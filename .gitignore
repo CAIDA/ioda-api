@@ -1,3 +1,5 @@
+# IDE Crap
+.idea/
 
 ###> symfony/framework-bundle ###
 /.env
