@@ -14,10 +14,10 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 class TopoController extends Controller
 {
     /**
-     * @Route("/databases",
+     * @Route("/databases/",
      *     methods={"GET"},
      *     name="topo_databases")
-     * @SWG\Tag(name="Topo")
+     * @SWG\Tag(name="Topographic")
      * @SWG\Response(
      *     response=200,
      *     description="Returns a list of available topographic databases"
@@ -31,9 +31,14 @@ class TopoController extends Controller
     }
 
     /**
-     * @Route("/databases/{db}",
+     * @Route("/databases/{db}/",
      *     methods={"GET"},
      *     name="topo_database")
+     * @SWG\Tag(name="Topographic")
+     * @SWG\Response(
+     *     response=200,
+     *     description="Returns information about the given topographic database"
+     * )
      */
     public function database($db)
     {
@@ -43,9 +48,14 @@ class TopoController extends Controller
     }
 
     /**
-     * @Route("/databases/{db}/tables",
+     * @Route("/databases/{db}/tables/",
      *     methods={"GET"},
      *     name="topo_database_tables")
+     * @SWG\Tag(name="Topographic")
+     * @SWG\Response(
+     *     response=200,
+     *     description="Returns a list of the available tables for the given topographic database"
+     * )
      */
     public function tables($db)
     {
@@ -55,9 +65,14 @@ class TopoController extends Controller
     }
 
     /**
-     * @Route("/databases/{db}/tables/{table}",
+     * @Route("/databases/{db}/tables/{table}/",
      *     methods={"GET"},
      *     name="topo_database_table")
+     * @SWG\Tag(name="Topographic")
+     * @SWG\Response(
+     *     response=200,
+     *     description="Returns the TopoJSON data for the given database table"
+     * )
      */
     public function table($db, $table)
     {

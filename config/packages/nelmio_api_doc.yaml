@@ -7,14 +7,14 @@ nelmio_api_doc:
             description: Data and metadata API for the Hi3 platform.
             version: 1.0.0
         tags:
-        - name: Topo
-          description: Topographic data access calls
         - name: Time Series
           description: Time series data and metadata access calls
-        - name: Sym
-          description: URL-shortening API
         - name: Expression
           description: Expression validation, annotation and metadata access calls.
+        - name: Topographic
+          description: Topographic data access calls
+        - name: URL Shortener
+          description: URL-shortening API
     areas: # to filter documented areas
         path_patterns:
             - ^/(?!doc|_error)
