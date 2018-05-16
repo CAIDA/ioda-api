@@ -17,4 +17,4 @@ nelmio_api_doc:
           description: URL-shortening API
     areas: # to filter documented areas
         path_patterns:
-            - ^/(?!doc|_error)
+            - ^/%env(API_VERSION)%(?!/docs|/_error)/
