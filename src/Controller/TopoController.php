@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use Swagger\Annotations as SWG;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 
@@ -13,7 +14,14 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 class TopoController extends Controller
 {
     /**
-     * @Route("/databases", methods={"GET"}, name="topo_databases")
+     * @Route("/databases",
+     *     methods={"GET"},
+     *     name="topo_databases")
+     * @SWG\Tag(name="Topo")
+     * @SWG\Response(
+     *     response=200,
+     *     description="Returns a list of available topographic databases"
+     * )
      */
     public function databases()
     {
@@ -23,7 +31,9 @@ class TopoController extends Controller
     }
 
     /**
-     * @Route("/databases/{db}", methods={"GET"}, name="topo_database")
+     * @Route("/databases/{db}",
+     *     methods={"GET"},
+     *     name="topo_database")
      */
     public function database($db)
     {
@@ -33,7 +43,9 @@ class TopoController extends Controller
     }
 
     /**
-     * @Route("/databases/{db}/tables", methods={"GET"}, name="topo_database_tables")
+     * @Route("/databases/{db}/tables",
+     *     methods={"GET"},
+     *     name="topo_database_tables")
      */
     public function tables($db)
     {
@@ -43,7 +55,9 @@ class TopoController extends Controller
     }
 
     /**
-     * @Route("/databases/{db}/tables/{table}", methods={"GET"}, name="topo_database_table")
+     * @Route("/databases/{db}/tables/{table}",
+     *     methods={"GET"},
+     *     name="topo_database_table")
      */
     public function table($db, $table)
     {
