@@ -17,4 +17,4 @@ nelmio_api_doc:
           description: Expression validation, annotation and metadata access calls.
     areas: # to filter documented areas
         path_patterns:
-            - ^/(?!doc)
+            - ^/(?!doc|_error)
