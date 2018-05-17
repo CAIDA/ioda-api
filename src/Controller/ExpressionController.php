@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -18,7 +19,11 @@ class ExpressionController extends Controller
      * @SWG\Tag(name="Expression")
      * @SWG\Response(
      *     response=200,
-     *     description="Returns a list of supported transformation functions"
+     *     description="Returns a list of supported transformation functions",
+     *     @SWG\Schema(
+     *         type="array",
+     *         @SWG\Items(ref=@Model(type=\App\Entity\Expression\ExpressionFunction::class, groups={"public"}))
+     *     )
      * )
      */
     public function functions()

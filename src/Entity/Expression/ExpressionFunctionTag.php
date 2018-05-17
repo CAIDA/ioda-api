@@ -7,7 +7,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\ExpressionFunctionTagRepository")
+ * @ORM\Entity(repositoryClass="App\Repository\Expression\ExpressionFunctionTagRepository")
  */
 class ExpressionFunctionTag
 {

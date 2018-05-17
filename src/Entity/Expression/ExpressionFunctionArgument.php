@@ -3,9 +3,10 @@
 namespace App\Entity\Expression;
 
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\ExpressionFunctionArgumentRepository")
+ * @ORM\Entity(repositoryClass="App\Repository\Expression\ExpressionFunctionArgumentRepository")
  */
 class ExpressionFunctionArgument
 {
@@ -13,11 +14,13 @@ class ExpressionFunctionArgument
      * @ORM\Id()
      * @ORM\GeneratedValue()
      * @ORM\Column(type="integer")
+     * @Groups({"all"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Groups({"all", "public"})
      */
     private $name;
 

@@ -5,9 +5,10 @@ namespace App\Entity\Expression;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\ExpressionFunctionRepository")
+ * @ORM\Entity(repositoryClass="App\Repository\Expression\ExpressionFunctionRepository")
  */
 class ExpressionFunction
 {
@@ -15,26 +16,31 @@ class ExpressionFunction
      * @ORM\Id()
      * @ORM\GeneratedValue()
      * @ORM\Column(type="integer")
+     * @Groups({"all"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Groups({"all", "public"})
      */
     private $slug;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Groups({"all", "public"})
      */
     private $name;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\Expression\ExpressionFunctionArgument", mappedBy="function", orphanRemoval=true)
+     * @Groups({"all", "public"})
      */
     private $arguments;
 
     /**
      * @ORM\ManyToMany(targetEntity="App\Entity\Expression\ExpressionFunctionTag", inversedBy="functions")
+     * @Groups({"all", "public"})
      */
     private $tags;
 
