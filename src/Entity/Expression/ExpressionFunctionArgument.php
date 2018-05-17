@@ -26,27 +26,32 @@ class ExpressionFunctionArgument
 
     /**
      * @ORM\Column(type="text")
+     * @Groups({"all", "public"})
      */
     private $description;
 
     /**
      * @ORM\Column(type="string", length=255)
+     * @Groups({"all", "public"})
      */
     private $type;
 
     /**
      * @ORM\Column(type="boolean")
+     * @Groups({"all", "public"})
      */
     private $mandatory;
 
     /**
      * @ORM\Column(type="boolean")
+     * @Groups({"all", "public"})
      */
     private $multiple;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Expression\ExpressionFunction", inversedBy="arguments")
      * @ORM\JoinColumn(nullable=false)
+     * @Groups({"all"})
      */
     private $function;
 

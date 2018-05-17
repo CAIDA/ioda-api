@@ -5,6 +5,8 @@ namespace App\Entity\Expression;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use Swagger\Annotations as SWG;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
@@ -35,12 +37,20 @@ class ExpressionFunction
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\Expression\ExpressionFunctionArgument", mappedBy="function", orphanRemoval=true)
      * @Groups({"all", "public"})
+     * @SWG\Property(
+     *         type="array",
+     *         @SWG\Items(ref=@Model(type=\App\Entity\Expression\ExpressionFunctionArgument::class, groups={"public"}))
+     * )
      */
     private $arguments;
 
     /**
      * @ORM\ManyToMany(targetEntity="App\Entity\Expression\ExpressionFunctionTag", inversedBy="functions")
      * @Groups({"all", "public"})
+     * @SWG\Property(
+     *         type="array",
+     *         @SWG\Items(ref=@Model(type=\App\Entity\Expression\ExpressionFunctionTag::class, groups={"public"}))
+     * )
      */
     private $tags;
 
