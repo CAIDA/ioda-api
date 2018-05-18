@@ -21,8 +21,11 @@ class ExpressionController extends Controller
      *     response=200,
      *     description="Returns a list of supported transformation functions",
      *     @SWG\Schema(
-     *         type="array",
-     *         @SWG\Items(ref=@Model(type=\App\Entity\Expression\ExpressionFunction::class, groups={"public"}))
+     *         @SWG\Property(
+     *             property="data",
+     *             type="array",
+     *             @SWG\Items(ref=@Model(type=\App\Entity\Expression\ExpressionFunctionSpec::class, groups={"public"}))
+     *         )
      *     )
      * )
      */

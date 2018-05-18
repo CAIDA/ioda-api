@@ -15,6 +15,21 @@ nelmio_api_doc:
           description: Topographic data access calls
         - name: URL Shortener
           description: URL-shortening API
+
+        responses:
+            ResponseEnvelope:
+                schema:
+                    properties:
+                        type:
+                            type: "string"
+                        requestParamters:
+                            type: "object"
+                        error:
+                            type: "string"
+                            description: "This field must be overridden."
+                        data:
+                            description: "This field must be overridden."
+
     areas: # to filter documented areas
         path_patterns:
             - ^/%env(API_VERSION)%(?!/docs|/_error)/
