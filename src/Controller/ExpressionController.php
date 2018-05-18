@@ -21,6 +21,7 @@ class ExpressionController extends Controller
      *     response=200,
      *     description="Returns a list of supported transformation functions",
      *     @SWG\Schema(
+     *         ref="#/definitions/ResponseEnvelope",
      *         @SWG\Property(
      *             property="data",
      *             type="array",

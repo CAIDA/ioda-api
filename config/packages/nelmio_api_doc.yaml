@@ -16,19 +16,18 @@ nelmio_api_doc:
         - name: URL Shortener
           description: URL-shortening API
 
-        responses:
+        definitions:
             ResponseEnvelope:
-                schema:
-                    properties:
-                        type:
-                            type: "string"
-                        requestParamters:
-                            type: "object"
-                        error:
-                            type: "string"
-                            description: "This field must be overridden."
-                        data:
-                            description: "This field must be overridden."
+                properties:
+                    type:
+                        type: "string"
+                    requestParamters:
+                        type: "object"
+                    error:
+                        type: "string"
+                        description: "This field must be overridden."
+                    data:
+                        description: "This field must be overridden."
 
     areas: # to filter documented areas
         path_patterns:
