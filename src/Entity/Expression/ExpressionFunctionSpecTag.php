@@ -8,9 +8,9 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\Expression\ExpressionFunctionTagRepository")
+ * @ORM\Entity(repositoryClass="\App\Repository\ExpressionFunctionSpecTagRepository")
  */
-class ExpressionFunctionTag
+class ExpressionFunctionSpecTag
 {
     /**
      * @ORM\Id()
@@ -33,7 +33,7 @@ class ExpressionFunctionTag
     private $description;
 
     /**
-     * @ORM\ManyToMany(targetEntity="App\Entity\Expression\ExpressionFunction", mappedBy="tags")
+     * @ORM\ManyToMany(targetEntity="ExpressionFunctionSpec", mappedBy="tags")
      */
     private $functions;
 
@@ -72,14 +72,14 @@ class ExpressionFunctionTag
     }
 
     /**
-     * @return Collection|ExpressionFunction[]
+     * @return Collection|ExpressionFunctionSpec[]
      */
     public function getFunctions(): Collection
     {
         return $this->functions;
     }
 
-    public function addFunction(ExpressionFunction $function): self
+    public function addFunction(ExpressionFunctionSpec $function): self
     {
         if (!$this->functions->contains($function)) {
             $this->functions[] = $function;
@@ -89,7 +89,7 @@ class ExpressionFunctionTag
         return $this;
     }
 
-    public function removeFunction(ExpressionFunction $function): self
+    public function removeFunction(ExpressionFunctionSpec $function): self
     {
         if ($this->functions->contains($function)) {
             $this->functions->removeElement($function);

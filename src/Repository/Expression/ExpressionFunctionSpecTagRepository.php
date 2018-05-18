@@ -2,21 +2,21 @@
 
 namespace App\Repository\Expression;
 
-use App\Entity\Expression\ExpressionFunctionTag;
+use App\Entity\Expression\ExpressionFunctionSpecTag;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 
 /**
- * @method ExpressionFunctionTag|null find($id, $lockMode = null, $lockVersion = null)
- * @method ExpressionFunctionTag|null findOneBy(array $criteria, array $orderBy = null)
- * @method ExpressionFunctionTag[]    findAll()
- * @method ExpressionFunctionTag[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @method ExpressionFunctionSpecTag|null find($id, $lockMode = null, $lockVersion = null)
+ * @method ExpressionFunctionSpecTag|null findOneBy(array $criteria, array $orderBy = null)
+ * @method ExpressionFunctionSpecTag[]    findAll()
+ * @method ExpressionFunctionSpecTag[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class ExpressionFunctionTagRepository extends ServiceEntityRepository
+class ExpressionFunctionSpecTagRepository extends ServiceEntityRepository
 {
     public function __construct(RegistryInterface $registry)
     {
-        parent::__construct($registry, ExpressionFunctionTag::class);
+        parent::__construct($registry, ExpressionFunctionSpecTag::class);
     }
 
 //    /**

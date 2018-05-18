@@ -2,21 +2,21 @@
 
 namespace App\Repository\Expression;
 
-use App\Entity\Expression\ExpressionFunctionArgument;
+use App\Entity\Expression\ExpressionFunctionSpecArgument;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 
 /**
- * @method ExpressionFunctionArgument|null find($id, $lockMode = null, $lockVersion = null)
- * @method ExpressionFunctionArgument|null findOneBy(array $criteria, array $orderBy = null)
- * @method ExpressionFunctionArgument[]    findAll()
- * @method ExpressionFunctionArgument[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @method ExpressionFunctionSpecArgument|null find($id, $lockMode = null, $lockVersion = null)
+ * @method ExpressionFunctionSpecArgument|null findOneBy(array $criteria, array $orderBy = null)
+ * @method ExpressionFunctionSpecArgument[]    findAll()
+ * @method ExpressionFunctionSpecArgument[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
-class ExpressionFunctionArgumentRepository extends ServiceEntityRepository
+class ExpressionFunctionSpecArgumentRepository extends ServiceEntityRepository
 {
     public function __construct(RegistryInterface $registry)
     {
-        parent::__construct($registry, ExpressionFunctionArgument::class);
+        parent::__construct($registry, ExpressionFunctionSpecArgument::class);
     }
 
 //    /**

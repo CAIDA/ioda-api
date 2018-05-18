@@ -6,9 +6,9 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\Expression\ExpressionFunctionArgumentRepository")
+ * @ORM\Entity(repositoryClass="\App\Repository\ExpressionFunctionSpecArgumentRepository")
  */
-class ExpressionFunctionArgument
+class ExpressionFunctionSpecArgument
 {
     /**
      * @ORM\Id()
@@ -49,7 +49,7 @@ class ExpressionFunctionArgument
     private $multiple;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Expression\ExpressionFunction", inversedBy="arguments")
+     * @ORM\ManyToOne(targetEntity="ExpressionFunctionSpec", inversedBy="arguments")
      * @ORM\JoinColumn(nullable=false)
      * @Groups({"all"})
      */
@@ -120,12 +120,12 @@ class ExpressionFunctionArgument
         return $this;
     }
 
-    public function getFunction(): ?ExpressionFunction
+    public function getFunction(): ?ExpressionFunctionSpec
     {
         return $this->function;
     }
 
-    public function setFunction(?ExpressionFunction $function): self
+    public function setFunction(?ExpressionFunctionSpec $function): self
     {
         $this->function = $function;
 

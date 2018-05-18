@@ -10,9 +10,9 @@ use Swagger\Annotations as SWG;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\Expression\ExpressionFunctionRepository")
+ * @ORM\Entity(repositoryClass="\App\Repository\ExpressionFunctionSpecRepository")
  */
-class ExpressionFunction
+class ExpressionFunctionSpec
 {
     /**
      * @ORM\Id()
@@ -35,21 +35,21 @@ class ExpressionFunction
     private $name;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Expression\ExpressionFunctionArgument", mappedBy="function", orphanRemoval=true)
+     * @ORM\OneToMany(targetEntity="ExpressionFunctionSpecArgument", mappedBy="function", orphanRemoval=true)
      * @Groups({"all", "public"})
      * @SWG\Property(
      *         type="array",
-     *         @SWG\Items(ref=@Model(type=\App\Entity\Expression\ExpressionFunctionArgument::class, groups={"public"}))
+     *         @SWG\Items(ref=@Model(type=\App\Entity\Expression\ExpressionFunctionSpecArgument::class, groups={"public"}))
      * )
      */
     private $arguments;
 
     /**
-     * @ORM\ManyToMany(targetEntity="App\Entity\Expression\ExpressionFunctionTag", inversedBy="functions")
+     * @ORM\ManyToMany(targetEntity="ExpressionFunctionSpecTag", inversedBy="functions")
      * @Groups({"all", "public"})
      * @SWG\Property(
      *         type="array",
-     *         @SWG\Items(ref=@Model(type=\App\Entity\Expression\ExpressionFunctionTag::class, groups={"public"}))
+     *         @SWG\Items(ref=@Model(type=\App\Entity\Expression\ExpressionFunctionSpecTag::class, groups={"public"}))
      * )
      */
     private $tags;
@@ -90,14 +90,14 @@ class ExpressionFunction
     }
 
     /**
-     * @return Collection|ExpressionFunctionArgument[]
+     * @return Collection|ExpressionFunctionSpecArgument[]
      */
     public function getArguments(): Collection
     {
         return $this->arguments;
     }
 
-    public function addArgument(ExpressionFunctionArgument $argument): self
+    public function addArgument(ExpressionFunctionSpecArgument $argument): self
     {
         if (!$this->arguments->contains($argument)) {
             $this->arguments[] = $argument;
@@ -107,7 +107,7 @@ class ExpressionFunction
         return $this;
     }
 
-    public function removeArgument(ExpressionFunctionArgument $argument): self
+    public function removeArgument(ExpressionFunctionSpecArgument $argument): self
     {
         if ($this->arguments->contains($argument)) {
             $this->arguments->removeElement($argument);
@@ -121,14 +121,14 @@ class ExpressionFunction
     }
 
     /**
-     * @return Collection|ExpressionFunctionTag[]
+     * @return Collection|ExpressionFunctionSpecTag[]
      */
     public function getTags(): Collection
     {
         return $this->tags;
     }
 
-    public function addTag(ExpressionFunctionTag $tag): self
+    public function addTag(ExpressionFunctionSpecTag $tag): self
     {
         if (!$this->tags->contains($tag)) {
             $this->tags[] = $tag;
@@ -137,7 +137,7 @@ class ExpressionFunction
         return $this;
     }
 
-    public function removeTag(ExpressionFunctionTag $tag): self
+    public function removeTag(ExpressionFunctionSpecTag $tag): self
     {
         if ($this->tags->contains($tag)) {
             $this->tags->removeElement($tag);
