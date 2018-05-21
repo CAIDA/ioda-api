@@ -25,12 +25,20 @@ class ExpressionFunctionSpec
     /**
      * @ORM\Column(type="string", length=255)
      * @Groups({"all", "public"})
+     * @SWG\Property(
+     *     type="string",
+     *     example="sumSeries"
+     * )
      */
     private $slug;
 
     /**
      * @ORM\Column(type="string", length=255)
      * @Groups({"all", "public"})
+     * @SWG\Property(
+     *     type="string",
+     *     example="Sum Series"
+     * )
      */
     private $name;
 

@@ -14,6 +14,7 @@ abstract class ResponseEnvelope
 
     /**
      * @Groups({"all", "public"})
+     * @SWG\Property(type="string")
      */
     private $type;
 
