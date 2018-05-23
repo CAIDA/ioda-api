@@ -9,12 +9,12 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 /**
  * Class TimeseriesController
  * @package App\Controller\Timeseries
- * @Route("/ts")
+ * @Route("/ts", name="ts_")
  */
 class TimeseriesController extends AbstractController
 {
     /**
-     * @Route("/query/", methods={"POST"}, name="ts_query")
+     * @Route("/query/", methods={"POST"}, name="query")
      * @SWG\Tag(name="Time Series")
      * @SWG\Response(
      *     response=200,
@@ -29,7 +29,7 @@ class TimeseriesController extends AbstractController
     }
 
     /**
-     * @Route("/list/", methods={"GET"}, name="ts_list")
+     * @Route("/list/", methods={"GET"}, name="list")
      * @SWG\Tag(name="Time Series")
      * @SWG\Response(
      *     response=200,

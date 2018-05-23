@@ -9,14 +9,14 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 /**
  * Class TopoController
  * @package App\Controller
- * @Route("/topo")
+ * @Route("/topo", name="topo_")
  */
 class TopoController extends Controller
 {
     /**
      * @Route("/databases/",
      *     methods={"GET"},
-     *     name="topo_databases")
+     *     name="databases")
      * @SWG\Tag(name="Topographic")
      * @SWG\Response(
      *     response=200,
@@ -33,7 +33,7 @@ class TopoController extends Controller
     /**
      * @Route("/databases/{db}/",
      *     methods={"GET"},
-     *     name="topo_database")
+     *     name="database")
      * @SWG\Tag(name="Topographic")
      * @SWG\Response(
      *     response=200,
@@ -50,7 +50,7 @@ class TopoController extends Controller
     /**
      * @Route("/databases/{db}/tables/",
      *     methods={"GET"},
-     *     name="topo_database_tables")
+     *     name="database_tables")
      * @SWG\Tag(name="Topographic")
      * @SWG\Response(
      *     response=200,
@@ -67,7 +67,7 @@ class TopoController extends Controller
     /**
      * @Route("/databases/{db}/tables/{table}/",
      *     methods={"GET"},
-     *     name="topo_database_table")
+     *     name="database_table")
      * @SWG\Tag(name="Topographic")
      * @SWG\Response(
      *     response=200,

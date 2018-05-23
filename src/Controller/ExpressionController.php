@@ -15,12 +15,12 @@ use Symfony\Component\Serializer\SerializerInterface;
 /**
  * Class ExpressionController
  * @package App\Controller
- * @Route("/expression")
+ * @Route("/expression", name="expression_")
  */
 class ExpressionController extends Controller
 {
     /**
-     * @Route("/functions/", methods={"GET"}, name="expression_functions")
+     * @Route("/functions/", methods={"GET"}, name="functions")
      * @SWG\Tag(name="Expression")
      * @SWG\Response(
      *     response=200,
@@ -65,7 +65,7 @@ class ExpressionController extends Controller
     }
 
     /**
-     * @Route("/validate/", methods={"POST"}, name="expression_validate")
+     * @Route("/validate/", methods={"POST"}, name="validate")
      * @SWG\Tag(name="Expression")
      * @SWG\Response(
      *     response=200,
