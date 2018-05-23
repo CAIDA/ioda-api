@@ -12,8 +12,11 @@ class Registry
 {
     /**
      * @SWG\Property(
-     *     type="array",
-     *     @SWG\Items(ref=@Model(type=PrototypeTag::class, groups={"public"}))
+     *     type="object",
+     *     additionalProperties={
+     *         @SWG\Property(ref=@Model(type=PrototypeTag::class, groups={"public"})),
+     *         "$ref": "#/definitions/PrototypeTag"
+     *     }
      * )
      * @Groups({"public"})
      */
@@ -23,6 +26,7 @@ class Registry
      * @SWG\Property(
      *     type="object",
      *     additionalProperties={
+     *         @SWG\Property(ref=@Model(type=Prototype::class, groups={"public"})),
      *         "$ref": "#/definitions/Prototype"
      *     }
      * )
