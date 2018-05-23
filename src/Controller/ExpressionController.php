@@ -2,10 +2,15 @@
 
 namespace App\Controller;
 
+use App\Expression\Functions\Registry;
+use App\Response\Envelope;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\Serializer\SerializerInterface;
 
 /**
  * Class ExpressionController
@@ -22,7 +27,7 @@ class ExpressionController extends Controller
      *     description="Returns a list of supported transformation functions",
      *     @SWG\Schema(
      *         allOf={
-     *             @SWG\Schema(ref=@Model(type=\App\Response\ResponseEnvelope::class)),
+     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
      *             @SWG\Schema(
      *                 @SWG\Property(
      *                     property="type",
@@ -30,20 +35,33 @@ class ExpressionController extends Controller
      *                     enum={"expression.functions"}
      *                 ),
      *                 @SWG\Property(
+     *                     property="error",
+     *                     type="string",
+     *                     enum={}
+     *                 ),
+     *                 @SWG\Property(
      *                     property="data",
-     *                     type="array",
-     *                     @SWG\Items(ref=@Model(type=\App\Entity\Expression\ExpressionFunctionSpec::class, groups={"public"}))
+     *                     ref=@Model(type=\App\Expression\Functions\Registry::class, groups={"public"})
      *                 )
      *             )
      *         }
      *     )
      * )
+     *
+     * @var Request $request
+     * @var SerializerInterface $serializer
+     * @var Registry $functionRegistry
+     * @return JsonResponse
      */
-    public function functions()
+    public function functions(Request $request, SerializerInterface $serializer, Registry $functionRegistry)
     {
-        return $this->json([
-            'functions'
-        ]);
+        $envelope = new Envelope(
+            'expression.functions',
+            null,
+            $request->server->get('REQUEST_TIME')
+        );
+        $envelope->setData($functionRegistry);
+        return $this->json($envelope);
     }
 
     /**
