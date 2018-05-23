@@ -105,7 +105,7 @@ prototypes:
         type: timeSeries
         mandatory: true
       - name: Total
-        desc: Total to use (default: None / derived from series)
+        desc: "Total to use (default: None / derived from series)"
         type: number
         mandatory: false
     tags: [calculate, arithmetic]
@@ -430,11 +430,11 @@ prototypes:
         type: timeSeries
         mandatory: true
       - name: Interval
-        desc: Bucket time-interval size. Examples: 1hour, 1week, 13week, ...
+        desc: "Bucket time-interval size. Examples: 1hour, 1week, 13week, ..."
         type: string
         mandatory: true
       - name: AlignToInterval
-        desc: Force align start of time buckets. (default: False).
+        desc: "Force align start of time buckets. (default: False)."
         type: string
         mandatory: false
     tags: [transform]
@@ -448,7 +448,7 @@ prototypes:
         type: timeSeries
         mandatory: true
       - name: Delta
-        desc: (default: 3)
+        desc: "(default: 3)"
         type: number
         mandatory: false
     tags: [calculate, statistical]
@@ -551,7 +551,7 @@ prototypes:
         type: timeSeries
         mandatory: true
       - name: Base
-        desc: Log base (default: 10)
+        desc: "Log base (default: 10)"
         type: number
         mandatory: false
     tags: [transform, arithmetic]
@@ -735,7 +735,7 @@ prototypes:
         type: timeSeries
         mandatory: true
       - name: MaxValue
-        desc: Maximum Value (default: None)
+        desc: "Maximum Value (default: None)"
         type: number
         mandatory: false
     tags: [transform, differential]
@@ -778,7 +778,7 @@ prototypes:
         type: number
         mandatory: true
       - name: Interpolate
-        desc: Boolean (True/False) to request interpolation or not (default: False)
+        desc: "Boolean (True/False) to request interpolation or not (default: False)"
         type: string
         mandatory: false
     tags: [transform, statistical]
@@ -830,7 +830,7 @@ prototypes:
         type: timeSeries
         mandatory: true
       - name: MaxValue
-        desc: Maximum Value (default: None)
+        desc: "Maximum Value (default: None)"
         type: number
         mandatory: false
     tags: [transform, differential]
@@ -1054,15 +1054,15 @@ prototypes:
         type: timeSeries
         mandatory: true
       - name: Interval
-        desc: Bucket time-interval size. Examples: 1hour, 1week, 13week, ...
+        desc: "Bucket time-interval size. Examples: 1hour, 1week, 13week, ..."
         type: string
         mandatory: true
       - name: Function
-        desc: Aggregation function to use: sum, avg, max, min or last. (default: sum)
+        desc: "Aggregation function to use: sum, avg, max, min or last. (default: sum)"
         type: string
         mandatory: false
       - name: AlignToFrom
-        desc: Force align start of buckets to from time offset. (default: False). By default, buckets are calculated by rounding to the nearest interval. This works well for intervals smaller than a day. For example, 22:32 will end up in the bucket 22:00-23:00 when the interval=1hour.
+        desc: "Force align start of buckets to from time offset. (default: False). By default, buckets are calculated by rounding to the nearest interval. This works well for intervals smaller than a day. For example, 22:32 will end up in the bucket 22:00-23:00 when the interval=1hour."
         type: string
         mandatory: false
     tags: [transform]
@@ -1119,11 +1119,11 @@ prototypes:
         type: timeSeries
         mandatory: true
       - name: TimeShift
-        desc: Length of time (examples: 7d, +1h). If no sign is given, a minus sign ( - ) is implied which will shift the metric back in time. If a plus sign ( + ) is given, the metric will be shifted forward in time.
+        desc: "Length of time (examples: 7d, +1h). If no sign is given, a minus sign ( - ) is implied which will shift the metric back in time. If a plus sign ( + ) is given, the metric will be shifted forward in time."
         type: string
         mandatory: true
       - name: ResetEnd
-        desc: Boolean (True/False) on whether to automatically reset the end date range to the end of the base stat. (default: True). Example case is when you timeshift to last week and have the graph date range set to include a time in the future, will limit this timeshift to pretend ending at the current time. If ResetEnd is False, will instead return full range including future time.
+        desc: "Boolean (True/False) on whether to automatically reset the end date range to the end of the base stat. (default: True). Example case is when you timeshift to last week and have the graph date range set to include a time in the future, will limit this timeshift to pretend ending at the current time. If ResetEnd is False, will instead return full range including future time."
         type: string
         mandatory: false
     tags: [Time, transform]
@@ -1137,7 +1137,7 @@ prototypes:
         type: timeSeries
         mandatory: true
       - name: NewValue
-        desc: Value to transform null points to. (default: 0)
+        desc: "Value to transform null points to. (default: 0)"
         type: number
         mandatory: false
     tags: [transform]

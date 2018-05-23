@@ -25,6 +25,12 @@ class PrototypeTag
      */
     private $description;
 
+    public function __construct($name, $description)
+    {
+        $this->setName($name);
+        $this->setDescription($description);
+    }
+
     public function getName(): string
     {
         return $this->name;
@@ -35,12 +41,12 @@ class PrototypeTag
         $this->name = $name;
     }
 
-    public function getDescription(): string
+    public function getDescription(): ?string
     {
         return $this->description;
     }
 
-    public function setDescription(string $description): void
+    public function setDescription(?string $description): void
     {
         $this->description = $description;
     }
