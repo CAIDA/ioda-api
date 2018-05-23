@@ -41,56 +41,56 @@ tags:
 prototypes:
   absolute:
     name: Absolute
-    desc: Takes a series or set of series, and applies the mathematical abs function to each datapoint transforming it to its absolute value.
-    args:
+    description: Takes a series or set of series, and applies the mathematical abs function to each datapoint transforming it to its absolute value.
+    parameters:
       - name: Series
-        desc: Series to apply function to
+        description: Series to apply function to
         type: timeSeries
         mandatory: true
     tags: [transform, arithmetic]
 
   alias:
     name: Alias
-    desc: Takes a series and a string in quotes. Uses the string instead of the metric as the series name.
-    args:
+    description: Takes a series and a string in quotes. Uses the string instead of the metric as the series name.
+    parameters:
       - name: Series
-        desc: Series to rename
+        description: Series to rename
         type: timeSeries
         mandatory: true
       - name: NewName
-        desc: The new name for the series
+        description: The new name for the series
         type: string
         mandatory: true
     tags: [label]
 
   aliasSub:
     name: Alias Substitute
-    desc: Runs series names through a regex search/replace.
-    args:
+    description: Runs series names through a regex search/replace.
+    parameters:
       - name: Series
-        desc: Series to rename
+        description: Series to rename
         type: timeSeries
         mandatory: true
       - name: Search
-        desc: A regular expression search string
+        description: A regular expression search string
         type: string
         mandatory: true
       - name: Replace
-        desc: The replace string
+        description: The replace string
         type: string
         mandatory: true
     tags: [label]
 
   aliasByNode:
     name: Alias By Node
-    desc: Takes a series or set of series and applies an alias derived from one or more “node” portion/s of the series name. Node indices are 0 indexed.
-    args:
+    description: Takes a series or set of series and applies an alias derived from one or more “node” portion/s of the series name. Node indices are 0 indexed.
+    parameters:
       - name: Series
-        desc: Series to rename
+        description: Series to rename
         type: timeSeries
         mandatory: true
       - name: NodeIndices
-        desc: Indices of the nodes to use for the new series name.
+        description: Indices of the nodes to use for the new series name.
         type: number
         mandatory: true
         multiple: true
@@ -98,52 +98,52 @@ prototypes:
 
   asPercent:
     name: As Percent
-    desc: Takes a series or set of series, and calculates a percentage of the total of the series. If total is specified, each series will be calculated as a percentage of that total. If total is not specified, the sum of all points in the series set will be used instead.
-    args:
+    description: Takes a series or set of series, and calculates a percentage of the total of the series. If total is specified, each series will be calculated as a percentage of that total. If total is not specified, the sum of all points in the series set will be used instead.
+    parameters:
       - name: Series
-        desc: Series to calculate percentage of
+        description: Series to calculate percentage of
         type: timeSeries
         mandatory: true
       - name: Total
-        desc: "Total to use (default: None / derived from series)"
+        description: "Total to use (default: None / derived from series)"
         type: number
         mandatory: false
     tags: [calculate, arithmetic]
 
   averageAbove:
     name: Average Above
-    desc: Takes a series or set of series followed by an integer N. Out of all metrics passed, returns only the metrics with an average value above N for the time period specified.
-    args:
+    description: Takes a series or set of series followed by an integer N. Out of all metrics passed, returns only the metrics with an average value above N for the time period specified.
+    parameters:
       - name: Series
-        desc: Series to filter from
+        description: Series to filter from
         type: timeSeries
         mandatory: true
       - name: Threshold
-        desc: Threshold value
+        description: Threshold value
         type: number
         mandatory: true
     tags: [filter, statistical]
 
   averageBelow:
     name: AverageBelow
-    desc: Takes a series or set of series followed by an integer N. Out of all metrics passed, returns only the metrics with an average value below N for the time period specified.
-    args:
+    description: Takes a series or set of series followed by an integer N. Out of all metrics passed, returns only the metrics with an average value below N for the time period specified.
+    parameters:
       - name: Series
-        desc: Series to filter from
+        description: Series to filter from
         type: timeSeries
         mandatory: true
       - name: Threshold
-        desc: Threshold value
+        description: Threshold value
         type: number
         mandatory: true
     tags: [filter, statistical]
 
   averageSeries:
     name: Average Series
-    desc: Takes a series or set of series. Returns the average value of all metrics passed at each time.
-    args:
+    description: Takes a series or set of series. Returns the average value of all metrics passed at each time.
+    parameters:
       - name: Series
-        desc: List of series to average from
+        description: List of series to average from
         type: timeSeries
         mandatory: true
         multiple: true
@@ -151,28 +151,28 @@ prototypes:
 
   averageOutsidePercentile:
     name: Average Outside Percentile
-    desc: Removes series lying inside an average percentile interval.
-    args:
+    description: Removes series lying inside an average percentile interval.
+    parameters:
       - name: Series
-        desc: Series to filter
+        description: Series to filter
         type: timeSeries
         mandatory: true
       - name: N
-        desc: n-th percentile
+        description: n-th percentile
         type: number
         mandatory: true
     tags: [filter, statistical]
 
   binAbsolute:
     name: Bin (Absolute)
-    desc: Bin values for each series into the given bins. A value will be placed in the first bin where the value is greater-than, or equal-to the bin value.
-    args:
+    description: Bin values for each series into the given bins. A value will be placed in the first bin where the value is greater-than, or equal-to the bin value.
+    parameters:
       - name: Series
-        desc: Series to bin values for
+        description: Series to bin values for
         type: timeSeries
         mandatory: true
       - name: Bin Stop(s)
-        desc: All values between this value and the next bin argument will be set to this value.
+        description: All values between this value and the next bin argument will be set to this value.
         type: number
         mandatory: false
         multiple: true
@@ -180,20 +180,20 @@ prototypes:
 
   constantLine:
     name: Constant Line
-    desc: Defines a constant time-series with Y value.
-    args:
+    description: Defines a constant time-series with Y value.
+    parameters:
       - name: Y
-        desc: Constant Value
+        description: Constant Value
         type: number
         mandatory: true
     tags: [generate]
 
   countSeries:
     name: Count Series
-    desc: Takes a series or set of series. generates a new time-series representing the number of nodes found in the input series.
-    args:
+    description: Takes a series or set of series. generates a new time-series representing the number of nodes found in the input series.
+    parameters:
       - name: Series
-        desc: Series to count
+        description: Series to count
         type: timeSeries
         mandatory: true
         multiple: true
@@ -201,52 +201,52 @@ prototypes:
 
   currentAbove:
     name: Current Above
-    desc: Takes a series or set of series, followed by an integer N. Out of all metrics passed, returns only the metrics whose value is above N at the end of the time period specified.
-    args:
+    description: Takes a series or set of series, followed by an integer N. Out of all metrics passed, returns only the metrics whose value is above N at the end of the time period specified.
+    parameters:
       - name: Series
-        desc: Series to filter from
+        description: Series to filter from
         type: timeSeries
         mandatory: true
       - name: Threshold
-        desc: Threshold value
+        description: Threshold value
         type: number
         mandatory: true
     tags: [filter]
 
   currentBelow:
     name: Current Below
-    desc: Takes a series or set of series, followed by an integer N. Out of all metrics passed, returns only the metrics whose value is below N at the end of the time period specified.
-    args:
+    description: Takes a series or set of series, followed by an integer N. Out of all metrics passed, returns only the metrics whose value is below N at the end of the time period specified.
+    parameters:
       - name: Series
-        desc: Series to filter from
+        description: Series to filter from
         type: timeSeries
         mandatory: true
       - name: Threshold
-        desc: Threshold value
+        description: Threshold value
         type: number
         mandatory: true
     tags: [filter]
 
   derivative:
     name: Derivative
-    desc: This is the opposite of the integral function. This is useful for taking a running total metric and calculating the delta between subsequent data points. This function does not normalize for periods of time, as a true derivative would. Instead see the perSecond() function to calculate a rate of change over time.
-    args:
+    description: This is the opposite of the integral function. This is useful for taking a running total metric and calculating the delta between subsequent data points. This function does not normalize for periods of time, as a true derivative would. Instead see the perSecond() function to calculate a rate of change over time.
+    parameters:
       - name: Series
-        desc: Series to calculate derivative
+        description: Series to calculate derivative
         type: timeSeries
         mandatory: true
       - name: Step
-        desc: Distance between the values to find the delta of. Defaults to 1 (i.e. the value immediately prior).
+        description: Distance between the values to find the delta of. Defaults to 1 (i.e. the value immediately prior).
         type: number
         mandatory: false
     tags: [transform, differential]
 
   diffSeries:
     name: Diff Series
-    desc: Takes a set of series (at least 2) and subtracts them. Subtracts parameter 2 through n (subtrahend) from parameter 1 (minuend).
-    args:
+    description: Takes a set of series (at least 2) and subtracts them. Subtracts parameter 2 through n (subtrahend) from parameter 1 (minuend).
+    parameters:
       - name: Series
-        desc: Series to subtract
+        description: Series to subtract
         type: timeSeries
         mandatory: true
         multiple: true
@@ -254,61 +254,62 @@ prototypes:
 
   divideSeries:
     name: Divide Series
-    desc: Takes a dividend metric and a divisor metric and returns the division result.
-    args:
+    description: Takes a dividend metric and a divisor metric and returns the division result.
+    parameters:
       - name: Dividend
-        desc: Dividend Series
+        description: Dividend Series
         type: timeSeries
         mandatory: true
       - name: Divisor
-        desc: Divisor Series
+        description: Divisor Series
         type: timeSeries
         mandatory: true
     tags: [combine, arithmetic]
 
   divideSeriesArrays:
     name: Divide Series (Arrays)
-    desc: Takes a group of dividend metrics and a group of divisor metrics and divides each metric in the dividend group by the metric at the same index of the divisor group. Both groups must have exactly the same number of elements.
-    args:
+    description: Takes a group of dividend metrics and a group of divisor metrics and divides each metric in the dividend group by the metric at the same index of the divisor group. Both groups must have exactly the same number of elements.
+    parameters:
       - name: Dividend Group
-        desc: Group of Dividend Series
+        description: Group of Dividend Series
         type: timeSeries
         mandatory: true
       - name: Divisor Group
-        desc: Group of Divisor Series
+        description: Group of Divisor Series
         type: timeSeries
         mandatory: true
     tags: [combine, arithmetic]
 
   diurnalForecast:
     name: Diurnal Forecast
-    desc: Uses historical data to forecast the lowest expected value for each point in time.
-    args:
+    description: Uses historical data to forecast the lowest expected value for each point in time.
+    parameters:
       - name: Series
-        desc: Series to compute the dirurnal forecast for
+        description: Series to compute the dirurnal forecast for
         type: timeSeries
         mandatory: true
       - name: Weeks
-        desc: Number of weeks to use for the historical reference window (defaults to 4).
+        description: Number of weeks to use for the historical reference window (defaults to 4).
         type: number
         default: 4
         mandatory: false
       - name: Percentile
-        desc: For each forecast point, the value at this percentile is extracted from the historical window of values (defaults to 2, use 0 for the minimum).
+        description: For each forecast point, the value at this percentile is extracted from the historical window of values (defaults to 2, use 0 for the minimum).
         type: number
         default: 2
         mandatory: false
+    tags: [statistical, calculate]
 
   exclude:
     name: Exclude
-    desc: Takes a series or set of series followed by one or more regular expressions. Excludes metrics that match any of the regular expression.
-    args:
+    description: Takes a series or set of series followed by one or more regular expressions. Excludes metrics that match any of the regular expression.
+    parameters:
       - name: Series
-        desc: Series to filter
+        description: Series to filter
         type: timeSeries
         mandatory: true
       - name: patterns
-        desc: Regular expression matching pattern
+        description: Regular expression matching pattern
         type: string
         mandatory: true
         multiple: true
@@ -316,14 +317,14 @@ prototypes:
 
   grep:
     name: Grep
-    desc: Takes a series or set of series followed by one or more regular expressions. Excludes metrics that do not match any of the regular expressions.
-    args:
+    description: Takes a series or set of series followed by one or more regular expressions. Excludes metrics that do not match any of the regular expressions.
+    parameters:
       - name: Series
-        desc: Series to filter
+        description: Series to filter
         type: timeSeries
         mandatory: true
       - name: patterns
-        desc: Regular expression matching pattern
+        description: Regular expression matching pattern
         type: string
         mandatory: true
         multiple: true
@@ -331,10 +332,10 @@ prototypes:
 
   group:
     name: Group Series
-    desc: Takes an arbitrary number of series and adds them to a single series list. This is used to pass multiple series to a function which only takes one.
-    args:
+    description: Takes an arbitrary number of series and adds them to a single series list. This is used to pass multiple series to a function which only takes one.
+    parameters:
       - name: Series
-        desc: Series to group
+        description: Series to group
         type: timeSeries
         mandatory: true
         multiple: true
@@ -342,38 +343,38 @@ prototypes:
 
   groupByNode:
     name: Group by Node
-    desc: Takes a wildcarded series and maps a callback function to subgroups within as defined by a common node.
-    args:
+    description: Takes a wildcarded series and maps a callback function to subgroups within as defined by a common node.
+    parameters:
       - name: Series
-        desc: Series to group
+        description: Series to group
         type: timeSeries
         mandatory: true
         multiple: true
       - name: NodeNum
-        desc: Index number of the wildcarded node
+        description: Index number of the wildcarded node
         type: number
         mandatory: true
       - name: Callback
-        desc: Callback function name
+        description: Callback function name
         type: string
         mandatory: true
     tags: [combine]
 
   groupByNodes:
     name: Group by Nodes
-    desc: Takes a wildcarded series and maps a callback function to subgroups within as defined by a set of common nodes.
-    args:
+    description: Takes a wildcarded series and maps a callback function to subgroups within as defined by a set of common nodes.
+    parameters:
       - name: Series
-        desc: Series to group
+        description: Series to group
         type: timeSeries
         mandatory: true
         multiple: false
       - name: Callback
-        desc: Callback function name
+        description: Callback function name
         type: string
         mandatory: true
       - name: NodeNum
-        desc: Index number of the wildcarded node
+        description: Index number of the wildcarded node
         type: number
         mandatory: true
         multiple: true
@@ -381,94 +382,94 @@ prototypes:
 
   highestAverage:
     name: Highest Average
-    desc: Takes a series or set of series, followed by an integer N. Out of all metrics passed, returns only the top N metrics with the highest average value for the time period specified.
-    args:
+    description: Takes a series or set of series, followed by an integer N. Out of all metrics passed, returns only the top N metrics with the highest average value for the time period specified.
+    parameters:
       - name: Series
-        desc: Series to filter from
+        description: Series to filter from
         type: timeSeries
         mandatory: true
       - name: Threshold
-        desc: Threshold of average value
+        description: Threshold of average value
         type: number
         mandatory: true
     tags: [filter, statistical]
 
   highestCurrent:
     name: Highest Current
-    desc: Takes a series or set of series, followed by an integer N. Out of all metrics passed, returns only the N metrics with the highest value at the end of the time period specified.
-    args:
+    description: Takes a series or set of series, followed by an integer N. Out of all metrics passed, returns only the N metrics with the highest value at the end of the time period specified.
+    parameters:
       - name: Series
-        desc: Series to filter from
+        description: Series to filter from
         type: timeSeries
         mandatory: true
       - name: Threshold
-        desc: Threshold of current value
+        description: Threshold of current value
         type: number
         mandatory: true
     tags: [filter]
 
   highestMax:
     name: Highest Max
-    desc: Takes a series or set of series, followed by an integer N. Out of all metrics passed, returns only the N metrics with the highest maximum value in the time period specified.
-    args:
+    description: Takes a series or set of series, followed by an integer N. Out of all metrics passed, returns only the N metrics with the highest maximum value in the time period specified.
+    parameters:
       - name: Series
-        desc: Series to filter from
+        description: Series to filter from
         type: timeSeries
         mandatory: true
       - name: Threshold
-        desc: Threshold of max value
+        description: Threshold of max value
         type: number
         mandatory: true
     tags: [filter]
 
   hitCount:
     name: Hit Count
-    desc: Estimate hit counts from a list of time series. This function assumes the values in each time series represent hits per second. It calculates hits per some larger interval such as per day or per hour. This function is like summarize(), except that it compensates automatically for different time scales (so that a similar graph results from using either fine-grained or coarse-grained records) and handles rarely-occurring events gracefully.
-    args:
+    description: Estimate hit counts from a list of time series. This function assumes the values in each time series represent hits per second. It calculates hits per some larger interval such as per day or per hour. This function is like summarize(), except that it compensates automatically for different time scales (so that a similar graph results from using either fine-grained or coarse-grained records) and handles rarely-occurring events gracefully.
+    parameters:
       - name: Series
-        desc: Hit-based series to count
+        description: Hit-based series to count
         type: timeSeries
         mandatory: true
       - name: Interval
-        desc: "Bucket time-interval size. Examples: 1hour, 1week, 13week, ..."
+        description: "Bucket time-interval size. Examples: 1hour, 1week, 13week, ..."
         type: string
         mandatory: true
       - name: AlignToInterval
-        desc: "Force align start of time buckets. (default: False)."
+        description: "Force align start of time buckets. (default: False)."
         type: string
         mandatory: false
     tags: [transform]
 
   holtWintersConfidenceBands:
     name: Holt Winters Confidence Bands
-    desc: Performs a Holt-Winters forecast using the series as input data and returns upper and lower bands with the predicted forecast deviations.
-    args:
+    description: Performs a Holt-Winters forecast using the series as input data and returns upper and lower bands with the predicted forecast deviations.
+    parameters:
       - name: Series
-        desc: Series to calculate Holt-Winters forecast on
+        description: Series to calculate Holt-Winters forecast on
         type: timeSeries
         mandatory: true
       - name: Delta
-        desc: "(default: 3)"
+        description: "(default: 3)"
         type: number
         mandatory: false
     tags: [calculate, statistical]
 
   holtWintersForecast:
     name: Holt Winters Forecast
-    desc: Performs a Holt-Winters forecast using the series as input data. Data from one week previous to the series is used to bootstrap the initial forecast.
-    args:
+    description: Performs a Holt-Winters forecast using the series as input data. Data from one week previous to the series is used to bootstrap the initial forecast.
+    parameters:
       - name: Series
-        desc: Series to calculate Holt-Winters forecast on
+        description: Series to calculate Holt-Winters forecast on
         type: timeSeries
         mandatory: true
     tags: [calculate, statistical]
 
   invert:
     name: Invert
-    desc: Takes a series or set of series, and inverts each datapoint (i.e. 1/x).
-    args:
+    description: Takes a series or set of series, and inverts each datapoint (i.e. 1/x).
+    parameters:
       - name: Series
-        desc: Series to invert
+        description: Series to invert
         type: timeSeries
         mandatory: true
     tags: [transform, arithmetic]
@@ -476,24 +477,24 @@ prototypes:
 
   integral:
     name: Integral
-    desc: This will return the sum over time, sort of like a continuous addition function. Useful for finding totals or trends in metrics that are collected per minute.
-    args:
+    description: This will return the sum over time, sort of like a continuous addition function. Useful for finding totals or trends in metrics that are collected per minute.
+    parameters:
       - name: Series
-        desc: Series to integrate
+        description: Series to integrate
         type: timeSeries
         mandatory: true
     tags: [transform, differential]
 
   keepDayOfWeek:
     name: Keep Day of Week
-    desc: Keeps data only from the given day(s) of the week. e.g. if 'Sunday' is specified, all data points that do not fall on a Sunday will be set to null.
-    args:
+    description: Keeps data only from the given day(s) of the week. e.g. if 'Sunday' is specified, all data points that do not fall on a Sunday will be set to null.
+    parameters:
       - name: Series
-        desc: Series to filter
+        description: Series to filter
         type: timeSeries
         mandatory: true
       - name: Day
-        desc: Day of week to keep. 'weekend' and 'weekday' are also accepted values.
+        description: Day of week to keep. 'weekend' and 'weekday' are also accepted values.
         type: string
         mandatory: true
         multiple: true
@@ -501,14 +502,14 @@ prototypes:
 
   keepHourOfDay:
     name: Keep Hour of Day
-    desc: Keeps data only from the given hour(s) of each day. e.g. if 17 is specified, all data points that do not fall between 17:00 and 18:00 will be set to null
-    args:
+    description: Keeps data only from the given hour(s) of each day. e.g. if 17 is specified, all data points that do not fall between 17:00 and 18:00 will be set to null
+    parameters:
       - name: Series
-        desc: Series to filter
+        description: Series to filter
         type: timeSeries
         mandatory: true
       - name: Hour
-        desc: Hour of day to keep (0-24).
+        description: Hour of day to keep (0-24).
         type: number
         mandatory: true
         multiple: true
@@ -516,136 +517,136 @@ prototypes:
 
   keepLastValue:
     name: Keep Last Value
-    desc: Continues the line with the last received value when gaps ('null' values) appear the data, rather than breaking the line.
-    args:
+    description: Continues the line with the last received value when gaps ('null' values) appear the data, rather than breaking the line.
+    parameters:
       - name: Series
-        desc: Series to continue line for
+        description: Series to continue line for
         type: timeSeries
         mandatory: true
       - name: Points
-        desc: Number of null points to replace (defaults to infinite)
+        description: Number of null points to replace (defaults to infinite)
         type: number
         mandatory: false
     tags: [transform]
 
   limit:
     name: Limit
-    desc: Takes a series or set of series followed by an integer N. Only returns the first N metrics. Useful when testing a wildcard in a metric.
-    args:
+    description: Takes a series or set of series followed by an integer N. Only returns the first N metrics. Useful when testing a wildcard in a metric.
+    parameters:
       - name: Series
-        desc: Series to filter
+        description: Series to filter
         type: timeSeries
         mandatory: true
       - name: Limit
-        desc: Max number of metrics to return
+        description: Max number of metrics to return
         type: number
         mandatory: true
     tags: [filter]
 
   log:
     name: Logarithm
-    desc: Takes a series or set of series, a base, and applies a logarithmic function. If base is omitted, the function defaults to base 10.
-    args:
+    description: Takes a series or set of series, a base, and applies a logarithmic function. If base is omitted, the function defaults to base 10.
+    parameters:
       - name: Series
-        desc: Series to apply log to
+        description: Series to apply log to
         type: timeSeries
         mandatory: true
       - name: Base
-        desc: "Log base (default: 10)"
+        description: "Log base (default: 10)"
         type: number
         mandatory: false
     tags: [transform, arithmetic]
 
   lowestAverage:
     name: Lowest Average
-    desc: Takes a series or set of series, followed by an integer N. Out of all metrics passed, returns only the bottom N metrics with the lowest average value for the time period specified.
-    args:
+    description: Takes a series or set of series, followed by an integer N. Out of all metrics passed, returns only the bottom N metrics with the lowest average value for the time period specified.
+    parameters:
       - name: Series
-        desc: Series to filter from
+        description: Series to filter from
         type: timeSeries
         mandatory: true
       - name: Threshold
-        desc: Threshold of average value
+        description: Threshold of average value
         type: number
         mandatory: true
     tags: [filter, statistical]
 
   lowestCurrent:
     name: Lowest Current
-    desc: Takes a series or set of series, followed by an integer N. Out of all metrics passed, returns only the N metrics with the lowest value at the end of the time period specified.
-    args:
+    description: Takes a series or set of series, followed by an integer N. Out of all metrics passed, returns only the N metrics with the lowest value at the end of the time period specified.
+    parameters:
       - name: Series
-        desc: Series to filter from
+        description: Series to filter from
         type: timeSeries
         mandatory: true
       - name: Threshold
-        desc: Threshold of current value
+        description: Threshold of current value
         type: number
         mandatory: true
     tags: [filter]
 
   maximumAbove:
     name: Maximum Above
-    desc: Takes a series or set of series followed by an integer N. Out of all metrics passed, only the metrics with a maximum value above N.
-    args:
+    description: Takes a series or set of series followed by an integer N. Out of all metrics passed, only the metrics with a maximum value above N.
+    parameters:
       - name: Series
-        desc: Series to filter
+        description: Series to filter
         type: timeSeries
         mandatory: true
       - name: Threshold
-        desc: Threshold maximum value
+        description: Threshold maximum value
         type: number
         mandatory: true
     tags: [filter]
 
   maximumBelow:
     name: Maximum Below
-    desc: Takes a series or set of series followed by an integer N. Out of all metrics passed, only the metrics with a maximum value below N.
-    args:
+    description: Takes a series or set of series followed by an integer N. Out of all metrics passed, only the metrics with a maximum value below N.
+    parameters:
       - name: Series
-        desc: Series to filter
+        description: Series to filter
         type: timeSeries
         mandatory: true
       - name: Threshold
-        desc: Threshold maximum value
+        description: Threshold maximum value
         type: number
         mandatory: true
     tags: [filter]
 
   minimumAbove:
     name: Minimum Above
-    desc: Takes a series or set of series followed by an integer N. Out of all metrics passed, only the metrics with a minimum value above N.
-    args:
+    description: Takes a series or set of series followed by an integer N. Out of all metrics passed, only the metrics with a minimum value above N.
+    parameters:
       - name: Series
-        desc: Series to filter
+        description: Series to filter
         type: timeSeries
         mandatory: true
       - name: Threshold
-        desc: Threshold minimum value
+        description: Threshold minimum value
         type: number
         mandatory: true
     tags: [filter]
 
   minimumBelow:
     name: Minimum Below
-    desc: Takes a series or set of series followed by an integer N. Out of all metrics passed, only the metrics with a minimum value below N.
-    args:
+    description: Takes a series or set of series followed by an integer N. Out of all metrics passed, only the metrics with a minimum value below N.
+    parameters:
       - name: Series
-        desc: Series to filter
+        description: Series to filter
         type: timeSeries
         mandatory: true
       - name: Threshold
-        desc: Threshold minimum value
+        description: Threshold minimum value
         type: number
         mandatory: true
     tags: [filter]
 
   maxSeries:
     name: Maximum Series
-    desc: For each datapoint from each series passed in, returns the maximum value.
-    args:
+    description: For each datapoint from each series passed in, returns the maximum value.
+    parameters:
       - name: Series
-        desc: List of Series to pick maximum from
+        description: List of Series to pick maximum from
         type: timeSeries
         mandatory: true
         multiple: true
@@ -653,38 +654,38 @@ prototypes:
 
   movingAverage:
     name: Moving Average
-    desc: calculates the moving average of a metric (or metrics) over a fixed number of past points, or a time interval. Takes a series or set of series followed by a number of datapoints or a length of time. Returns the average of the preceeding datapoints for each point on the series. All previous datapoints are set to None at the beginning.
-    args:
+    description: calculates the moving average of a metric (or metrics) over a fixed number of past points, or a time interval. Takes a series or set of series followed by a number of datapoints or a length of time. Returns the average of the preceeding datapoints for each point on the series. All previous datapoints are set to None at the beginning.
+    parameters:
       - name: Series
-        desc: Series to calculate moving average on
+        description: Series to calculate moving average on
         type: timeSeries
         mandatory: true
       - name: windowSize
-        desc: Number of datapoints or a string with a length of time like '1hour' or '5min'
+        description: Number of datapoints or a string with a length of time like '1hour' or '5min'
         type: string
         mandatory: true
     tags: [calculate, statistical]
 
   movingMedian:
     name: Moving Median
-    desc: calculates the moving median of a metric (or metrics) over a fixed number of past points, or a time interval. Takes a series or set of series followed by a number of datapoints or a length of time. Returns the median of the preceeding datapoints for each point on the series. All previous datapoints are set to None at the beginning.
-    args:
+    description: calculates the moving median of a metric (or metrics) over a fixed number of past points, or a time interval. Takes a series or set of series followed by a number of datapoints or a length of time. Returns the median of the preceeding datapoints for each point on the series. All previous datapoints are set to None at the beginning.
+    parameters:
       - name: Series
-        desc: Series to calculate moving median on
+        description: Series to calculate moving median on
         type: timeSeries
         mandatory: true
       - name: windowSize
-        desc: Number of datapoints or a string with a length of time like '1hour' or '5min'
+        description: Number of datapoints or a string with a length of time like '1hour' or '5min'
         type: string
         mandatory: true
     tags: [calculate, statistical]
 
   minSeries:
     name: Minimum Series
-    desc: For each datapoint from each series passed in, returns the minimum value.
-    args:
+    description: For each datapoint from each series passed in, returns the minimum value.
+    parameters:
       - name: Series
-        desc: List of Series to pick minimum from
+        description: List of Series to pick minimum from
         type: timeSeries
         mandatory: true
         multiple: true
@@ -692,10 +693,10 @@ prototypes:
 
   minValue:
     name: Minimum Value
-    desc: For each series, draws a constant line at y = min(series) with the same step as the original series.
-    args:
+    description: For each series, draws a constant line at y = min(series) with the same step as the original series.
+    parameters:
       - name: Series
-        desc: List of Series to draw minimum lines for
+        description: List of Series to draw minimum lines for
         type: timeSeries
         mandatory: true
         multiple: true
@@ -703,24 +704,24 @@ prototypes:
 
   mostDeviant:
     name: Most Deviant
-    desc: Takes a series or set of series followed by an integer N. Returns the N most deviant metrics. To find the deviants, the standard deviation (sigma) of each series is taken and ranked. The top N standard deviations are returned.
-    args:
+    description: Takes a series or set of series followed by an integer N. Returns the N most deviant metrics. To find the deviants, the standard deviation (sigma) of each series is taken and ranked. The top N standard deviations are returned.
+    parameters:
       - name: Series
-        desc: Series to calculate deviation on
+        description: Series to calculate deviation on
         type: timeSeries
         mandatory: true
       - name: N
-        desc: Top number of series to return (int)
+        description: Top number of series to return (int)
         type: number
         mandatory: true
     tags: [filter, statistical]
 
   multiplySeries:
     name: Multiply Series
-    desc: Takes two or more series and multiplies their points.
-    args:
+    description: Takes two or more series and multiplies their points.
+    parameters:
       - name: Series
-        desc: List of Series (at least 2)
+        description: List of Series (at least 2)
         type: timeSeries
         mandatory: true
         multiple: true
@@ -728,24 +729,24 @@ prototypes:
 
   nonNegativeDerivative:
     name: Non-negative Derivative
-    desc: Same as the derivative function, but ignores datapoints that trend down. Useful for counters that increase for a long time, then wrap or reset.
-    args:
+    description: Same as the derivative function, but ignores datapoints that trend down. Useful for counters that increase for a long time, then wrap or reset.
+    parameters:
       - name: Series
-        desc: Series to calculate derivative
+        description: Series to calculate derivative
         type: timeSeries
         mandatory: true
       - name: MaxValue
-        desc: "Maximum Value (default: None)"
+        description: "Maximum Value (default: None)"
         type: number
         mandatory: false
     tags: [transform, differential]
 
   normalize:
     name: Normalize
-    desc: Normalizes the values in each series to be between -1 and 1. Each value is scaled based on the maximum absolute value of the series.
-    args:
+    description: Normalizes the values in each series to be between -1 and 1. Each value is scaled based on the maximum absolute value of the series.
+    parameters:
       - name: Series
-        desc: List of Series to normalize
+        description: List of Series to normalize
         type: timeSeries
         mandatory: true
         multiple: true
@@ -753,94 +754,94 @@ prototypes:
 
   nPercentile:
     name: N Percentile
-    desc: Returns n-percent of each series.
-    args:
+    description: Returns n-percent of each series.
+    parameters:
       - name: Series
-        desc: Series to filter
+        description: Series to filter
         type: timeSeries
         mandatory: true
       - name: N
-        desc: Nth-percentile
+        description: Nth-percentile
         type: number
         mandatory: true
     tags: [filter]
 
   percentileOfSeries:
     name: Percentile of Series
-    desc: Returns a single series which is composed of the n-percentile values taken across a wildcard series at each point. Unless interpolate is set to True, percentile values are actual values contained in one of the supplied series.
-    args:
+    description: Returns a single series which is composed of the n-percentile values taken across a wildcard series at each point. Unless interpolate is set to True, percentile values are actual values contained in one of the supplied series.
+    parameters:
       - name: Series
-        desc: Series to calculate percentile
+        description: Series to calculate percentile
         type: timeSeries
         mandatory: true
       - name: N
-        desc: n-th percentile
+        description: n-th percentile
         type: number
         mandatory: true
       - name: Interpolate
-        desc: "Boolean (True/False) to request interpolation or not (default: False)"
+        description: "Boolean (True/False) to request interpolation or not (default: False)"
         type: string
         mandatory: false
     tags: [transform, statistical]
 
   pow:
     name: Power
-    desc: Takes a series or set of series followed by a constant, and raises each series to the exponent of the constant provided.
-    args:
+    description: Takes a series or set of series followed by a constant, and raises each series to the exponent of the constant provided.
+    parameters:
       - name: Series (Base)
-        desc: Series to apply power to
+        description: Series to apply power to
         type: timeSeries
         mandatory: true
       - name: Exponent
-        desc: Value of exponents
+        description: Value of exponents
         type: number
         mandatory: true
     tags: [transform, arithmetic]
 
   offset:
     name: Offset
-    desc: Takes a series or set of series followed by a constant, and adds the constant to each datapoint.
-    args:
+    description: Takes a series or set of series followed by a constant, and adds the constant to each datapoint.
+    parameters:
       - name: Series
-        desc: Series to offset
+        description: Series to offset
         type: timeSeries
         mandatory: true
       - name: Factor
-        desc: Offset factor (float)
+        description: Offset factor (float)
         type: number
         mandatory: true
     tags: [transform, arithmetic]
 
   offsetToZero:
     name: Offset to Zero
-    desc: Offsets a series or set of series by subtracting the minimum value in the series from each datapoint. Useful to compare different series where the values in each series may be higher or lower on average but you’re only interested in the relative difference.
-    args:
+    description: Offsets a series or set of series by subtracting the minimum value in the series from each datapoint. Useful to compare different series where the values in each series may be higher or lower on average but you’re only interested in the relative difference.
+    parameters:
       - name: Series
-        desc: Series to offset
+        description: Series to offset
         type: timeSeries
         mandatory: true
     tags: [transform, arithmetic]
 
   perSecond:
     name: Per Second
-    desc: Derivative adjusted for the series time interval. This is useful for taking a running total metric and showing how many requests per second were handled.
-    args:
+    description: Derivative adjusted for the series time interval. This is useful for taking a running total metric and showing how many requests per second were handled.
+    parameters:
       - name: Series
-        desc: Series to calculate derivative
+        description: Series to calculate derivative
         type: timeSeries
         mandatory: true
       - name: MaxValue
-        desc: "Maximum Value (default: None)"
+        description: "Maximum Value (default: None)"
         type: number
         mandatory: false
     tags: [transform, differential]
 
   rangeOfSeries:
     name: Range of Series
-    desc: Takes a series or set of series. Distills down a set of inputs into the range of the series.
-    args:
+    description: Takes a series or set of series. Distills down a set of inputs into the range of the series.
+    parameters:
       - name: Series
-        desc: List of Series to calculate range
+        description: List of Series to calculate range
         type: timeSeries
         mandatory: true
         multiple: true
@@ -848,94 +849,94 @@ prototypes:
 
   removeAbovePercentile:
     name: Remove Above Percentile
-    desc: Removes data above the nth percentile from the series or set of series provided. Values above this percentile are assigned a value of None.
-    args:
+    description: Removes data above the nth percentile from the series or set of series provided. Values above this percentile are assigned a value of None.
+    parameters:
       - name: Series
-        desc: Series to filter from
+        description: Series to filter from
         type: timeSeries
         mandatory: true
       - name: N
-        desc: n-th percentile
+        description: n-th percentile
         type: number
         mandatory: true
     tags: [filter, statistical]
 
   removeAboveValue:
     name: Remove Above Value
-    desc: Removes data above the given threshold from the series or set of series provided. Values above this threshold are assigned a value of None.
-    args:
+    description: Removes data above the given threshold from the series or set of series provided. Values above this threshold are assigned a value of None.
+    parameters:
       - name: Series
-        desc: Series to filter from
+        description: Series to filter from
         type: timeSeries
         mandatory: true
       - name: Threshold
-        desc: Threshold value
+        description: Threshold value
         type: number
         mandatory: true
     tags: [filter]
 
   removeBelowPercentile:
     name: Remove Below Percentile
-    desc: Removes data above the nth percentile from the series or set of series provided. Values below this percentile are assigned a value of None.
-    args:
+    description: Removes data above the nth percentile from the series or set of series provided. Values below this percentile are assigned a value of None.
+    parameters:
       - name: Series
-        desc: Series to filter from
+        description: Series to filter from
         type: timeSeries
         mandatory: true
       - name: N
-        desc: n-th percentile
+        description: n-th percentile
         type: number
         mandatory: true
     tags: [filter, statistical]
 
   removeBelowValue:
     name: Remove Below Value
-    desc: Removes data above the given threshold from the series or set of series provided. Values below this threshold are assigned a value of None.
-    args:
+    description: Removes data above the given threshold from the series or set of series provided. Values below this threshold are assigned a value of None.
+    parameters:
       - name: Series
-        desc: Series to filter from
+        description: Series to filter from
         type: timeSeries
         mandatory: true
       - name: Threshold
-        desc: Threshold value
+        description: Threshold value
         type: number
         mandatory: true
     tags: [filter]
 
   removeEmpty:
     name: Remove Empty
-    desc: Removes series that are empty (i.e. those comprised entirely of None values)
-    args:
+    description: Removes series that are empty (i.e. those comprised entirely of None values)
+    parameters:
       - name: Series
-        desc: Series to filter from
+        description: Series to filter from
         type: timeSeries
         mandatory: true
     tags: [filter]
 
   removeBetweenPercentile:
     name: Remove Between Percentile
-    desc: Removes series which do not have an value lying in the x-percentile of all the values at any moment.
-    args:
+    description: Removes series which do not have an value lying in the x-percentile of all the values at any moment.
+    parameters:
       - name: Series
-        desc: Series to filter
+        description: Series to filter
         type: timeSeries
         mandatory: true
       - name: N
-        desc: n-th percentile
+        description: n-th percentile
         type: number
         mandatory: true
     tags: [filter, statistical]
 
   removeDayOfWeek:
     name: Remove Day of Week
-    desc: Removes data from the given day(s) of the week. e.g. if 'Sunday' is specified, all data points that fall on a Sunday will be set to null
-    args:
+    description: Removes data from the given day(s) of the week. e.g. if 'Sunday' is specified, all data points that fall on a Sunday will be set to null
+    parameters:
       - name: Series
-        desc: Series to filter
+        description: Series to filter
         type: timeSeries
         mandatory: true
       - name: Day
-        desc: Day of week to remove. 'weekend' and 'weekday' are also accepted values.
+        description: Day of week to remove. 'weekend' and 'weekday' are also accepted values.
         type: string
         mandatory: true
         multiple: true
@@ -943,14 +944,14 @@ prototypes:
 
   removeHourOfDay:
     name: Remove Hour of Day
-    desc: Removes data from the given hour(s) of each day. e.g. if 17 is specified, all data points that fall between 17:00 and 18:00 will be set to null
-    args:
+    description: Removes data from the given hour(s) of each day. e.g. if 17 is specified, all data points that fall between 17:00 and 18:00 will be set to null
+    parameters:
       - name: Series
-        desc: Series to filter
+        description: Series to filter
         type: timeSeries
         mandatory: true
       - name: Hour
-        desc: Hour of day to remove (0-24).
+        description: Hour of day to remove (0-24).
         type: number
         mandatory: true
         multiple: true
@@ -958,88 +959,88 @@ prototypes:
 
   scale:
     name: Scale
-    desc: Takes a series or set of series followed by a constant, and multiplies the datapoint by the constant provided at each point.
-    args:
+    description: Takes a series or set of series followed by a constant, and multiplies the datapoint by the constant provided at each point.
+    parameters:
       - name: Series
-        desc: Series to scale
+        description: Series to scale
         type: timeSeries
         mandatory: true
       - name: Factor
-        desc: Scaling factor (float)
+        description: Scaling factor (float)
         type: number
         mandatory: true
     tags: [transform, arithmetic]
 
   scaleToSeconds:
     name: Scale to Seconds
-    desc: Takes a series or set of series and returns “value per seconds” (vps), where seconds is the last argument in this function. Useful in conjunction with derivative or integral function if you want to normalize its result to a known resolution for arbitrary retentions.
-    args:
+    description: Takes a series or set of series and returns “value per seconds” (vps), where seconds is the last argument in this function. Useful in conjunction with derivative or integral function if you want to normalize its result to a known resolution for arbitrary retentions.
+    parameters:
       - name: Series
-        desc: Series to measure vps
+        description: Series to measure vps
         type: timeSeries
         mandatory: true
       - name: Seconds
-        desc: Definition of "seconds"
+        description: Definition of "seconds"
         type: number
         mandatory: true
     tags: [transform]
 
   sortByMaxima:
     name: Sort by Maxima
-    desc: Takes a series or set of series and sorts the metrics by the maximum value across the time period specified.
-    args:
+    description: Takes a series or set of series and sorts the metrics by the maximum value across the time period specified.
+    parameters:
       - name: Series
-        desc: Series to sort
+        description: Series to sort
         type: timeSeries
         mandatory: true
     tags: [sort]
 
   sortByMinima:
     name: Sort by Minima
-    desc: Takes a series or set of series and sorts the metrics by the minimum value across the time period specified.
-    args:
+    description: Takes a series or set of series and sorts the metrics by the minimum value across the time period specified.
+    parameters:
       - name: Series
-        desc: Series to sort
+        description: Series to sort
         type: timeSeries
         mandatory: true
     tags: [sort]
 
   sortByTotal:
     name: Sort by Total
-    desc: Takes a series or set of series and sorts the metrics by the sum of values across the time period specified.
-    args:
+    description: Takes a series or set of series and sorts the metrics by the sum of values across the time period specified.
+    parameters:
       - name: Series
-        desc: Series to sort
+        description: Series to sort
         type: timeSeries
         mandatory: true
     tags: [sort]
 
   sortByName:
     name: Sort by Name
-    desc: Takes a series or set of series and sorts the metrics by the name of each series
-    args:
+    description: Takes a series or set of series and sorts the metrics by the name of each series
+    parameters:
       - name: Series
-        desc: Series to sort
+        description: Series to sort
         type: timeSeries
         mandatory: true
     tags: [sort]
 
   squareRoot:
     name: Square Root
-    desc: Takes a series or set of series, and computes the square root of each datapoint.
-    args:
+    description: Takes a series or set of series, and computes the square root of each datapoint.
+    parameters:
       - name: Series (Base)
-        desc: Series to apply square root to
+        description: Series to apply square root to
         type: timeSeries
         mandatory: true
     tags: [transform, arithmetic]
 
   stdev:
     name: Standard Deviation (stdev)
-    desc: Returns the standard deviation of all metrics passed at each time.
-    args:
+    description: Returns the standard deviation of all metrics passed at each time.
+    parameters:
       - name: Series
-        desc: Series to calculate stdev on
+        description: Series to calculate stdev on
         type: timeSeries
         mandatory: true
         multiple: true
@@ -1047,32 +1048,32 @@ prototypes:
 
   summarize:
     name: Summarize
-    desc: Summarize the data into interval buckets of a certain size. By default, the contents of each interval bucket are summed together. This is useful for counters where each increment represents a discrete event and retrieving a “per X” value requires summing all the events in that interval. Specifying ‘avg’ instead will return the mean for each bucket, which can be more useful when the value is a gauge that represents a certain value in time. ‘max’, ‘min’ or ‘last’ can also be specified.
-    args:
+    description: Summarize the data into interval buckets of a certain size. By default, the contents of each interval bucket are summed together. This is useful for counters where each increment represents a discrete event and retrieving a “per X” value requires summing all the events in that interval. Specifying ‘avg’ instead will return the mean for each bucket, which can be more useful when the value is a gauge that represents a certain value in time. ‘max’, ‘min’ or ‘last’ can also be specified.
+    parameters:
       - name: Series
-        desc: Series to summarize
+        description: Series to summarize
         type: timeSeries
         mandatory: true
       - name: Interval
-        desc: "Bucket time-interval size. Examples: 1hour, 1week, 13week, ..."
+        description: "Bucket time-interval size. Examples: 1hour, 1week, 13week, ..."
         type: string
         mandatory: true
       - name: Function
-        desc: "Aggregation function to use: sum, avg, max, min or last. (default: sum)"
+        description: "Aggregation function to use: sum, avg, max, min or last. (default: sum)"
         type: string
         mandatory: false
       - name: AlignToFrom
-        desc: "Force align start of buckets to from time offset. (default: False). By default, buckets are calculated by rounding to the nearest interval. This works well for intervals smaller than a day. For example, 22:32 will end up in the bucket 22:00-23:00 when the interval=1hour."
+        description: "Force align start of buckets to from time offset. (default: False). By default, buckets are calculated by rounding to the nearest interval. This works well for intervals smaller than a day. For example, 22:32 will end up in the bucket 22:00-23:00 when the interval=1hour."
         type: string
         mandatory: false
     tags: [transform]
 
   sumSeries:
     name: Sum Series
-    desc: Adds metrics together and returns the sum at each datapoint.
-    args:
+    description: Adds metrics together and returns the sum at each datapoint.
+    parameters:
       - name: Series
-        desc: List of Series (at least 2)
+        description: List of Series (at least 2)
         type: timeSeries
         mandatory: true
         multiple: true
@@ -1080,64 +1081,64 @@ prototypes:
 
   sumSeriesArrays:
     name: Sum Series (Arrays)
-    desc: Takes two groups of metrics and each metric in the first group by the metric at the same index of the second group. Both groups must have exactly the same number of elements.
-    args:
+    description: Takes two groups of metrics and each metric in the first group by the metric at the same index of the second group. Both groups must have exactly the same number of elements.
+    parameters:
       - name: Group A
-        desc: Group of Series
+        description: Group of Series
         type: timeSeries
         mandatory: true
       - name: Group B
-        desc: Group of Series
+        description: Group of Series
         type: timeSeries
         mandatory: true
     tags: [combine, arithmetic]
 
   timeInterval:
     name: Time Interval
-    desc: Overrides the global from and until settings to provide data from the given time interval.
-    args:
+    description: Overrides the global from and until settings to provide data from the given time interval.
+    parameters:
       - name: Series
-        desc: Series to set the time interval for
+        description: Series to set the time interval for
         type: timeSeries
         mandatory: true
       - name: from
-        desc: Start time for result data. Accepts the same formats as the `from` GET parameter. Defaults to the global `from` time.
+        description: Start time for result data. Accepts the same formats as the `from` GET parameter. Defaults to the global `from` time.
         type: time
         mandatory: false
       - name: until
-        desc: End time for result data. Accepts the same formats as the `until` GET parameter. Defaults to the global `until` time.
+        description: End time for result data. Accepts the same formats as the `until` GET parameter. Defaults to the global `until` time.
         type: time
         mandatory: false
     tags: [Time, transform]
 
   timeShift:
     name: Time Shift
-    desc: Takes a series or set of series, followed by a quoted string with the length of time. Returns the selected metrics shifted in time. Useful for comparing a metric against itself at a past periods or correcting data stored at an offset.
-    args:
+    description: Takes a series or set of series, followed by a quoted string with the length of time. Returns the selected metrics shifted in time. Useful for comparing a metric against itself at a past periods or correcting data stored at an offset.
+    parameters:
       - name: Series
-        desc: Series to time shift
+        description: Series to time shift
         type: timeSeries
         mandatory: true
       - name: TimeShift
-        desc: "Length of time (examples: 7d, +1h). If no sign is given, a minus sign ( - ) is implied which will shift the metric back in time. If a plus sign ( + ) is given, the metric will be shifted forward in time."
+        description: "Length of time (examples: 7d, +1h). If no sign is given, a minus sign ( - ) is implied which will shift the metric back in time. If a plus sign ( + ) is given, the metric will be shifted forward in time."
         type: string
         mandatory: true
       - name: ResetEnd
-        desc: "Boolean (True/False) on whether to automatically reset the end date range to the end of the base stat. (default: True). Example case is when you timeshift to last week and have the graph date range set to include a time in the future, will limit this timeshift to pretend ending at the current time. If ResetEnd is False, will instead return full range including future time."
+        description: "Boolean (True/False) on whether to automatically reset the end date range to the end of the base stat. (default: True). Example case is when you timeshift to last week and have the graph date range set to include a time in the future, will limit this timeshift to pretend ending at the current time. If ResetEnd is False, will instead return full range including future time."
         type: string
         mandatory: false
     tags: [Time, transform]
 
   transformNull:
     name: transform Null
-    desc: Takes a series or set of series, and an optional value to transform Nulls to.
-    args:
+    description: Takes a series or set of series, and an optional value to transform Nulls to.
+    parameters:
       - name: Series
-        desc: Series to transform
+        description: Series to transform
         type: timeSeries
         mandatory: true
       - name: NewValue
-        desc: "Value to transform null points to. (default: 0)"
+        description: "Value to transform null points to. (default: 0)"
         type: number
         mandatory: false
     tags: [transform]

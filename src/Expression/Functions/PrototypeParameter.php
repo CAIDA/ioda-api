@@ -40,6 +40,15 @@ class PrototypeParameter
      */
     private $multiple;
 
+    public function __construct($name, $description, $type, $mandatory, $multiple)
+    {
+        $this->setName($name);
+        $this->setDescription($description);
+        $this->setType($type);
+        $this->setMandatory($mandatory);
+        $this->setMultiple($multiple);
+    }
+
     public function getName(): string
     {
         return $this->name;

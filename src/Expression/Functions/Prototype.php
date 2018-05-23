@@ -30,7 +30,16 @@ class Prototype
      *     example="Sum Series"
      * )
      */
-    private $nameHuman;
+    private $title;
+
+    /**
+     * @Groups({"public"})
+     * @SWG\Property(
+     *     type="string",
+     *     example="Adds metrics together and returns the sum at each datapoint."
+     * )
+     */
+    private $description;
 
     /**
      * @Groups({"public"})
@@ -50,8 +59,11 @@ class Prototype
      */
     private $tags;
 
-    public function __construct()
+    public function __construct($name, $title, $description)
     {
+        $this->setName($name);
+        $this->setTitle($title);
+        $this->setDescription($description);
         $this->parameters = [];
         $this->tags = [];
     }
@@ -66,14 +78,24 @@ class Prototype
         $this->name = $name;
     }
 
-    public function getNameHuman(): string
+    public function getTitle(): string
     {
-        return $this->nameHuman;
+        return $this->title;
     }
 
-    public function setNameHuman(string $nameHuman): void
+    public function setTitle(string $title): void
     {
-        $this->nameHuman = $nameHuman;
+        $this->title = $title;
+    }
+
+    public function getDescription(): string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(string $description): void
+    {
+        $this->description = $description;
     }
 
     /**

@@ -44,20 +44,33 @@ class Registry
         $parsed = $yamlParser->parse(file_get_contents(Registry::$YAML_REGISTRY_FILE));
         $this->prototypes = [];
         $this->tags = [];
-        $this->loadTags($parsed['tags']);
-        $this->loadPrototypes($parsed['prototypes']);
+        foreach ($parsed['tags'] as $tagId => $rawTag) {
+            $this->tags[$tagId] = new PrototypeTag($rawTag['name'], $rawTag['description'] ?? null);
+        }
+        foreach ($parsed['prototypes'] as $name => $rawPrototype) {
+            $this->prototypes[$name] = $proto = new Prototype(
+                $name,
+                $rawPrototype['name'],
+                $rawPrototype['description']
+            );
+            $proto->setTags($rawPrototype['tags']);
+            $params = [];
+            foreach ($rawPrototype['parameters'] as $rawParam) {
+                $params[] = new PrototypeParameter(
+                    $rawParam['name'],
+                    $rawParam['description'],
+                    $rawParam['type'],
+                    $rawParam['mandatory'],
+                    $rawParam['multiple'] ?? false
+                );
+            }
+            $proto->setParameters($params);
+        }
     }
 
     public function getTags(): array
     {
         return $this->tags;
-    }
-
-    private function loadTags($rawTags)
-    {
-        foreach ($rawTags as $tagId => $rawTag) {
-            $this->tags[$tagId] = new PrototypeTag($rawTag['name'], $rawTag['description'] ?? null);
-        }
     }
 
     /**
@@ -68,8 +81,4 @@ class Registry
         return $this->prototypes;
     }
 
-    private function loadPrototypes($rawPrototypes)
-    {
-
-    }
 }
