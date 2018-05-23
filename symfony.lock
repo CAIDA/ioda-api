@@ -197,6 +197,12 @@
     "symfony/polyfill-mbstring": {
         "version": "v1.8.0"
     },
+    "symfony/polyfill-php72": {
+        "version": "v1.8.0"
+    },
+    "symfony/profiler-pack": {
+        "version": "v1.0.3"
+    },
     "symfony/property-info": {
         "version": "v4.0.9"
     },
@@ -212,6 +218,9 @@
     "symfony/serializer": {
         "version": "v4.0.9"
     },
+    "symfony/stopwatch": {
+        "version": "v4.0.10"
+    },
     "symfony/twig-bridge": {
         "version": "v4.0.9"
     },
@@ -222,6 +231,18 @@
             "branch": "master",
             "version": "3.3",
             "ref": "f75ac166398e107796ca94cc57fa1edaa06ec47f"
+        }
+    },
+    "symfony/var-dumper": {
+        "version": "v4.0.10"
+    },
+    "symfony/web-profiler-bundle": {
+        "version": "3.3",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "master",
+            "version": "3.3",
+            "ref": "6bdfa1a95f6b2e677ab985cd1af2eae35d62e0f6"
         }
     },
     "symfony/yaml": {
