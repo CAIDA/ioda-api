@@ -5,17 +5,16 @@ namespace App\Expression;
 
 use Symfony\Component\Serializer\Annotation\Groups;
 
+/**
+ * Class AbstractExpression
+ * @package App\Expression
+ */
 abstract class AbstractExpression
 {
     /**
      * @Groups({"public"})
      */
     protected $type;
-
-    /**
-     * @Groups({"public"})
-     */
-    protected $name;
 
     public function __construct(string $type)
     {
@@ -30,16 +29,6 @@ abstract class AbstractExpression
     public function getType(): string
     {
         return $this->type;
-    }
-
-    public function setName(string $name)
-    {
-        $this->name = $name;
-    }
-
-    public function getName(): string
-    {
-        return $this->name;
     }
 
     abstract public
