@@ -2,17 +2,26 @@
 
 namespace App\Expression\Functions;
 
+use Swagger\Annotations as SWG;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 class PrototypeTag
 {
     /**
      * @Groups({"public"})
+     * @SWG\Property(
+     *     type="string",
+     *     example="Transform"
+     * )
      */
     private $name;
 
     /**
      * @Groups({"public"})
+     * @SWG\Property(
+     *     type="string",
+     *     example="Time series transformation functions"
+     * )
      */
     private $description;
 
