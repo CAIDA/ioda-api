@@ -13,19 +13,28 @@ class PrototypeParameter
 
     /**
      * @Groups({"public"})
+     * @SWG\Property(
+     *     type="string",
+     *     example="Series"
+     * )
      */
     private $name;
 
     /**
      * @Groups({"public"})
+     * @SWG\Property(
+     *     type="string",
+     *     example="List of Series (at least 2)"
+     * )
      */
     private $description;
 
     /**
      * @Groups({"public"})
-     * @SWG\Schema(
+     * @SWG\Property(
      *     type="string",
-     *     enum={"timeSeries", "string", "number"}
+     *     enum={"timeSeries", "string", "number"},
+     *     example="timeSeries"
      * )
      */
     private $type;

@@ -54,7 +54,8 @@ class Prototype
      * @Groups({"public"})
      * @SWG\Property(
      *         type="array",
-     *         @SWG\Items(type="string")
+     *         @SWG\Items(type="string", example="transform")
+     *
      * )
      */
     private $tags;
