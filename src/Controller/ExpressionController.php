@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+use App\Expression\ExpressionFactory;
 use App\Expression\Functions\Registry;
+use App\Expression\ParsingException;
 use App\Response\Envelope;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
@@ -148,7 +150,7 @@ class ExpressionController extends ApiController
      *
      * @return JsonResponse
      */
-    public function validate(Request $request, SerializerInterface $serializer)
+    public function validate(Request $request, SerializerInterface $serializer, ExpressionFactory $expressionFactory)
     {
         $rawExpression = $request->attributes->get('parsedContent');
         $envelope = new Envelope(
@@ -159,8 +161,12 @@ class ExpressionController extends ApiController
         if (!is_array($rawExpression)) {
             throw new BadRequestHttpException('Missing expression');
         }
-        // TODO: attempt to create expression from $rawExpression
-        $envelope->setData(true);
+        try {
+            $exp = $expressionFactory->createFromJson($rawExpression);
+            $envelope->setData($exp);
+        } catch (ParsingException $exception) {
+            $envelope->setError($exception->getMessage());
+        }
         return $this->json($envelope);
     }
 }

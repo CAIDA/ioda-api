@@ -218,4 +218,13 @@ class PathExpression extends AbstractExpression
                                     true);
     }
 
+    public static function createFromJson(ExpressionFactory $expFactory,
+                                          array $json): ?AbstractExpression
+    {
+        if (!array_key_exists('path', $json)) {
+            throw new ParsingException(
+                "Path expression is missing 'path' attribute");
+        }
+        return new PathExpression($json['path']);
+    }
 }

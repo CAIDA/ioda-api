@@ -92,4 +92,13 @@ class ConstantExpression extends AbstractExpression
             $this->getCommonRoot($that) : new ConstantExpression($this->getValue());
     }
 
+    public static function createFromJson(ExpressionFactory $expFactory,
+                                          array $json): ?AbstractExpression
+    {
+        if (!array_key_exists('value', $json)) {
+            throw new ParsingException(
+                "Constant expression is missing 'value' attribute");
+        }
+        return new ConstantExpression($json['value']);
+    }
 }

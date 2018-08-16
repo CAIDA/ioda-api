@@ -96,4 +96,20 @@ abstract class AbstractExpression
      * @return AbstractExpression|null
      */
     abstract public function getCommonLeaf(?AbstractExpression $that): ?AbstractExpression;
+
+    /**
+     * Factory method for creating Expression instances from a deserialized
+     * JSON object
+     *
+     * Expression types that have child expression should use the createByType
+     * method of the provided factory instance to instantiate appropriate
+     * sub-expressions.
+     *
+     * @throws ParsingException|\InvalidArgumentException
+     * @param ExpressionFactory $expFactory
+     * @param array $json
+     * @return AbstractExpression|null
+     */
+    abstract public static function createFromJson(ExpressionFactory $expFactory,
+                                                   array $json): ?AbstractExpression;
 }
