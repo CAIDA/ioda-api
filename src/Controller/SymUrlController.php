@@ -10,7 +10,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
  * Class SymUrlController
  * @package App\Controller
  */
-class SymUrlController extends Controller
+class SymUrlController extends ApiController
 {
     /**
      * @Route("/@{short}/", methods={"GET"}, name="sym_go")

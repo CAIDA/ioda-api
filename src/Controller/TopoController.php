@@ -11,7 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
  * @package App\Controller
  * @Route("/topo", name="topo_")
  */
-class TopoController extends Controller
+class TopoController extends ApiController
 {
     /**
      * @Route("/databases/",

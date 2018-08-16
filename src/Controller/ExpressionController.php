@@ -10,7 +10,6 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\Serializer\SerializerInterface;
 
 /**
@@ -18,7 +17,7 @@ use Symfony\Component\Serializer\SerializerInterface;
  * @package App\Controller
  * @Route("/expression", name="expression_")
  */
-class ExpressionController extends Controller
+class ExpressionController extends ApiController
 {
     /**
      * List expression functions

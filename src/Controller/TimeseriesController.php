@@ -4,14 +4,13 @@ namespace App\Controller;
 
 use Swagger\Annotations as SWG;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 /**
  * Class TimeseriesController
  * @package App\Controller\Timeseries
  * @Route("/ts", name="ts_")
  */
-class TimeseriesController extends AbstractController
+class TimeseriesController extends ApiController
 {
     /**
      * @Route("/query/", methods={"POST"}, name="query")
