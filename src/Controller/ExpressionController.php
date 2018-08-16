@@ -147,10 +147,12 @@ class ExpressionController extends ApiController
      *
      * @var Request $request
      * @var SerializerInterface $serializer
+     * @var ExpressionFactory $expressionFactory
      *
      * @return JsonResponse
      */
-    public function validate(Request $request, SerializerInterface $serializer, ExpressionFactory $expressionFactory)
+    public function validate(Request $request, SerializerInterface $serializer,
+                             ExpressionFactory $expressionFactory)
     {
         $rawExpression = $request->attributes->get('parsedContent');
         $envelope = new Envelope(
@@ -163,6 +165,107 @@ class ExpressionController extends ApiController
         }
         try {
             $exp = $expressionFactory->createFromJson($rawExpression);
+            $envelope->setData($exp);
+            return $this->json($envelope);
+        } catch (ParsingException $exception) {
+            $envelope->setError($exception->getMessage());
+            return $this->json($envelope, 400);
+        }
+    }
+
+    /**
+     * Parse a graphite-style expression string into a JSON-formatted expression
+     * object
+     *
+     * @Route("/parse/", methods={"POST"}, name="parse")
+     * @SWG\Tag(name="Expression")
+     * @SWG\Parameter(
+     *     name="query",
+     *     in="body",
+     *     type="object",
+     *     description="Graphite-style expression string.",
+     *     required=true,
+     *     @SWG\Schema(
+     *         @SWG\Property(
+     *                     property="expression_string",
+     *                     type="string",
+     *                     example="scaleToSeconds(a.test.series, 8)"
+     *         )
+     *     )
+     * )
+     * @SWG\Response(
+     *     response=200,
+     *     description="Indicates that the given expression was parsed successfully. The parsed expression is returned in the response.",
+     *     @SWG\Schema(
+     *         allOf={
+     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
+     *             @SWG\Schema(
+     *                 @SWG\Property(
+     *                     property="type",
+     *                     type="string",
+     *                     enum={"expression.parse"}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="error",
+     *                     type="string",
+     *                     enum={}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="data",
+     *                     type="object",
+     *                     @SWG\Schema(ref=@Model(type=\App\Expression\AbstractExpression::class, groups={"public"}))
+     *                 )
+     *             )
+     *         }
+     *     )
+     * )
+     * @SWG\Response(
+     *     response=400,
+     *     description="Indicates that the given expression could not be parsed.",
+     *     @SWG\Schema(
+     *         allOf={
+     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
+     *             @SWG\Schema(
+     *                 @SWG\Property(
+     *                     property="type",
+     *                     type="string",
+     *                     enum={"expression.parse"}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="error",
+     *                     type="string",
+     *                     enum={"Parse error: unknown function 'foo'"}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="data",
+     *                     type="string",
+     *                     enum={}
+     *                 )
+     *             )
+     *         }
+     *     )
+     * )
+     *
+     * @var Request $request
+     * @var SerializerInterface $serializer
+     * @var ExpressionFactory $expressionFactory
+     *
+     * @return JsonResponse
+     */
+    public function parse(Request $request, SerializerInterface $serializer,
+                          ExpressionFactory $expressionFactory)
+    {
+        $query = $request->attributes->get('parsedContent');
+        $envelope = new Envelope(
+            'expression.parse',
+            $query,
+            $request->server->get('REQUEST_TIME')
+        );
+        if (!array_key_exists('expression_string', $query)) {
+            throw new BadRequestHttpException('Missing required expression_string parameter');
+        }
+        try {
+            $exp = $expressionFactory->createFromCanonical($query['expression_string']);
             $envelope->setData($exp);
         } catch (ParsingException $exception) {
             $envelope->setError($exception->getMessage());

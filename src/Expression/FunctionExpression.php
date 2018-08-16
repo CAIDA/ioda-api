@@ -220,4 +220,31 @@ class FunctionExpression extends AbstractExpression
         }
         return $expression;
     }
+
+    public static function createFromCanonical(ExpressionFactory $expFactory,
+                                               string $expStr): ?AbstractExpression
+    {
+        $firstCh = substr($expStr, 0, 1);
+        $lastCh = substr($expStr, -1, 1);
+        if ($lastCh != ')' ||
+            substr_count($expStr, '(') !=
+            substr_count($expStr, ')')
+        ) {
+            throw new ParsingException("Malformed function: '$expStr'");
+        }
+        if ($firstCh == '(') {
+            throw new ParsingException("Missing function name: '$expStr'");
+        }
+        $pos = strpos($expStr, '(');
+        $funcName = substr($expStr, 0, $pos);
+        $expression = new FunctionExpression($funcName);
+        /* extract arguments as comma-separated string */
+        $args = preg_replace('/^.+?\((.*)\)$/', '$1', $expStr);
+        $argsExps = $expFactory->createFromCanonical($args);
+        if (!is_array($argsExps)) {
+            $argsExps = [$argsExps];
+        }
+        $expression->setArgs($argsExps);
+        return $expression;
+    }
 }

@@ -119,9 +119,8 @@ abstract class AbstractExpression
      * Factory method for creating Expression instances from a deserialized
      * JSON object
      *
-     * Expression types that have child expression should use the createByType
-     * method of the provided factory instance to instantiate appropriate
-     * sub-expressions.
+     * Expression types that have child expression should use the provided
+     * factory instance to instantiate appropriate sub-expressions.
      *
      * @throws ParsingException|\InvalidArgumentException
      * @param ExpressionFactory $expFactory
@@ -130,4 +129,19 @@ abstract class AbstractExpression
      */
     abstract public static function createFromJson(ExpressionFactory $expFactory,
                                                    array $json): ?AbstractExpression;
+
+    /**
+     * Factory method for creating Expression instances from a "canonical"
+     * graphite-style expression string
+     *
+     * Expression types that have child expression should use the provided
+     * factory instance to instantiate appropriate sub-expressions.
+     *
+     * @throws ParsingException|\InvalidArgumentException
+     * @param ExpressionFactory $expFactory
+     * @param string $expStr
+     * @return AbstractExpression|null
+     */
+    abstract public static function createFromCanonical(ExpressionFactory $expFactory,
+                                                        string $expStr): ?AbstractExpression;
 }

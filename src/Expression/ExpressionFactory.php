@@ -42,33 +42,67 @@ class ExpressionFactory
     }
 
     /**
-     * Creates an expression object of specified type from the given arguments
+     * Create a new instance of this object from a "canonical" graphite-style
+     * expression string
      *
-     * @param $type
-     * @param array $arguments
+     * @param string $expStr
      *
-     * @throws ParsingException|\InvalidArgumentException
-     * @return AbstractExpression
+     * @throws ParsingException
+     * @return AbstractExpression|AbstractExpression[]
      */
-    /*
-    public function createByType(string $type, array $arguments = null)
+    public function createFromCanonical(string $expStr)
     {
-        if (!array_key_exists($type, $this->expressionClasses)) {
-            throw new ParsingException('Invalid expression type: ' .
-                                                $type);
+        if ($expStr == null || ($expStr = trim($expStr)) == '') {
+            return null;
         }
-        $class = $this->expressionClasses[$type];
-        if (!class_exists($class)) {
-            throw new \InvalidArgumentException('Invalid expression class: ' . $type);
+        $chunks = [];
+        $carry = '';
+        foreach (explode(',', $expStr) as $t) {
+            $carry .= ((strlen($carry) ? ',' : '') . $t);
+            // Remove quoted parts
+            $noQuotesArr = [];
+            foreach (explode('"', $carry) as $i => $_) {
+                if ($i % 2 == 0) {
+                    $noQuotesArr[] = $_;
+                }
+            }
+            $noQuotes = implode('', $noQuotesArr);
+            unset($noQuotesArr);
+            if (strlen(trim($carry)) &&
+                substr_count($noQuotes, '(') == substr_count($noQuotes, ')') &&
+                substr_count($carry, '"') % 2 == 0
+            ) {
+                $chunks[] = $carry;
+                $carry = '';
+            }
         }
-        if (!isset($arguments)) {
-            $arguments = [];
-        } elseif (!is_array($arguments)) {
-            throw new \InvalidArgumentException('Arguments must be an array, ' .
-                                                gettype($arguments) . ' given');
+        if (strlen($carry)) {
+            throw new ParsingException("Malformed expression: '$carry'");
         }
-
-        return new $class(...$arguments);
+        if (count($chunks) > 1) { // list of items, so recurs
+            /* we have a list of expressions. technically this shouldn't be
+               allowed, but it makes things easier for the function parser */
+            $exps = [];
+            foreach ($chunks as $chunk) {
+                $exps[] = $this->createFromCanonical($chunk);
+            }
+            return $exps;
+        }
+        $expStr = $chunks[0];
+        $firstCh = substr($expStr, 0, 1);
+        $lastCh = substr($expStr, -1, 1);
+        if ($firstCh == '"' || $lastCh == '"' || is_numeric($expStr)) { // String
+            /* still has quote marks */
+            $type = ConstantExpression::TYPE;
+        } elseif (substr_count($expStr, '(') != 0 ||
+                  substr_count($expStr, ')') != 0
+        ) { // Function
+            $type = FunctionExpression::TYPE;
+        } else { // only option left, must be a path
+            $type = PathExpression::TYPE;
+        }
+        $expression = call_user_func([$this->expressionClasses[$type], 'createFromCanonical'],
+                                     $this, $expStr);
+        return $expression;
     }
-    */
 }

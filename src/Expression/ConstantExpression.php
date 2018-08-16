@@ -101,4 +101,28 @@ class ConstantExpression extends AbstractExpression
         AbstractExpression::checkJsonAttributes("Constant", ['value'], $json);
         return new ConstantExpression($json['value']);
     }
+
+    public static function createFromCanonical(ExpressionFactory $expFactory,
+                                               string $expStr): ?AbstractExpression
+    {
+        $valid = 0;
+        $quoteCnt = substr_count($expStr, '"');
+        if ($quoteCnt == 0 && is_numeric($expStr)) {
+            $valid = 1;
+            $expStr = (float)$expStr;
+        } elseif ($quoteCnt == 2) {
+            $firstCh = substr($expStr, 0, 1);
+            $lastCh = substr($expStr, -1, 1);
+            if ($firstCh != '"' || $lastCh != '"') {
+                throw new ParsingException("Malformed string constant: '$expStr'");
+            }
+            $expStr = str_replace('"', '', $expStr);
+            $valid = 1;
+        }
+        if ($valid) {
+            return new ConstantExpression($expStr);
+        } else {
+            throw new ParsingException("Malformed constant: '$expStr'");
+        }
+    }
 }

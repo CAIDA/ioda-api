@@ -224,4 +224,11 @@ class PathExpression extends AbstractExpression
         AbstractExpression::checkJsonAttributes("Path", ['path'], $json);
         return new PathExpression($json['path']);
     }
+
+    public static function createFromCanonical(ExpressionFactory $expFactory,
+                                               string $expStr): ?AbstractExpression
+    {
+        // TODO: check for illegal characters in path
+        return new PathExpression($expStr);
+    }
 }
