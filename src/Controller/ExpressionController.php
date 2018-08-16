@@ -83,9 +83,13 @@ class ExpressionController extends Controller
      *     name="expression",
      *     in="body",
      *     type="object",
-     *     description="JSON-encoded expression object",
+     *     description="JSON-encoded expression object. Due to limitations in the current API documentation, the full expression schema cannot be properly described. See the various `*Expression` model definitions for more information about types of supported expressions.",
      *     required=true,
-     *     @SWG\Schema(ref=@Model(type=\App\Expression\AbstractExpression::class, groups={"public"}))
+     *     @SWG\Schema(
+     *         ref=@Model(type=\App\Expression\AbstractExpression::class, groups={"public"})
+     *     ),
+     *     @SWG\Schema(ref=@Model(type=\App\Expression\PathExpression::class, groups={"public"})),
+     *     @SWG\Schema(ref=@Model(type=\App\Expression\ConstantExpression::class, groups={"public"}))
      * )
      * @SWG\Response(
      *     response=200,

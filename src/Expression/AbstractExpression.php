@@ -31,18 +31,6 @@ abstract class AbstractExpression
         return $this->type;
     }
 
-    abstract public
-    function whitelistPaths($whitelist);
-
-    /**
-     * Flatten the expression into a string
-     *
-     * This string *should* be compatible with graphite's target parameter
-     *
-     * @return string
-     */
-    abstract public function __toString(): string;
-
     /**
      * Get the full canonical name for this expression
      *
@@ -57,30 +45,30 @@ abstract class AbstractExpression
      *
      * @return string
      */
-    abstract public function getCanonicalName(AbstractExpression $excludeRoot = null,
-                                              AbstractExpression $excludeLeaf = null);
+    abstract public function getCanonicalHumanized(?AbstractExpression $excludeRoot = null,
+                                                   ?AbstractExpression $excludeLeaf = null): string;
 
     /**
-     * Flatten the expression into a string
+     * Flatten the expression into the canonical "graphite" representation
      *
      * @return string
      */
-    public function getCanonicalStr(): string
-    {
-        return $this->__toString();
-    }
+    abstract public function getCanonicalStr(): string;
 
     /**
      * Get an array of all of the sub-expressions of the given type
      *
      * If the type of this expression matches the type, it will be included in the set.
-     * This method should be called recursively by expressions that have sub expressions, and the results merged
+     * This method should be overridden called recursively by expressions that have sub expressions, and the results merged
      *
      * @param string $type
      *
      * @return AbstractExpression[]
      */
-    abstract public function getAllByType(string $type): array;
+    public function getAllByType(string $type): array
+    {
+        return ($type == $this->type) ? [$this] : [];
+    }
 
     /**
      * Get the expression that is common between this expression and $that.
