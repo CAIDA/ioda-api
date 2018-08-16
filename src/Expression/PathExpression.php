@@ -221,10 +221,7 @@ class PathExpression extends AbstractExpression
     public static function createFromJson(ExpressionFactory $expFactory,
                                           array $json): ?AbstractExpression
     {
-        if (!array_key_exists('path', $json)) {
-            throw new ParsingException(
-                "Path expression is missing 'path' attribute");
-        }
+        AbstractExpression::checkJsonAttributes("Path", ['path'], $json);
         return new PathExpression($json['path']);
     }
 }

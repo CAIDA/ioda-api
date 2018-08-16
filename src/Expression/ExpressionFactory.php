@@ -7,7 +7,7 @@ class ExpressionFactory
 {
     protected $expressionClasses = [
         ConstantExpression::TYPE => 'App\Expression\ConstantExpression',
-        //FunctionExpression::TYPE => 'App\Expression\FunctionExpression',
+        FunctionExpression::TYPE => 'App\Expression\FunctionExpression',
         PathExpression::TYPE => 'App\Expression\PathExpression',
     ];
 
@@ -32,7 +32,7 @@ class ExpressionFactory
                 'Missing type parameter');
         }
         if (!array_key_exists($json['type'], $this->expressionClasses)) {
-            throw new ParsingException('Invalid expression type: ' . $json['type']);
+            throw new ParsingException("Invalid expression type: '" . $json['type']."'");
         }
         // we hand off the outer object to the appropriate implementation
         // if it has child objects, it will in turn call their createFromJson
@@ -50,6 +50,7 @@ class ExpressionFactory
      * @throws ParsingException|\InvalidArgumentException
      * @return AbstractExpression
      */
+    /*
     public function createByType(string $type, array $arguments = null)
     {
         if (!array_key_exists($type, $this->expressionClasses)) {
@@ -69,4 +70,5 @@ class ExpressionFactory
 
         return new $class(...$arguments);
     }
+    */
 }

@@ -21,6 +21,7 @@ class ConstantExpression extends AbstractExpression
 
     /**
      * @Groups({"public"})
+     * @var string
      */
     private $value;
 
@@ -34,8 +35,10 @@ class ConstantExpression extends AbstractExpression
         $this->setValue($value);
     }
 
-    /* TODO: this function can actually return an integer, but swagger doesn't seem to handle multiple return types */
-    public function getValue(): string
+    /**
+     * @return integer|string
+     */
+    public function getValue()
     {
         return $this->value;
     }
@@ -95,10 +98,7 @@ class ConstantExpression extends AbstractExpression
     public static function createFromJson(ExpressionFactory $expFactory,
                                           array $json): ?AbstractExpression
     {
-        if (!array_key_exists('value', $json)) {
-            throw new ParsingException(
-                "Constant expression is missing 'value' attribute");
-        }
+        AbstractExpression::checkJsonAttributes("Constant", ['value'], $json);
         return new ConstantExpression($json['value']);
     }
 }

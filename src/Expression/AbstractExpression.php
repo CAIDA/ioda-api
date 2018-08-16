@@ -32,6 +32,24 @@ abstract class AbstractExpression
     }
 
     /**
+     * @param string $typeName
+     * @param string[] $params
+     * @param array $json
+
+     * @throws ParsingException
+     */
+    protected static function checkJsonAttributes(string $typeName,
+                                                  array $params, array $json): void
+    {
+        foreach ($params as $param) {
+            if (!array_key_exists($param, $json)) {
+                throw new ParsingException(
+                    "$typeName expression is missing '$param' attribute");
+            }
+        }
+    }
+
+    /**
      * Get the full canonical name for this expression
      *
      * This is a human-readable version of the canonical string representation
