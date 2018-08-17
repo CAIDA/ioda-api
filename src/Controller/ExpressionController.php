@@ -81,16 +81,22 @@ class ExpressionController extends ApiController
      * @Route("/validate/", methods={"POST"}, name="validate")
      * @SWG\Tag(name="Expression")
      * @SWG\Parameter(
-     *     name="expression",
+     *     name="query",
      *     in="body",
      *     type="object",
-     *     description="JSON-encoded expression object. Due to limitations in the current API documentation, the full expression schema cannot be properly described. See the various `*Expression` model definitions for more information about types of supported expressions.",
+     *     description="Query object. Due to limitations in the current API documentation, the full expression schema cannot be properly described. See the various `*Expression` model definitions for more information about types of supported expressions.",
      *     required=true,
      *     @SWG\Schema(
-     *         ref=@Model(type=\App\Expression\AbstractExpression::class, groups={"public"})
+     *         @SWG\Property(
+     *             property="expression",
+     *             type="object",
+     *             description="JSON-encoded expression object.",
+     *             ref=@Model(type=\App\Expression\AbstractExpression::class, groups={"public"})
+     *        )
      *     ),
      *     @SWG\Schema(ref=@Model(type=\App\Expression\PathExpression::class, groups={"public"})),
-     *     @SWG\Schema(ref=@Model(type=\App\Expression\ConstantExpression::class, groups={"public"}))
+     *     @SWG\Schema(ref=@Model(type=\App\Expression\ConstantExpression::class, groups={"public"})),
+     *     @SWG\Schema(ref=@Model(type=\App\Expression\FunctionExpression::class, groups={"public"}))
      * )
      * @SWG\Response(
      *     response=200,
@@ -154,17 +160,17 @@ class ExpressionController extends ApiController
     public function validate(Request $request, SerializerInterface $serializer,
                              ExpressionFactory $expressionFactory)
     {
-        $rawExpression = $request->attributes->get('parsedContent');
+        $query = $request->attributes->get('parsedContent');
         $envelope = new Envelope(
             'expression.validate',
-            $rawExpression,
+            $query,
             $request->server->get('REQUEST_TIME')
         );
-        if (!is_array($rawExpression)) {
-            throw new BadRequestHttpException('Missing expression');
+        if (!array_key_exists('expression', $query)) {
+            throw new BadRequestHttpException('Missing required expression parameter');
         }
         try {
-            $exp = $expressionFactory->createFromJson($rawExpression);
+            $exp = $expressionFactory->createFromJson($query['expression']);
             $envelope->setData($exp);
             return $this->json($envelope);
         } catch (ParsingException $exception) {
@@ -174,8 +180,8 @@ class ExpressionController extends ApiController
     }
 
     /**
-     * Parse a graphite-style expression string into a JSON-formatted expression
-     * object
+     * Parse a "canonical" graphite-style expression string into a
+     * JSON-formatted expression object
      *
      * @Route("/parse/", methods={"POST"}, name="parse")
      * @SWG\Tag(name="Expression")
@@ -183,13 +189,14 @@ class ExpressionController extends ApiController
      *     name="query",
      *     in="body",
      *     type="object",
-     *     description="Graphite-style expression string.",
+     *     description="Query object",
      *     required=true,
      *     @SWG\Schema(
      *         @SWG\Property(
-     *                     property="expression_string",
+     *                     property="expression_canonical",
      *                     type="string",
-     *                     example="scaleToSeconds(a.test.series, 8)"
+     *                     example="scaleToSeconds(a.test.series, 8)",
+     *                     description="Canonical graphite-style expression string."
      *         )
      *     )
      * )
@@ -261,11 +268,11 @@ class ExpressionController extends ApiController
             $query,
             $request->server->get('REQUEST_TIME')
         );
-        if (!array_key_exists('expression_string', $query)) {
+        if (!array_key_exists('expression_canonical', $query)) {
             throw new BadRequestHttpException('Missing required expression_string parameter');
         }
         try {
-            $exp = $expressionFactory->createFromCanonical($query['expression_string']);
+            $exp = $expressionFactory->createFromCanonical($query['expression_canonical']);
             $envelope->setData($exp);
         } catch (ParsingException $exception) {
             $envelope->setError($exception->getMessage());
