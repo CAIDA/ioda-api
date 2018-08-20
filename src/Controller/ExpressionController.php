@@ -167,7 +167,8 @@ class ExpressionController extends ApiController
             $request->server->get('REQUEST_TIME')
         );
         if (!array_key_exists('expression', $query)) {
-            throw new BadRequestHttpException('Missing required expression parameter');
+            $envelope->setError('Missing required expression parameter');
+            return $this->json($envelope, 400);
         }
         try {
             $exp = $expressionFactory->createFromJson($query['expression']);
@@ -269,14 +270,16 @@ class ExpressionController extends ApiController
             $request->server->get('REQUEST_TIME')
         );
         if (!array_key_exists('expression_canonical', $query)) {
-            throw new BadRequestHttpException('Missing required expression_string parameter');
+            $envelope->setError('Missing required expression_string parameter');
+            return $this->json($envelope, 400);
         }
         try {
             $exp = $expressionFactory->createFromCanonical($query['expression_canonical']);
             $envelope->setData($exp);
+            return $this->json($envelope);
         } catch (ParsingException $exception) {
             $envelope->setError($exception->getMessage());
+            return $this->json($envelope, 400);
         }
-        return $this->json($envelope);
     }
 }
