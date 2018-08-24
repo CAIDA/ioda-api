@@ -216,7 +216,11 @@ class FunctionExpression extends AbstractExpression
             throw new ParsingException("Function expression 'args' parameter must be an array");
         }
         foreach ($json['args'] as $arg) {
-            $expression->addArg($expFactory->createFromJson($arg));
+            try {
+                $expression->addArg($expFactory->createFromJson($arg));
+            } catch (ParsingException $ex) {
+                throw new ParsingException("Argument parsing failed for '".$json['func']."' function: " . $ex->getMessage());
+            }
         }
         return $expression;
     }

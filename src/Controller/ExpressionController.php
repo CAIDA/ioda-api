@@ -6,6 +6,7 @@ use App\Expression\ExpressionFactory;
 use App\Expression\Functions\Registry;
 use App\Expression\ParsingException;
 use App\Response\Envelope;
+use App\Response\RequestParameter;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -160,23 +161,24 @@ class ExpressionController extends ApiController
     public function validate(Request $request, SerializerInterface $serializer,
                              ExpressionFactory $expressionFactory)
     {
-        $query = $request->attributes->get('parsedContent');
-        $envelope = new Envelope(
-            'expression.validate',
-            $query,
-            $request->server->get('REQUEST_TIME')
+        $env = new Envelope('expression.validate',
+                            'body',
+                            [
+                                new RequestParameter('expression', RequestParameter::ARRAY, null, true),
+                            ],
+                            $request
         );
-        if (!array_key_exists('expression', $query)) {
-            $envelope->setError('Missing required expression parameter');
-            return $this->json($envelope, 400);
+        if ($env->getError()) {
+            return $this->json($env, 400);
         }
+
         try {
-            $exp = $expressionFactory->createFromJson($query['expression']);
-            $envelope->setData($exp);
-            return $this->json($envelope);
+            $exp = $expressionFactory->createFromJson($env->getParam('expression'));
+            $env->setData($exp);
+            return $this->json($env);
         } catch (ParsingException $exception) {
-            $envelope->setError($exception->getMessage());
-            return $this->json($envelope, 400);
+            $env->setError($exception->getMessage());
+            return $this->json($env, 400);
         }
     }
 
@@ -263,23 +265,24 @@ class ExpressionController extends ApiController
     public function parse(Request $request, SerializerInterface $serializer,
                           ExpressionFactory $expressionFactory)
     {
-        $query = $request->attributes->get('parsedContent');
-        $envelope = new Envelope(
-            'expression.parse',
-            $query,
-            $request->server->get('REQUEST_TIME')
+        $env = new Envelope('expression.parse',
+                            'body',
+                            [
+                                new RequestParameter('expression_canonical', RequestParameter::STRING, null, true),
+                            ],
+                            $request
         );
-        if (!array_key_exists('expression_canonical', $query)) {
-            $envelope->setError('Missing required expression_string parameter');
-            return $this->json($envelope, 400);
+        if ($env->getError()) {
+            return $this->json($env, 400);
         }
+
         try {
-            $exp = $expressionFactory->createFromCanonical($query['expression_canonical']);
-            $envelope->setData($exp);
-            return $this->json($envelope);
+            $exp = $expressionFactory->createFromCanonical($env->getParam('expression_canonical'));
+            $env->setData($exp);
+            return $this->json($env);
         } catch (ParsingException $exception) {
-            $envelope->setError($exception->getMessage());
-            return $this->json($envelope, 400);
+            $env->setError($exception->getMessage());
+            return $this->json($env, 400);
         }
     }
 }

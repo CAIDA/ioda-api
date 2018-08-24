@@ -24,8 +24,11 @@ class ExpressionFactory
      * @throws ParsingException
      * @return AbstractExpression
      */
-    public function createFromJson(array $json): AbstractExpression
+    public function createFromJson($json): AbstractExpression
     {
+        if (!is_array($json)) {
+            throw new ParsingException("Expression must be an object");
+        }
         // recursively parse the json
         if (!array_key_exists('type', $json)) {
             throw new ParsingException(

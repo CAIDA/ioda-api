@@ -50,8 +50,7 @@ class TimeSeriesSet
      * @param AbstractExpression $expression
      * @return TimeSeries
      */
-    public
-    function getSeries(AbstractExpression $expression): TimeSeries
+    public function getSeries(AbstractExpression $expression): TimeSeries
     {
         return $this->seriesSet[$expression->getCanonicalStr()];
     }

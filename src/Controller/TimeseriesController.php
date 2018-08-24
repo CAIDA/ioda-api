@@ -2,9 +2,11 @@
 
 namespace App\Controller;
 
+use App\Expression\AbstractExpression;
 use App\Expression\ExpressionFactory;
 use App\Expression\ParsingException;
 use App\Response\Envelope;
+use App\Response\RequestParameter;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -126,18 +128,25 @@ class TimeseriesController extends ApiController
     public function list(Request $request, SerializerInterface $serializer,
                          ExpressionFactory $expressionFactory)
     {
-        $path = $request->query->get('path', '*');
-        $envelope = new Envelope(
-            'ts.list',
-            $request->query->all(),
-            $request->server->get('REQUEST_TIME')
+        $env = new Envelope('ts.list',
+                            'query',
+                            [
+                                new RequestParameter('path', RequestParameter::STRING, '*', false),
+                                new RequestParameter('absolute_paths', RequestParameter::BOOL, false),
+                                new RequestParameter('include_ranges', RequestParameter::BOOL, false),
+                            ],
+                            $request
         );
-        try {
-            $exp = $expressionFactory->createFromCanonical($path);
-            $envelope->setData($exp);
-        } catch (ParsingException $exception) {
-            $envelope->setError($exception->getMessage());
+        if ($env->getError()) {
+            return $this->json($env, 400);
         }
-        return $this->json($envelope);
+
+        try {
+            $exp = $expressionFactory->createFromCanonical($env->getParam('path'));
+            $env->setData($exp);
+        } catch (ParsingException $exception) {
+            $env->setError($exception->getMessage());
+        }
+        return $this->json($env);
     }
 }
