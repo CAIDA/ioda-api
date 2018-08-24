@@ -5,8 +5,10 @@ namespace App\Controller;
 use App\Expression\AbstractExpression;
 use App\Expression\ExpressionFactory;
 use App\Expression\ParsingException;
+use App\Expression\PathExpression;
 use App\Response\Envelope;
 use App\Response\RequestParameter;
+use App\TimeSeries\Backend\GraphiteBackend;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -54,14 +56,6 @@ class TimeseriesController extends ApiController
      *     in="query",
      *     type="boolean",
      *     description="Return absolute paths (rather than relative)",
-     *     required=false,
-     *     default=false
-     * )
-     * @SWG\Parameter(
-     *     name="include_range",
-     *     in="query",
-     *     type="boolean",
-     *     description="Include time range each time series covers.",
      *     required=false,
      *     default=false
      * )
@@ -121,19 +115,18 @@ class TimeseriesController extends ApiController
      *
      * @var Request $request
      * @var SerializerInterface $serializer
-     * @var ExpressionFactory $expressionFactory
+     * @var GraphiteBackend $tsBackend
      *
      * @return JsonResponse
      */
     public function list(Request $request, SerializerInterface $serializer,
-                         ExpressionFactory $expressionFactory)
+                         GraphiteBackend $tsBackend)
     {
         $env = new Envelope('ts.list',
                             'query',
                             [
                                 new RequestParameter('path', RequestParameter::STRING, '*', false),
                                 new RequestParameter('absolute_paths', RequestParameter::BOOL, false),
-                                new RequestParameter('include_ranges', RequestParameter::BOOL, false),
                             ],
                             $request
         );
@@ -141,12 +134,12 @@ class TimeseriesController extends ApiController
             return $this->json($env, 400);
         }
 
-        try {
-            $exp = $expressionFactory->createFromCanonical($env->getParam('path'));
-            $env->setData($exp);
-        } catch (ParsingException $exception) {
-            $env->setError($exception->getMessage());
-        }
-        return $this->json($env);
+        // parse the given path expression
+        $pathExp = new PathExpression($env->getParam('path'));
+        // ask the time series backend to find us a list of paths
+        $paths = $tsBackend->pathListQuery($pathExp,
+                                           $env->getParam('absolute_paths'));
+        $env->setData($paths);
+        return $this->json($env, 200, [], ['groups' => ['public', 'list']]);
     }
 }

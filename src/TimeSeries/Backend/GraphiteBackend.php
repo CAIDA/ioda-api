@@ -4,15 +4,15 @@ namespace App\TimeSeries\Backend;
 
 
 use App\Expression\AbstractExpression;
+use App\Expression\PathExpression;
 use App\TimeSeries\TimeSeriesSet;
 
 class GraphiteBackend implements BackendInterface
 {
-    public function listQuery(AbstractExpression $expression,
-                              bool $absolute_paths,
-                              bool $include_ranges): array
+    public function pathListQuery(PathExpression $pathExp,
+                                  bool $absolute_paths): array
     {
-        // TODO: Implement listQuery() method.
+        return [$pathExp];
     }
 
     public function tsQuery(AbstractExpression $expression,

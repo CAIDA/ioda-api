@@ -4,23 +4,22 @@ namespace App\TimeSeries\Backend;
 
 
 use App\Expression\AbstractExpression;
+use App\Expression\PathExpression;
 use App\Timeseries\TimeSeriesSet;
 
 interface BackendInterface
 {
     /**
-     * Perform a metadata query to identify time series that match the given
+     * Perform a metadata query to identify paths that match the given path
      * expression.
      *
-     * @param AbstractExpression $expression
+     * @param PathExpression $expression
      * @param bool $absolute_paths
-     * @param bool $include_ranges
      *
-     * @return AbstractExpression[]
+     * @return PathExpression[]
      */
-    public function listQuery(AbstractExpression $expression,
-                              bool $absolute_paths,
-                              bool $include_ranges): array;
+    public function pathListQuery(PathExpression $expression,
+                                  bool $absolute_paths): array;
 
     /**
      * Perform a query for time series data.

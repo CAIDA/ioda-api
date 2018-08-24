@@ -54,6 +54,22 @@ class PathExpression extends AbstractExpression
     protected $humanNodes;
 
     /**
+     * Does this path describe an actual time series metric?
+     *
+     * @var bool
+     * @Groups({"list"})
+     */
+    protected $leaf;
+
+    /**
+     * Number of paths represented by this (wildcard or relative) expression
+     *
+     * @var integer
+     * @Groups({"list"})
+     */
+    protected $pathCount;
+
+    /**
      * PathExpression constructor.
      * @param string $path
      */
@@ -62,6 +78,8 @@ class PathExpression extends AbstractExpression
         /* TODO: implement the humanizer */
         parent::__construct($this::TYPE);
         $this->setPath($path);
+        $this->pathCount = 1;
+        $this->leaf = false;
     }
 
     public static function nodesToString($nodes, $isName)
@@ -116,6 +134,26 @@ class PathExpression extends AbstractExpression
     public function getHumanNodes()
     {
         return $this->humanNodes;
+    }
+
+    public function isLeaf(): bool
+    {
+        return $this->leaf;
+    }
+
+    public function setLeaf(bool $leaf): void
+    {
+        $this->leaf = $leaf;
+    }
+
+    public function getPathCount(): int
+    {
+        return $this->pathCount;
+    }
+
+    public function setPathCount(int $pathCount): void
+    {
+        $this->pathCount = $pathCount;
     }
 
     public function getCanonicalStr(): string
