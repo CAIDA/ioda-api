@@ -8,7 +8,9 @@ use App\TimeSeries\TimeSeriesSet;
 
 class GraphiteBackend implements BackendInterface
 {
-    public function listQuery(AbstractExpression $expression): array
+    public function listQuery(AbstractExpression $expression,
+                              bool $absolute_paths,
+                              bool $include_ranges): array
     {
         // TODO: Implement listQuery() method.
     }

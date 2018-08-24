@@ -13,10 +13,14 @@ interface BackendInterface
      * expression.
      *
      * @param AbstractExpression $expression
+     * @param bool $absolute_paths
+     * @param bool $include_ranges
      *
      * @return AbstractExpression[]
      */
-    public function listQuery(AbstractExpression $expression): array;
+    public function listQuery(AbstractExpression $expression,
+                              bool $absolute_paths,
+                              bool $include_ranges): array;
 
     /**
      * Perform a query for time series data.
