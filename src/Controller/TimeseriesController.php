@@ -8,6 +8,7 @@ use App\Expression\ParsingException;
 use App\Expression\PathExpression;
 use App\Response\Envelope;
 use App\Response\RequestParameter;
+use App\TimeSeries\Backend\BackendException;
 use App\TimeSeries\Backend\GraphiteBackend;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
@@ -137,9 +138,15 @@ class TimeseriesController extends ApiController
         // parse the given path expression
         $pathExp = new PathExpression($env->getParam('path'));
         // ask the time series backend to find us a list of paths
-        $paths = $tsBackend->pathListQuery($pathExp,
-                                           $env->getParam('absolute_paths'));
-        $env->setData($paths);
+        try {
+            $paths = $tsBackend->pathListQuery($pathExp,
+                                               $env->getParam('absolute_paths'));
+            $env->setData($paths);
+        } catch (BackendException $ex) {
+            $env->setError($ex->getMessage());
+            // TODO: check HTTP error codes used
+            return $this->json($env, 400);
+        }
         return $this->json($env, 200, [], ['groups' => ['public', 'list']]);
     }
 }

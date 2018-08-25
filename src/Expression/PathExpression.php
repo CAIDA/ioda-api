@@ -156,6 +156,11 @@ class PathExpression extends AbstractExpression
         $this->pathCount = $pathCount;
     }
 
+    public function incrementPathCount(): void
+    {
+        $this->pathCount++;
+    }
+
     public function getCanonicalStr(): string
     {
         return $this->getPath();

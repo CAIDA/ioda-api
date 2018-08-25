@@ -3,6 +3,7 @@
     "license": "proprietary",
     "require": {
         "php": "^7.2",
+        "ext-curl": "^7.2",
         "ext-iconv": "*",
         "nelmio/api-doc-bundle": "^3.2",
         "sensio/framework-extra-bundle": "^5.2",

@@ -17,6 +17,7 @@ interface BackendInterface
      * @param bool $absolute_paths
      *
      * @return PathExpression[]
+     * @throws BackendException
      */
     public function pathListQuery(PathExpression $expression,
                                   bool $absolute_paths): array;
@@ -31,6 +32,7 @@ interface BackendInterface
      * TODO: bool $annotate
      *
      * @return TimeSeriesSet
+     * @throws BackendException
      */
     public function tsQuery(AbstractExpression $expression,
                             \DateTime $from, \DateTime $until): TimeSeriesSet;

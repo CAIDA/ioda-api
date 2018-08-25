@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6f143ae398f28cf9de1a4bac3d19ab12",
+    "content-hash": "2d877ffa5cc4ef143aa0bde120d3862e",
     "packages": [
         {
             "name": "doctrine/annotations",
@@ -2862,6 +2862,17 @@
         {
             "name": "symfony/lts",
             "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/lts.git",
+                "reference": "6de50b244bad631a71544b3cc3c8e206c0e5f991"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/lts/zipball/6de50b244bad631a71544b3cc3c8e206c0e5f991",
+                "reference": "6de50b244bad631a71544b3cc3c8e206c0e5f991",
+                "shasum": ""
+            },
             "conflict": {
                 "symfony/asset": ">=5",
                 "symfony/browser-kit": ">=5",
@@ -4340,6 +4351,7 @@
     "prefer-lowest": false,
     "platform": {
         "php": "^7.2",
+        "ext-curl": "^7.2",
         "ext-iconv": "*"
     },
     "platform-dev": []
