@@ -2,9 +2,6 @@
 
 namespace App\Controller;
 
-use App\Expression\AbstractExpression;
-use App\Expression\ExpressionFactory;
-use App\Expression\ParsingException;
 use App\Expression\PathExpression;
 use App\Response\Envelope;
 use App\Response\RequestParameter;

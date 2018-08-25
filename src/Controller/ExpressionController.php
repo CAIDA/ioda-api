@@ -62,15 +62,19 @@ class ExpressionController extends ApiController
      *
      * @return JsonResponse
      */
-    public function functions(Request $request, SerializerInterface $serializer, Registry $functionRegistry)
+    public function functions(Request $request, SerializerInterface $serializer,
+                              Registry $functionRegistry)
     {
-        $envelope = new Envelope(
-            'expression.functions',
-            null,
-            $request->server->get('REQUEST_TIME')
+        $env = new Envelope('expression.functions',
+                            'query',
+                            [],
+                            $request
         );
-        $envelope->setData($functionRegistry);
-        return $this->json($envelope);
+        if ($env->getError()) {
+            return $this->json($env, 400);
+        }
+        $env->setData($functionRegistry);
+        return $this->json($env);
     }
 
     /**
