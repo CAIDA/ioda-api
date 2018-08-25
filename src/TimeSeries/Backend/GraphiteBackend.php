@@ -106,7 +106,7 @@ class GraphiteBackend implements BackendInterface
             if (array_key_exists($key, $paths)) {
                 $paths[$key]->incrementPathCount();
             } else {
-                $data[$key] = $nodePath;
+                $paths[$key] = $nodePath;
             }
         }
         return $paths;
