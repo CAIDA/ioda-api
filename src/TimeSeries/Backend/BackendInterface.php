@@ -28,12 +28,13 @@ interface BackendInterface
      * @param AbstractExpression $expression
      * @param \DateTime $from
      * @param \DateTime $until
-     * TODO: aggrFunc (pass callback?)
+     * @param string $aggrFunc
      * TODO: bool $annotate
      *
      * @return TimeSeriesSet
      * @throws BackendException
      */
     public function tsQuery(AbstractExpression $expression,
-                            \DateTime $from, \DateTime $until): TimeSeriesSet;
+                            \DateTime $from, \DateTime $until,
+                            string $aggrFunc): TimeSeriesSet;
 }

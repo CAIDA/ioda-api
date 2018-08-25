@@ -113,7 +113,8 @@ class GraphiteBackend implements BackendInterface
     }
 
     public function tsQuery(AbstractExpression $expression,
-                            \DateTime $from, \DateTime $until): TimeSeriesSet
+                            \DateTime $from, \DateTime $until,
+                            string $aggrFunc): TimeSeriesSet
     {
         // TODO: Implement tsQuery() method.
         // TODO: unlimit
