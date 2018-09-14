@@ -207,6 +207,7 @@ class RequestParameter
     const ARRAY = 'array';
     const MIXED = 'mixed';
     const DATETIME = 'date-time';
+    // TODO: add 'expression' type (will need expression factory)
 
     const TYPES = [
         RequestParameter::STRING,

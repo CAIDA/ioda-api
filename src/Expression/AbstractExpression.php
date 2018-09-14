@@ -13,6 +13,7 @@ abstract class AbstractExpression
 {
     /**
      * @Groups({"public"})
+     * TODO: separate public group into query/response
      */
     protected $type;
 
@@ -30,6 +31,8 @@ abstract class AbstractExpression
     {
         return $this->type;
     }
+
+    abstract public function getHumanName(): string;
 
     /**
      * @param string $typeName

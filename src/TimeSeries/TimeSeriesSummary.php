@@ -151,7 +151,7 @@ class TimeSeriesSummary
     /**
      * @param AbstractExpression $commonPrefix
      */
-    public function setCommonPrefix(AbstractExpression $commonPrefix): void
+    public function setCommonPrefix(?AbstractExpression $commonPrefix): void
     {
         $this->commonPrefix = $commonPrefix;
     }
@@ -167,7 +167,7 @@ class TimeSeriesSummary
     /**
      * @param AbstractExpression $commonSuffix
      */
-    public function setCommonSuffix(AbstractExpression $commonSuffix): void
+    public function setCommonSuffix(?AbstractExpression $commonSuffix): void
     {
         $this->commonSuffix = $commonSuffix;
     }

@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: alistair
- * Date: 8/16/18
- * Time: 11:17 AM
- */
 
 namespace App\Expression;
 
@@ -64,6 +58,19 @@ class FunctionExpression extends AbstractExpression
     public function getFunc(): string
     {
         return $this->func;
+    }
+
+
+    /**
+     * @Groups({"public"})
+     * @SWG\Property(
+     *     type="string",
+     *     example="sumSeries"
+     * )
+     */
+    public function getHumanName(): string
+    {
+        return $this->getFunc();
     }
 
     /**
@@ -149,7 +156,17 @@ class FunctionExpression extends AbstractExpression
 
     public function getCanonicalStr(): string
     {
-        return $this->getCanonicalHumanized(null, null);
+        $str = $this->getFunc() . "(";
+        $args = $this->getArgs();
+        $argc = count($args);
+        for ($i = 0; $i < $argc; $i++) {
+            $str .= $args[$i]->getCanonicalStr();
+            if ($i < $argc - 1) {
+                $str .= ',';
+            }
+        }
+        $str .= ')';
+        return $str;
     }
 
     public function getCommonRoot(?AbstractExpression $that): ?AbstractExpression

@@ -47,6 +47,15 @@ class PathExpression extends AbstractExpression
     private $pathNodes;
 
     /**
+     * @Groups({"public"})
+     * @SWG\Property(
+     *     type="string",
+     *     example="Human · Readable · Metric · Path"
+     * )
+     */
+    private $humanName;
+
+    /**
      * Array of humanized nodes that make up the path
      *
      * @var string[]
@@ -124,11 +133,21 @@ class PathExpression extends AbstractExpression
         $this->pathNodes = explode($this::SEPARATOR, $path);
         $this->path = null; // remove any previously cached string
         $this->humanNodes = $this->pathNodes; // TODO: $this->humanizer->humanizeFqid($this->pathNodes, true);
+        $this->humanName = null;
     }
 
     public function getPathNodes()
     {
         return $this->pathNodes;
+    }
+
+    public function getHumanName(): string
+    {
+        if (!$this->humanName) {
+            $this->humanName = $this->nodesToString($this->getHumanNodes(), true);
+            var_dump($this->humanName);
+        }
+        return $this->humanName;
     }
 
     public function getHumanNodes()

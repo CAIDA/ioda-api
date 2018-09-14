@@ -36,6 +36,14 @@ class ConstantExpression extends AbstractExpression
     }
 
     /**
+     * @Groups({"public"})
+     */
+    public function getHumanName(): string
+    {
+        return $this->getValue();
+    }
+
+    /**
      * @return integer|string
      */
     public function getValue()
