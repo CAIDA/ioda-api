@@ -145,7 +145,6 @@ class PathExpression extends AbstractExpression
     {
         if (!$this->humanName) {
             $this->humanName = $this->nodesToString($this->getHumanNodes(), true);
-            var_dump($this->humanName);
         }
         return $this->humanName;
     }

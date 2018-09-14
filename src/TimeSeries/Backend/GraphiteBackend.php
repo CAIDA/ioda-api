@@ -131,8 +131,8 @@ class GraphiteBackend extends AbstractBackend
                             QueryTime $from, QueryTime $until,
                             string $aggrFunc): TimeSeriesSet
     {
-        // TODO: unlimit
-        // TODO: max points per series
+        // TODO: is unlimit?
+        // TODO: is nocache?
 
         // if until is a relative time, then we want a low cache timeout
         $now = time();
@@ -150,17 +150,18 @@ class GraphiteBackend extends AbstractBackend
             }
         }
 
-        $result = $this->graphiteQuery(
-            '/render',
-            [
-                'format' => 'json-internal',
-                'target' => $expression->getCanonicalStr(),
-                'from' => $from->getGraphiteTime(),
-                'until' => $until->getGraphiteTime(),
-                'cacheTimeout' => $timeout,
-                'aggFunc' => $aggrFunc,
-            ]
-        );
+        $params = [
+            'format' => 'json-internal',
+            'target' => $expression->getCanonicalStr(),
+            'from' => $from->getGraphiteTime(),
+            'until' => $until->getGraphiteTime(),
+            'cacheTimeout' => $timeout,
+            'aggFunc' => $aggrFunc,
+        ];
+        // TODO check unlimit
+        $params['maxDataPoints'] = GraphiteBackend::MAX_POINTS_PER_SERIES;
+        // TODO nocache
+        $result = $this->graphiteQuery('/render', $params);
         $jsonResult = json_decode($result, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new BackendException('Invalid JSON from TS backend: ' . json_last_error_msg());
@@ -222,7 +223,7 @@ class GraphiteBackend extends AbstractBackend
         $summary->setCommonPrefix($commonRoot);
         $summary->setCommonSuffix($commonLeaf);
 
-        // TODO: unlimit
+        // TODO: check unlimit
         // now we should downsample
         $tss->downSample($this::MAX_POINTS, $aggrFunc);
 
