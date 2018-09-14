@@ -10,38 +10,61 @@ class TimeSeriesSet
 {
 
     /**
-     * @var TimeSeries[] $series
+     * @var TimeSeries[]
      * @Groups("public")
      */
-    protected $seriesSet;
+    protected $series;
+
+    /**
+     * @var TimeSeriesSummary
+     * @Groups("public")
+     */
+    protected $summary;
 
     public function __construct()
     {
-        $this->seriesSet = [];
+        $this->series = [];
+        $this->summary = new TimeSeriesSummary();
     }
 
     /**
      * @return TimeSeries[]
      */
-    public function getSeriesSet(): array
+    public function getSeries(): array
     {
-        return $this->seriesSet;
+        return $this->series;
     }
 
     /**
-     * @param TimeSeries[] $seriesSet
+     * @param TimeSeries[] $series
      */
-    public function setSeriesSet(array $seriesSet): void
+    public function setSeries(array $series): void
     {
-        $this->seriesSet = $seriesSet;
+        $this->series = $series;
+    }
+
+    /**
+     * @return TimeSeriesSummary
+     */
+    public function getSummary(): TimeSeriesSummary
+    {
+        return $this->summary;
+    }
+
+    /**
+     * @param TimeSeriesSummary $summary
+     */
+    public function setSummary(TimeSeriesSummary $summary): void
+    {
+        $this->summary = $summary;
     }
 
     /**
      * @param TimeSeries $series
      */
-    public function addSeries(TimeSeries $series): void
+    public function addOneSeries(TimeSeries $series): void
     {
-        $this->seriesSet[$series->getExpression()->getCanonicalStr()] = $series;
+        $this->series[$series->getExpression()->getCanonicalStr()] = $series;
     }
 
     /**
@@ -50,9 +73,9 @@ class TimeSeriesSet
      * @param AbstractExpression $expression
      * @return TimeSeries
      */
-    public function getSeries(AbstractExpression $expression): TimeSeries
+    public function getSeriesByExpression(AbstractExpression $expression): TimeSeries
     {
-        return $this->seriesSet[$expression->getCanonicalStr()];
+        return $this->series[$expression->getCanonicalStr()];
     }
 
     /**
@@ -60,15 +83,16 @@ class TimeSeriesSet
      * specified number of points
      *
      * @param int $maxPoints
+     * @param string $aggrFunc
      */
-    public function downSample(int $maxPoints): void
+    public function downSample(int $maxPoints, string $aggrFunc): void
     {
-        if (!$this->seriesSet || !count($this->seriesSet)) {
+        if (!$this->series || !count($this->series)) {
             return;
         }
         // first we need to know the total number of points that we have
         $numPoints = 0;
-        foreach ($this->seriesSet as $series) {
+        foreach ($this->series as $series) {
             $numPoints += $series->getNumPoints();
         }
         // if we have 0 points, just give up
@@ -80,8 +104,8 @@ class TimeSeriesSet
         if ($reductionRatio > 1) { // don't need to reduce
             return;
         }
-        foreach ($this->seriesSet as $series) {
-            $series->downSample($reductionRatio);
+        foreach ($this->series as $series) {
+            $series->downSample($reductionRatio, $aggrFunc);
         }
     }
 }

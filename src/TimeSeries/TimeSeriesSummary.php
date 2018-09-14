@@ -4,37 +4,44 @@ namespace App\TimeSeries;
 
 
 use App\Expression\AbstractExpression;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 class TimeSeriesSummary
 {
     /**
      * @var \DateTime
+     * @Groups("public")
      */
     protected $earliestFrom;
 
     /**
      * @var \DateTime
+     * @Groups("public")
      */
     protected $lastUntil;
 
     /**
      * @var int[]
+     * @Groups("public")
      */
     protected $steps;
 
     /**
      * @var int[]
+     * @Groups("public")
      */
     protected $nativeSteps;
 
     /**
      * @var AbstractExpression
      * TODO: consider a dedicated ExpressionPrefix/Suffix class?
+     * @Groups("public")
      */
     protected $commonPrefix;
 
     /**
      * @var AbstractExpression
+     * @Groups("public")
      */
     protected $commonSuffix;
 
@@ -47,7 +54,7 @@ class TimeSeriesSummary
     /**
      * @return \DateTime
      */
-    public function getEarliestFrom(): \DateTime
+    public function getEarliestFrom(): ?\DateTime
     {
         return $this->earliestFrom;
     }
@@ -73,7 +80,7 @@ class TimeSeriesSummary
     /**
      * @return \DateTime
      */
-    public function getLastUntil(): \DateTime
+    public function getLastUntil(): ?\DateTime
     {
         return $this->lastUntil;
     }
@@ -91,8 +98,8 @@ class TimeSeriesSummary
      */
     public function addUntil(\DateTime $until): void
     {
-        if (!isset($this->earliestUntil) || $until > $this->earliestUntil) {
-            $this->earliestUntil = $until;
+        if (!isset($this->lastUntil) || $until > $this->lastUntil) {
+            $this->lastUntil = $until;
         }
     }
 
@@ -112,15 +119,31 @@ class TimeSeriesSummary
     /**
      * @return int[]
      */
-    public function getNativeSteps(): array
+    public function getNativeSteps(): ?array
     {
-        return $this->nativeSteps;
+        if (count($this->nativeSteps) == 0) {
+            return null;
+        }
+        $result = [];
+        $nativeSteps = array_keys($this->nativeSteps);
+        foreach ($nativeSteps as $ns) {
+            $result[$ns] = array_keys($this->nativeSteps[$ns]);
+        }
+        return $result;
+    }
+
+    public function addNativeStep(int $nativeStep, int $step): void
+    {
+        if (!array_key_exists((int)$nativeStep, $this->nativeSteps)) {
+            $this->nativeSteps[(int)$nativeStep] = [];
+        }
+        $this->nativeSteps[(int)$nativeStep][(int)$step] = 1;
     }
 
     /**
      * @return AbstractExpression
      */
-    public function getCommonPrefix(): AbstractExpression
+    public function getCommonPrefix(): ?AbstractExpression
     {
         return $this->commonPrefix;
     }
@@ -136,7 +159,7 @@ class TimeSeriesSummary
     /**
      * @return AbstractExpression
      */
-    public function getCommonSuffix(): AbstractExpression
+    public function getCommonSuffix(): ?AbstractExpression
     {
         return $this->commonSuffix;
     }

@@ -2,17 +2,12 @@
 
 namespace App\Expression;
 
-use Symfony\Component\Serializer\Annotation\DiscriminatorMap;
+
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Class AbstractExpression
  * @package App\Expression
- * @DiscriminatorMap(typeProperty="type", mapping={
- *    "constant"="App\Expression\ConstantExpression",
- *    "function"="App\Expression\FunctionExpression",
- *    "path"="App\Expression\PathExpression"
- * })
  */
 abstract class AbstractExpression
 {

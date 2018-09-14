@@ -4,16 +4,27 @@ namespace App\TimeSeries\Backend;
 
 
 use App\Expression\AbstractExpression;
+use App\Expression\ExpressionFactory;
+use App\Expression\ParsingException;
 use App\Expression\PathExpression;
+use App\TimeSeries\TimeSeries;
 use App\TimeSeries\TimeSeriesSet;
-use Swagger\Annotations\Path;
+use App\Utils\QueryTime;
 
-class GraphiteBackend implements BackendInterface
+class GraphiteBackend extends AbstractBackend
 {
     const GRAPHITE_URL = 'http://charthouse-render.int.limbo.caida.org';
     const QUERY_TIMEOUT = 120;
     const META_CACHE_TIMEOUT = 28800; // 8 hrs
+    const DATA_CACHE_TIMEOUTS = [
+        7200 => 60, // cache last two hours for 1 min
+        86400 => 600, // cache last day for 10 min
+    ];
+    const DATA_CACHE_TIMEOUT_DEFAULT = 3600;
     const MAX_POINTS_PER_SERIES = 4000;
+    const MAX_POINTS = 200000;
+
+    private $expFactory;
 
     /**
      * Make a query to the graphite backend service.
@@ -48,6 +59,11 @@ class GraphiteBackend implements BackendInterface
         return $result;
     }
 
+    public function __construct(ExpressionFactory $expFactory)
+    {
+        $this->expFactory = $expFactory;
+    }
+
     public function pathListQuery(PathExpression $pathExp,
                                   bool $absolute_paths): array
     {
@@ -71,7 +87,6 @@ class GraphiteBackend implements BackendInterface
         /* @var PathExpression[] */
         $paths = [];
         $pathTree = [];
-        // TODO: here
         foreach ($jsonResult as $node) {
             $np = $node['path'];
 
@@ -113,11 +128,115 @@ class GraphiteBackend implements BackendInterface
     }
 
     public function tsQuery(AbstractExpression $expression,
-                            \DateTime $from, \DateTime $until,
+                            QueryTime $from, QueryTime $until,
                             string $aggrFunc): TimeSeriesSet
     {
-        // TODO: Implement tsQuery() method.
         // TODO: unlimit
         // TODO: max points per series
+
+        // if until is a relative time, then we want a low cache timeout
+        $now = time();
+        $timeout = GraphiteBackend::DATA_CACHE_TIMEOUT_DEFAULT;
+        if ($until->isRelative()) {
+            $t = $now;
+        } else {
+            $t = $until->getAbsoluteTime()->getTimestamp();
+        }
+        foreach (GraphiteBackend::DATA_CACHE_TIMEOUTS as $limit => $tout) {
+            if ($t >= $now - $limit) {
+                // our 'until' time falls inside this limit
+                $timeout = $tout;
+                break;
+            }
+        }
+
+        $result = $this->graphiteQuery(
+            '/render',
+            [
+                'format' => 'json-internal',
+                'target' => $expression->getCanonicalStr(),
+                'from' => $from->getGraphiteTime(),
+                'until' => $until->getGraphiteTime(),
+                'cacheTimeout' => $timeout,
+                'aggFunc' => $aggrFunc,
+            ]
+        );
+        $jsonResult = json_decode($result, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new BackendException('Invalid JSON from TS backend: ' . json_last_error_msg());
+        }
+        if (!is_array($jsonResult)) {
+            throw new BackendException('Invalid response from TS backend');
+        }
+
+        $tss = new TimeSeriesSet();
+        $summary = $tss->getSummary();
+
+        // first pass through the response, build expressions and calculate
+        // common root/leaves
+        /* @var AbstractExpression $commonRoot */
+        $commonRoot = null;
+        /* @var AbstractExpression $commonLeaf */
+        $commonLeaf = null;
+        $first = true;
+        foreach ($jsonResult as &$element) {
+            $exp = null;
+            try {
+                $exp = $this->expFactory->createFromCanonical($element['name']);
+            } catch (ParsingException $ex) {
+                // failed to parse the expression, make it a path
+                $exp = new PathExpression($element['name']);
+            }
+
+            $commonRoot = ($first) ? $exp : $exp->getCommonRoot($commonRoot);
+            if ($first) {
+                $commonLeaf = $exp;
+                $first = false;
+            } else {
+                if ($commonLeaf) {
+                    $commonLeaf = $commonLeaf->getCommonLeaf($exp);
+                }
+            }
+
+            $newSeries = new TimeSeries($exp);
+
+            $from = new \DateTime();
+            $from->setTimestamp((int)$element['start']);
+            $newSeries->setFrom($from);
+
+            $until = new \DateTime();
+            $until->setTimestamp((int)$element['end']);
+            $newSeries->setUntil($until);
+
+            $newSeries->setStep($element['step']);
+
+            $newSeries->setNativeStep(
+                array_key_exists('nativeStep', $element) ?
+                    $element['nativeStep'] : $element['step']
+            );
+
+            $newSeries->setValues($element['values']);
+
+            $tss->addOneSeries($newSeries);
+        }
+        $summary->setCommonPrefix($commonRoot);
+        $summary->setCommonSuffix($commonLeaf);
+
+        // TODO: unlimit
+        // now we should downsample
+        $tss->downSample($this::MAX_POINTS, $aggrFunc);
+
+        // take another pass through now that the summary object is ready
+        foreach ($tss->getSeries() as &$newSeries) {
+            // TODO: annotate
+
+            $summary->addStep($newSeries->getStep());
+            $summary->addNativeStep($newSeries->getStep(),
+                                    $newSeries->getNativeStep());
+            $summary->addFrom($newSeries->getFrom());
+            $summary->addUntil($newSeries->getUntil());
+        }
+
+        return $tss;
     }
 }

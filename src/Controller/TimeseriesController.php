@@ -9,6 +9,7 @@ use App\Response\Envelope;
 use App\Response\RequestParameter;
 use App\TimeSeries\Backend\BackendException;
 use App\TimeSeries\Backend\GraphiteBackend;
+use App\Utils\QueryTime;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -44,14 +45,12 @@ class TimeseriesController extends ApiController
      *        @SWG\Property(
      *             property="from",
      *             type="string",
-     *             format="date-time",
-     *             description="Start time of the query (inclusive)",
+     *             description="Start time of the query (inclusive). Times can be either absolute (e.g., '2018-08-31T16:08:18Z') or relative (e.g. '-24h')",
      *        ),
      *        @SWG\Property(
      *             property="until",
      *             type="string",
-     *             format="date-time",
-     *             description="End time of the query (exclusive)",
+     *             description="End time of the query (exclusive). Times can be either absolute (e.g., '2018-08-31T16:08:18Z') or relative (e.g. '-24h')",
      *        ),
      *        @SWG\Property(
      *             property="aggregation_func",
@@ -133,7 +132,9 @@ class TimeseriesController extends ApiController
                             'body',
                             [
                                 new RequestParameter('expression', RequestParameter::ARRAY, null, true),
-                                // TODO: other params
+                                new RequestParameter('from', RequestParameter::DATETIME, new QueryTime('-24h'), false),
+                                new RequestParameter('until', RequestParameter::DATETIME, new QueryTime('now'), false),
+                                new RequestParameter('aggregation_func', RequestParameter::STRING, 'avg', false),
                             ],
                             $request
         );
@@ -150,14 +151,19 @@ class TimeseriesController extends ApiController
         }
         // ask the time series backend to perform the query
         try {
-            $tss = $tsBackend->tsQuery($exp);
+            $tss = $tsBackend->tsQuery(
+                $exp,
+                $env->getParam('from'),
+                $env->getParam('until'),
+                $env->getParam('aggregation_func')
+            );
             $env->setData($tss);
         } catch (BackendException $ex) {
             $env->setError($ex->getMessage());
             // TODO: check HTTP error codes used
             return $this->json($env, 400);
         }
-        return $this->json($env, 200, [], ['groups' => ['public', 'list']]);
+        return $this->json($env);
     }
 
     /**

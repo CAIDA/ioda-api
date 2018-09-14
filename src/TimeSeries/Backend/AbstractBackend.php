@@ -6,8 +6,9 @@ namespace App\TimeSeries\Backend;
 use App\Expression\AbstractExpression;
 use App\Expression\PathExpression;
 use App\Timeseries\TimeSeriesSet;
+use App\Utils\QueryTime;
 
-interface BackendInterface
+abstract class AbstractBackend
 {
     /**
      * Perform a metadata query to identify paths that match the given path
@@ -19,22 +20,22 @@ interface BackendInterface
      * @return PathExpression[]
      * @throws BackendException
      */
-    public function pathListQuery(PathExpression $expression,
-                                  bool $absolute_paths): array;
+    abstract public function pathListQuery(PathExpression $expression,
+                                           bool $absolute_paths): array;
 
     /**
      * Perform a query for time series data.
      *
      * @param AbstractExpression $expression
-     * @param \DateTime $from
-     * @param \DateTime $until
+     * @param QueryTime $from
+     * @param QueryTime $until
      * @param string $aggrFunc
      * TODO: bool $annotate
      *
      * @return TimeSeriesSet
      * @throws BackendException
      */
-    public function tsQuery(AbstractExpression $expression,
-                            \DateTime $from, \DateTime $until,
-                            string $aggrFunc): TimeSeriesSet;
+    abstract public function tsQuery(AbstractExpression $expression,
+                                     QueryTime $from, QueryTime $until,
+                                     string $aggrFunc): TimeSeriesSet;
 }

@@ -2,6 +2,7 @@
 
 namespace App\Response;
 
+use App\Utils\QueryTime;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\ParameterBag;
@@ -58,7 +59,11 @@ class Envelope
     {
         $this->setType($type);
         $this->requestParameters = [];
-        $this->processRequestParameters($paramsIn, $requestParameters, $request);
+        try {
+            $this->processRequestParameters($paramsIn, $requestParameters, $request);
+        } catch (\InvalidArgumentException $ex) {
+            $this->setError($ex->getMessage());
+        }
         $this->setMetadata(
             new EnvelopeMetadata($request->server->get('REQUEST_TIME')));
     }
@@ -143,6 +148,9 @@ class Envelope
                 if (!is_array($parsedVal)) {
                     $parsedVal = [$parsedVal];
                 }
+            } elseif ($p->type == RequestParameter::DATETIME) {
+                $dateStr = $bag->get($p->name);
+                $parsedVal = new QueryTime($dateStr);
             } else {
                 throw new \InvalidArgumentException("Unexpected parameter type $p->type");
             }
@@ -198,6 +206,7 @@ class RequestParameter
     const INTEGER = 'integer';
     const ARRAY = 'array';
     const MIXED = 'mixed';
+    const DATETIME = 'date-time';
 
     const TYPES = [
         RequestParameter::STRING,
@@ -205,6 +214,7 @@ class RequestParameter
         RequestParameter::INTEGER,
         RequestParameter::ARRAY,
         RequestParameter::MIXED,
+        RequestParameter::DATETIME,
     ];
 
     /**
