@@ -23,6 +23,13 @@ services:
         resource: '../src/Controller'
         tags: ['controller.service_arguments']
 
+    property_normalizer:
+      class: Symfony\Component\Serializer\Normalizer\PropertyNormalizer
+      public: false
+      tags: [serializer.normalizer]
+      arguments:
+        $nameConverter: '@serializer.name_converter.camel_case_to_snake_case'
+
     datetime_method_normalizer:
         class: Symfony\Component\Serializer\Normalizer\DateTimeNormalizer
         public: false
