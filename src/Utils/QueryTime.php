@@ -102,8 +102,6 @@ class QueryTime
         return $this->relativeTime;
     }
 
-    // TODO: HERE. why does the serializer not serialize this correctly?
-    // TODO: why does the parser not parse the format that i get from the docs page?
     public function getAbsoluteTime(): ?\DateTime
     {
         return $this->absoluteTime;
