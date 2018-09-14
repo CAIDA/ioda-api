@@ -4,6 +4,7 @@ namespace App\TimeSeries;
 
 
 use App\Expression\AbstractExpression;
+use App\TimeSeries\Annotation\TimeSeriesAnnotation;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 class TimeSeries
@@ -63,6 +64,13 @@ class TimeSeries
     protected $nativeStep;
 
     /**
+     * List of annotations for this time series
+     * @var TimeSeriesAnnotation[]
+     * @Groups("public")
+     */
+    protected $annotations;
+
+    /**
      * Array of time series data points. The first point is at $from, each point
      * is $step seconds apart, and the last point is at ($until-$from).
      *
@@ -73,12 +81,6 @@ class TimeSeries
      * @Groups("public")
      */
     protected $values;
-
-    /**
-     * @var
-     */
-    // TODO
-    //protected $annotations;
 
     /**
      * TimeSeries constructor.
@@ -236,6 +238,22 @@ class TimeSeries
     public function getNumPoints(): int
     {
         return count($this->values);
+    }
+
+    /**
+     * @return TimeSeriesAnnotation[]
+     */
+    public function getAnnotations(): ?array
+    {
+        return $this->annotations;
+    }
+
+    /**
+     * @param TimeSeriesAnnotation[] $annotations
+     */
+    public function setAnnotations(?array $annotations): void
+    {
+        $this->annotations = $annotations;
     }
 
     /* ======= DOWN-SAMPLING ======== */

@@ -30,12 +30,13 @@ abstract class AbstractBackend
      * @param QueryTime $from
      * @param QueryTime $until
      * @param string $aggrFunc
-     * TODO: bool $annotate
+     * @param bool $annotate
      *
      * @return TimeSeriesSet
      * @throws BackendException
      */
     abstract public function tsQuery(AbstractExpression $expression,
                                      QueryTime $from, QueryTime $until,
-                                     string $aggrFunc): TimeSeriesSet;
+                                     string $aggrFunc,
+                                     bool $annotate): TimeSeriesSet;
 }

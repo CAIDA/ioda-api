@@ -27,6 +27,8 @@ class TimeseriesController extends ApiController
     /**
      * Perform a query for time series data
      *
+     * TODO: figure out how to correctly add "required" to properties
+     *
      * @Route("/query/", methods={"POST"}, name="query")
      * @SWG\Tag(name="Time Series")
      * @SWG\Parameter(
@@ -40,17 +42,19 @@ class TimeseriesController extends ApiController
      *             property="expression",
      *             type="object",
      *             description="JSON-encoded expression object.",
-     *             ref=@Model(type=\App\Expression\AbstractExpression::class, groups={"public"})
+     *             ref=@Model(type=\App\Expression\AbstractExpression::class, groups={"public"}),
      *        ),
      *        @SWG\Property(
      *             property="from",
      *             type="string",
      *             description="Start time of the query (inclusive). Times can be either absolute (e.g., '2018-08-31T16:08:18Z') or relative (e.g. '-24h')",
+     *             default="-7d"
      *        ),
      *        @SWG\Property(
      *             property="until",
      *             type="string",
      *             description="End time of the query (exclusive). Times can be either absolute (e.g., '2018-08-31T16:08:18Z') or relative (e.g. '-24h')",
+     *             default="now"
      *        ),
      *        @SWG\Property(
      *             property="aggregation_func",
@@ -59,6 +63,12 @@ class TimeseriesController extends ApiController
      *             enum={"avg", "sum"},
      *             description="Aggregation function to use when down-sampling data points",
      *        ),
+     *        @SWG\Property(
+     *             property="annotate",
+     *             type="boolean",
+     *             description="Annotate time series with metadata (e.g., geographic information)",
+     *             default=false
+     *        )
      *     ),
      *     @SWG\Schema(ref=@Model(type=\App\Expression\PathExpression::class, groups={"public"})),
      *     @SWG\Schema(ref=@Model(type=\App\Expression\ConstantExpression::class, groups={"public"})),
@@ -135,6 +145,7 @@ class TimeseriesController extends ApiController
                                 new RequestParameter('from', RequestParameter::DATETIME, new QueryTime('-24h'), false),
                                 new RequestParameter('until', RequestParameter::DATETIME, new QueryTime('now'), false),
                                 new RequestParameter('aggregation_func', RequestParameter::STRING, 'avg', false),
+                                new RequestParameter('annotate', RequestParameter::BOOL, false, false),
                             ],
                             $request
         );
@@ -155,7 +166,8 @@ class TimeseriesController extends ApiController
                 $exp,
                 $env->getParam('from'),
                 $env->getParam('until'),
-                $env->getParam('aggregation_func')
+                $env->getParam('aggregation_func'),
+                $env->getParam('annotate')
             );
             $env->setData($tss);
         } catch (BackendException $ex) {

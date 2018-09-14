@@ -24,6 +24,12 @@ class GraphiteBackend extends AbstractBackend
     const MAX_POINTS_PER_SERIES = 4000;
     const MAX_POINTS = 200000;
 
+    const AGGREGATION_FUNCS = [
+        'avg',
+        'sum',
+    ];
+
+
     private $expFactory;
 
     /**
@@ -129,10 +135,18 @@ class GraphiteBackend extends AbstractBackend
 
     public function tsQuery(AbstractExpression $expression,
                             QueryTime $from, QueryTime $until,
-                            string $aggrFunc): TimeSeriesSet
+                            string $aggrFunc, bool $annotate): TimeSeriesSet
     {
         // TODO: is unlimit?
         // TODO: is nocache?
+
+        // TODO: carefully check how dbats/graphite/charthouse deal with various functions
+        if (!in_array($aggrFunc, GraphiteBackend::AGGREGATION_FUNCS)) {
+            throw new BackendException("Invalid aggregation function '$aggrFunc'. ".
+                                       "Supported functions are: ".
+                                       implode(', ',
+                                               GraphiteBackend::AGGREGATION_FUNCS));
+        }
 
         // if until is a relative time, then we want a low cache timeout
         $now = time();
@@ -229,7 +243,9 @@ class GraphiteBackend extends AbstractBackend
 
         // take another pass through now that the summary object is ready
         foreach ($tss->getSeries() as &$newSeries) {
-            // TODO: annotate
+            if ($annotate) {
+                $newSeries->setAnnotations([]);
+            }
 
             $summary->addStep($newSeries->getStep());
             $summary->addNativeStep($newSeries->getStep(),
