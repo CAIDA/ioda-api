@@ -4,7 +4,7 @@ namespace App\TimeSeries;
 
 
 use App\Expression\AbstractExpression;
-use App\TimeSeries\Annotation\TimeSeriesAnnotation;
+use App\TimeSeries\Annotation\AbstractAnnotation;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 class TimeSeries
@@ -65,7 +65,7 @@ class TimeSeries
 
     /**
      * List of annotations for this time series
-     * @var TimeSeriesAnnotation[]
+     * @var AbstractAnnotation[]
      * @Groups("public")
      */
     protected $annotations;
@@ -241,7 +241,7 @@ class TimeSeries
     }
 
     /**
-     * @return TimeSeriesAnnotation[]
+     * @return AbstractAnnotation[]
      */
     public function getAnnotations(): ?array
     {
@@ -249,7 +249,7 @@ class TimeSeries
     }
 
     /**
-     * @param TimeSeriesAnnotation[] $annotations
+     * @param AbstractAnnotation[] $annotations
      */
     public function setAnnotations(?array $annotations): void
     {

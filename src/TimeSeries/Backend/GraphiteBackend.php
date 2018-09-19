@@ -7,6 +7,8 @@ use App\Expression\AbstractExpression;
 use App\Expression\ExpressionFactory;
 use App\Expression\ParsingException;
 use App\Expression\PathExpression;
+use App\TimeSeries\Annotation\AnnotationFactory;
+use App\TimeSeries\Annotation\GeoJoinAnnotation;
 use App\TimeSeries\TimeSeries;
 use App\TimeSeries\TimeSeriesSet;
 use App\Utils\QueryTime;
@@ -244,7 +246,9 @@ class GraphiteBackend extends AbstractBackend
         // take another pass through now that the summary object is ready
         foreach ($tss->getSeries() as &$newSeries) {
             if ($annotate) {
-                $newSeries->setAnnotations([]);
+                $newSeries->setAnnotations(
+                    AnnotationFactory::annotateExpression($newSeries->getExpression())
+                );
             }
 
             $summary->addStep($newSeries->getStep());
