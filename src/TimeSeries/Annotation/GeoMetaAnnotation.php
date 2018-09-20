@@ -34,7 +34,7 @@ class GeoMetaAnnotation extends AbstractMetaAnnotation
 
     public function setNativeLevel($level)
     {
-        if (!in_array($level, GeoMetaAnnotation::LEVELS)) {
+        if (isset($level) && !in_array($level, GeoMetaAnnotation::LEVELS)) {
             throw new \InvalidArgumentException("Invalid geo level '$level'");
         }
         $this->setAttribute('nativeLevel', $level);

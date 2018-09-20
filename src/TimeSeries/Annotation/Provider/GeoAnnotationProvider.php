@@ -107,7 +107,7 @@ class GeoAnnotationProvider extends AbstractAnnotationProvider
     private function maybeCreateAnnotation(string $provider, string $node,
                                            string $nodeName, string $pattern,
                                            string $level,
-                                           GeoJoinAnnotation $lastAnn,
+                                           ?GeoJoinAnnotation $lastAnn,
                                            string &$geoStr, array &$geoNameArr,
                                            GeoMetaAnnotation $metaAnn)
     {
