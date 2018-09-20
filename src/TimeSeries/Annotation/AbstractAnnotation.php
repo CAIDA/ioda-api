@@ -8,7 +8,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 abstract class AbstractAnnotation
 {
     /**
-     * @var array
+     * @var string array
      * @Groups({"public"})
      */
     private $attributes;

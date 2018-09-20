@@ -2,58 +2,166 @@
 
 namespace App\Controller;
 
+use App\Response\Envelope;
+use App\Response\RequestParameter;
+use App\SymUrl\SymUrlFactory;
+use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\Serializer\SerializerInterface;
 
 /**
  * Class SymUrlController
  * @package App\Controller
+ * @Route("/sym", name="sym_")
  */
 class SymUrlController extends ApiController
 {
     /**
-     * @Route("/@{short}/", methods={"GET"}, name="sym_go")
+     * Get information about a short URL.
+     *
+     * Returns a JSON object with metadata about the given short URL.
+     *
+     * @Route("/{short}/", methods={"GET"}, name="get")
      * @SWG\Tag(name="URL Shortener")
-     * @SWG\Response(
-     *     response=301,
-     *     description="Returns a redirect to the long URL referenced by the given short URL tag"
+     * @SWG\Parameter(
+     *     name="no_stats",
+     *     in="query",
+     *     type="boolean",
+     *     description="Do not update usage stats (counter, last-used time, etc.)",
+     *     required=false,
+     *     default=false,
      * )
+     * @SWG\Response(
+     *     response=200,
+     *     description="Returns information for the given short URL tag",
+     *     @SWG\Schema(
+     *         allOf={
+     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
+     *             @SWG\Schema(
+     *                 @SWG\Property(
+     *                     property="type",
+     *                     type="string",
+     *                     enum={"sym.get"}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="error",
+     *                     type="string",
+     *                     enum={}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="data",
+     *                     ref=@Model(type=\App\Entity\SymUrl::class, groups={"public"})
+     *                 )
+     *             )
+     *         }
+     *     )
+     * )
+     *
+     * @var string $short
+     * @var Request $request
+     * @var SerializerInterface $serializer
+     * @return JsonResponse
      */
-    public function go($short)
+    public function getInfo(string $short, Request $request,
+                            SerializerInterface $serializer)
     {
-        return $this->json([
-            "going to short url: $short"
-        ]);
+        $env = new Envelope('sym.get',
+                            'query',
+                            [
+                                new RequestParameter('no_stats', RequestParameter::BOOL, false, false),
+                            ],
+                            $request
+        );
+        if ($env->getError()) {
+            return $this->json($env, 400);
+        }
+        $env->setData(SymUrlFactory::getExisting($short,
+                                                 !$env->getParam('no_stats')));
+        return $this->json($env);
     }
 
     /**
-     * @Route("/sym/{short}/", methods={"GET"}, name="sym_get")
+     * Create a new short URL
+     *
+     * Creates a new short URL that maps to the given long URL. If there is
+     * already a short URL for the given long URL, the existing short URL is
+     * returned, otherwise a new short URL is created. If the "short_url"
+     * parameter is provided, then it will be used instead of an automatically
+     * generated URL unless it already exists, in which case an error will be
+     * returned.
+     *
+     * @Route("/", methods={"POST"}, name="new")
      * @SWG\Tag(name="URL Shortener")
+     * @SWG\Parameter(
+     *     name="query",
+     *     in="body",
+     *     type="object",
+     *     description="Object describing the URL to be shortened",
+     *     required=true,
+     *     @SWG\Schema(
+     *         @SWG\Property(
+     *                     property="long_url",
+     *                     type="string",
+     *                     example="https://hicube.caida.org",
+     *                     description="Long URL to be shortened"
+     *         ),
+     *         @SWG\Property(
+     *                     property="short_tag",
+     *                     type="string",
+     *                     example="myurl",
+     *                     description="Short tag to use instead of auto-generated tag [optional]"
+     *         )
+     *     )
+     * )
      * @SWG\Response(
      *     response=200,
-     *     description="Returns information for the given short URL tag"
+     *     description="Returns information about the newly created short URL",
+     *     @SWG\Schema(
+     *         allOf={
+     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
+     *             @SWG\Schema(
+     *                 @SWG\Property(
+     *                     property="type",
+     *                     type="string",
+     *                     enum={"sym.create"}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="error",
+     *                     type="string",
+     *                     enum={}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="data",
+     *                     ref=@Model(type=\App\Entity\SymUrl::class, groups={"public"})
+     *                 )
+     *             )
+     *         }
+     *     )
      * )
+     *
+     * @var Request $request
+     * @var SerializerInterface $serializer
+     * @return JsonResponse
      */
-    public function get($short)
+    public function new(Request $request,
+                        SerializerInterface $serializer)
     {
-        return $this->json([
-                               "get info for $short",
-                           ]);
-    }
-
-    /**
-     * @Route("/sym/", methods={"POST"}, name="sym_new")
-     * @SWG\Tag(name="URL Shortener")
-     * @SWG\Response(
-     *     response=200,
-     *     description="Returns information about the newly created short URL"
-     * )
-     */
-    public function new()
-    {
-        return $this->json([
-            "create new symurl"
-        ]);
+        $env = new Envelope('sym.create',
+                            'body',
+                            [
+                                new RequestParameter('long_url', RequestParameter::STRING, null, true),
+                                new RequestParameter('short_tag', RequestParameter::STRING, null, false),
+                            ],
+                            $request
+        );
+        if ($env->getError()) {
+            return $this->json($env, 400);
+        }
+        $env->setData(SymUrlFactory::createOrGet($env->getParam('long_url'),
+                                                 $env->getParam('short_tag')));
+        return $this->json($env);
     }
 }
