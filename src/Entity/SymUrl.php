@@ -7,6 +7,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\SymUrlRepository")
+ * @ORM\Table(indexes={@ORM\Index(name="long_url_idx", columns={"long_url"})})
  */
 class SymUrl
 {
@@ -18,10 +19,10 @@ class SymUrl
     private $id;
 
     /**
-     * @ORM\Column(type="string", length=255)
+     * @ORM\Column(type="string", length=255, unique=true)
      * @Groups({"public"})
      */
-    private $shortUrl;
+    private $shortTag;
 
     /**
      * @ORM\Column(type="text")
@@ -59,14 +60,14 @@ class SymUrl
         return $this->id;
     }
 
-    public function getShortUrl(): ?string
+    public function getShortTag(): ?string
     {
-        return $this->shortUrl;
+        return $this->shortTag;
     }
 
-    public function setShortUrl(string $shortUrl): self
+    public function setShortTag(string $shortTag): self
     {
-        $this->shortUrl = $shortUrl;
+        $this->shortTag = $shortTag;
 
         return $this;
     }

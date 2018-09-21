@@ -4,7 +4,9 @@ namespace App\Controller;
 
 use App\Response\Envelope;
 use App\Response\RequestParameter;
-use App\SymUrl\SymUrlFactory;
+use App\SymUrl\SymUrlService;
+use Doctrine\ORM\NonUniqueResultException;
+use Doctrine\ORM\ORMException;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -20,9 +22,11 @@ use Symfony\Component\Serializer\SerializerInterface;
 class SymUrlController extends ApiController
 {
     /**
-     * Get information about a short URL.
+     * Expand an existing short URL
      *
-     * Returns a JSON object with metadata about the given short URL.
+     * Returns a JSON object with metadata about the given short URL. Note that
+     * this also updates last-used times and counters unless the "no_stats"
+     * parameter is provided.
      *
      * @Route("/{short}/", methods={"GET"}, name="get")
      * @SWG\Tag(name="URL Shortener")
@@ -63,10 +67,13 @@ class SymUrlController extends ApiController
      * @var string $short
      * @var Request $request
      * @var SerializerInterface $serializer
+     * @var SymUrlService
      * @return JsonResponse
+     * @throws NonUniqueResultException
      */
     public function getInfo(string $short, Request $request,
-                            SerializerInterface $serializer)
+                            SerializerInterface $serializer,
+                            SymUrlService $symUrlService)
     {
         $env = new Envelope('sym.get',
                             'query',
@@ -78,8 +85,8 @@ class SymUrlController extends ApiController
         if ($env->getError()) {
             return $this->json($env, 400);
         }
-        $env->setData(SymUrlFactory::getExisting($short,
-                                                 !$env->getParam('no_stats')));
+        $env->setData($symUrlService->getExisting($short,
+                                                  !$env->getParam('no_stats')));
         return $this->json($env);
     }
 
@@ -144,10 +151,13 @@ class SymUrlController extends ApiController
      *
      * @var Request $request
      * @var SerializerInterface $serializer
+     * @var SymUrlService
      * @return JsonResponse
+     * @throws ORMException
      */
     public function new(Request $request,
-                        SerializerInterface $serializer)
+                        SerializerInterface $serializer,
+                        SymUrlService $symUrlService)
     {
         $env = new Envelope('sym.create',
                             'body',
@@ -160,8 +170,8 @@ class SymUrlController extends ApiController
         if ($env->getError()) {
             return $this->json($env, 400);
         }
-        $env->setData(SymUrlFactory::createOrGet($env->getParam('long_url'),
-                                                 $env->getParam('short_tag')));
+        $env->setData($symUrlService->createOrGet($env->getParam('long_url'),
+                                                  $env->getParam('short_tag')));
         return $this->json($env);
     }
 }
