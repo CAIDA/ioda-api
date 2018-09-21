@@ -2,9 +2,14 @@
 
 namespace App\Controller;
 
+use App\Response\Envelope;
+use App\Topo\TopoService;
+use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\Serializer\SerializerInterface;
 
 /**
  * Class TopoController
@@ -14,23 +19,57 @@ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 class TopoController extends ApiController
 {
     /**
-     * @Route("/databases/",
-     *     methods={"GET"},
-     *     name="databases")
+     * List available topographic databases
+     *
+     * @Route("/databases/", methods={"GET"}, name="databases")
      * @SWG\Tag(name="Topographic")
      * @SWG\Response(
      *     response=200,
-     *     description="Returns a list of available topographic databases"
+     *     description="Returns a list of available topographic databases",
+     *     @SWG\Schema(
+     *         allOf={
+     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
+     *             @SWG\Schema(
+     *                 @SWG\Property(
+     *                     property="type",
+     *                     type="string",
+     *                     enum={"topo.databases"}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="error",
+     *                     type="string",
+     *                     enum={}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="data",
+     *                     type="array",
+     *                     items=@SWG\Property(type="string")
+     *                 )
+     *             )
+     *         }
+     *     )
      * )
+     * @var Request $request
+     * @return JsonResponse
      */
-    public function databases()
+    public function databases(Request $request, SerializerInterface $serializer,
+                              TopoService $topoService)
     {
-        return $this->json([
-            'topo database list',
-        ]);
+        $env = new Envelope('topo.databases',
+                            'query',
+                            [],
+                            $request
+        );
+        if ($env->getError()) {
+            return $this->json($env, 400);
+        }
+        $env->setData($topoService->getDatabases());
+        return $this->json($env);
     }
 
     /**
+     * Get topographic database information
+     *
      * @Route("/databases/{db}/",
      *     methods={"GET"},
      *     name="database")
@@ -48,6 +87,8 @@ class TopoController extends ApiController
     }
 
     /**
+     * List available tables for the given topographic database
+     *
      * @Route("/databases/{db}/tables/",
      *     methods={"GET"},
      *     name="database_tables")
@@ -65,6 +106,8 @@ class TopoController extends ApiController
     }
 
     /**
+     * Get TopoJSON for the given database table
+     *
      * @Route("/databases/{db}/tables/{table}/",
      *     methods={"GET"},
      *     name="database_table")

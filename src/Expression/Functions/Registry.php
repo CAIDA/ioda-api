@@ -3,11 +3,9 @@
 namespace App\Expression\Functions;
 
 
-use App\Expression\Functions\Prototype;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Yaml\Parser as YamlParser;
 
 class Registry
