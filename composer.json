@@ -6,6 +6,7 @@
         "ext-curl": "^7.2",
         "ext-iconv": "*",
         "nelmio/api-doc-bundle": "^3.2",
+        "nelmio/cors-bundle": "^1.5",
         "sensio/framework-extra-bundle": "^5.2",
         "symfony/asset": "^4.1",
         "symfony/console": "^4.1",
