@@ -8,7 +8,6 @@ use App\Expression\ExpressionFactory;
 use App\Expression\ParsingException;
 use App\Expression\PathExpression;
 use App\TimeSeries\Annotation\AnnotationFactory;
-use App\TimeSeries\Annotation\GeoJoinAnnotation;
 use App\TimeSeries\TimeSeries;
 use App\TimeSeries\TimeSeriesSet;
 use App\Utils\QueryTime;
@@ -132,7 +131,7 @@ class GraphiteBackend extends AbstractBackend
                 $paths[$key] = $nodePath;
             }
         }
-        return $paths;
+        return array_values($paths);
     }
 
     public function tsQuery(AbstractExpression $expression,
