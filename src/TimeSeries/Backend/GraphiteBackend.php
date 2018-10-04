@@ -251,8 +251,8 @@ class GraphiteBackend extends AbstractBackend
             }
 
             $summary->addStep($newSeries->getStep());
-            $summary->addNativeStep($newSeries->getStep(),
-                                    $newSeries->getNativeStep());
+            $summary->addNativeStep($newSeries->getNativeStep(),
+                                    $newSeries->getStep());
             $summary->addFrom($newSeries->getFrom());
             $summary->addUntil($newSeries->getUntil());
         }
