@@ -41,8 +41,14 @@ class TimeseriesController extends ApiController
      *         @SWG\Property(
      *             property="expression",
      *             type="object",
-     *             description="JSON-encoded expression object.",
+     *             description="JSON-encoded expression object. To query for multiple expressions, use the `expressions` parameter instead.",
      *             ref=@Model(type=\App\Expression\AbstractExpression::class, groups={"public"}),
+     *        ),
+     *        @SWG\Property(
+     *             property="expressions",
+     *             type="array",
+     *             description="Array of JSON-encoded expression objects.",
+     *             items=@SWG\Schema(ref=@Model(type=\App\Expression\AbstractExpression::class, groups={"public"})),
      *        ),
      *        @SWG\Property(
      *             property="from",
@@ -141,7 +147,8 @@ class TimeseriesController extends ApiController
         $env = new Envelope('ts.query',
                             'body',
                             [
-                                new RequestParameter('expression', RequestParameter::ARRAY, null, true),
+                                new RequestParameter('expression', RequestParameter::ARRAY, null, false),
+                                new RequestParameter('expressions', RequestParameter::ARRAY, null, false),
                                 new RequestParameter('from', RequestParameter::DATETIME, new QueryTime('-24h'), false),
                                 new RequestParameter('until', RequestParameter::DATETIME, new QueryTime('now'), false),
                                 new RequestParameter('aggregation_func', RequestParameter::STRING, 'avg', false),
@@ -153,9 +160,28 @@ class TimeseriesController extends ApiController
             return $this->json($env, 400);
         }
 
-        // parse the given path expression
+        // we need either expression or expressions
+        $oneExp = $env->getParam('expression');
+        $manyExps = $env->getParam('expressions');
+
+        if ($oneExp && $manyExps) {
+            $env->setError("Only one of 'expression' or 'expressions' parameters can be set");
+            return $this->json($env, 400);
+        }
+
+        if ($oneExp) {
+            $rawExps = [$oneExp];
+        } elseif ($manyExps) {
+            $rawExps = $manyExps;
+        } else {
+            $env->setError("Either 'expression' or 'expressions' parameters must be set");
+            return $this->json($env, 400);
+        }
+        $exps = [];
         try {
-            $exp = $expressionFactory->createFromJson($env->getParam('expression'));
+            foreach ($rawExps as $exp) {
+                $exps[] = $expressionFactory->createFromJson($exp);
+            }
         } catch (ParsingException $ex) {
             $env->setError($ex->getMessage());
             return $this->json($env, 400);
@@ -163,7 +189,7 @@ class TimeseriesController extends ApiController
         // ask the time series backend to perform the query
         try {
             $tss = $tsBackend->tsQuery(
-                $exp,
+                $exps,
                 $env->getParam('from'),
                 $env->getParam('until'),
                 $env->getParam('aggregation_func'),

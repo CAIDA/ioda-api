@@ -26,7 +26,7 @@ abstract class AbstractBackend
     /**
      * Perform a query for time series data.
      *
-     * @param AbstractExpression $expression
+     * @param AbstractExpression[] $expressions
      * @param QueryTime $from
      * @param QueryTime $until
      * @param string $aggrFunc
@@ -35,7 +35,7 @@ abstract class AbstractBackend
      * @return TimeSeriesSet
      * @throws BackendException
      */
-    abstract public function tsQuery(AbstractExpression $expression,
+    abstract public function tsQuery(array $expressions,
                                      QueryTime $from, QueryTime $until,
                                      string $aggrFunc,
                                      bool $annotate): TimeSeriesSet;

@@ -134,7 +134,7 @@ class GraphiteBackend extends AbstractBackend
         return array_values($paths);
     }
 
-    public function tsQuery(AbstractExpression $expression,
+    public function tsQuery(array $expressions,
                             QueryTime $from, QueryTime $until,
                             string $aggrFunc, bool $annotate): TimeSeriesSet
     {
@@ -165,9 +165,14 @@ class GraphiteBackend extends AbstractBackend
             }
         }
 
+        $graphiteExpressions = [];
+        foreach ($expressions as $exp) {
+            $graphiteExpressions[] = $exp->getCanonicalStr();
+        }
+
         $params = [
             'format' => 'json-internal',
-            'target' => $expression->getCanonicalStr(),
+            'target' => $graphiteExpressions,
             'from' => $from->getGraphiteTime(),
             'until' => $until->getGraphiteTime(),
             'cacheTimeout' => $timeout,
