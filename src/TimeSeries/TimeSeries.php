@@ -29,6 +29,17 @@ class TimeSeries
     protected $expression;
 
     /**
+     * Contextual name of this time series.
+     *
+     * Generated based on the expressions of other time series in a given
+     * TimeSeriesSet.
+     *
+     * @var string
+     * @Groups({"public"})
+     */
+    protected $contextualName;
+
+    /**
      * Time of the first data point in this time series.
      *
      * @var \DateTime
@@ -97,6 +108,26 @@ class TimeSeries
     public function getExpression(): AbstractExpression
     {
         return $this->expression;
+    }
+
+    public function getContextualName(): string
+    {
+        return $this->contextualName;
+    }
+
+    /**
+     * Update the contextual name of this series based on a completed series
+     * summary object.
+     *
+     * @param TimeSeriesSummary $seriesSummary
+     */
+    public function updateContextualName(TimeSeriesSummary $seriesSummary): void
+    {
+        $this->contextualName =
+            $this->getExpression()->getCanonicalHumanized(
+                $seriesSummary->getCommonPrefix(),
+                $seriesSummary->getCommonSuffix()
+            );
     }
 
     /**

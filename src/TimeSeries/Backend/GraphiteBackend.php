@@ -255,6 +255,8 @@ class GraphiteBackend extends AbstractBackend
                 );
             }
 
+            $newSeries->updateContextualName($summary);
+
             $summary->addStep($newSeries->getStep());
             $summary->addNativeStep($newSeries->getNativeStep(),
                                     $newSeries->getStep());
