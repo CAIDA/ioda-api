@@ -136,9 +136,10 @@ class GraphiteBackend extends AbstractBackend
 
     public function tsQuery(array $expressions,
                             QueryTime $from, QueryTime $until,
-                            string $aggrFunc, bool $annotate): TimeSeriesSet
+                            string $aggrFunc,
+                            bool $annotate,
+                            bool $adaptiveDownsampling): TimeSeriesSet
     {
-        // TODO: is unlimit?
         // TODO: is nocache?
 
         // TODO: carefully check how dbats/graphite/charthouse deal with various functions
@@ -178,8 +179,9 @@ class GraphiteBackend extends AbstractBackend
             'cacheTimeout' => $timeout,
             'aggFunc' => $aggrFunc,
         ];
-        // TODO check unlimit
-        $params['maxDataPoints'] = GraphiteBackend::MAX_POINTS_PER_SERIES;
+        if ($adaptiveDownsampling) {
+            $params['maxDataPoints'] = GraphiteBackend::MAX_POINTS_PER_SERIES;
+        }
         // TODO nocache
         $result = $this->graphiteQuery('/render', $params);
         $jsonResult = json_decode($result, true);
@@ -243,9 +245,10 @@ class GraphiteBackend extends AbstractBackend
         $summary->setCommonPrefix($commonRoot);
         $summary->setCommonSuffix($commonLeaf);
 
-        // TODO: check unlimit
-        // now we should downsample
-        $tss->downSample($this::MAX_POINTS, $aggrFunc);
+        if ($adaptiveDownsampling) {
+            // now we should downsample
+            $tss->downSample($this::MAX_POINTS, $aggrFunc);
+        }
 
         // take another pass through now that the summary object is ready
         foreach ($tss->getSeries() as &$newSeries) {

@@ -74,6 +74,12 @@ class TimeseriesController extends ApiController
      *             type="boolean",
      *             description="Annotate time series with metadata (e.g., geographic information)",
      *             default=false
+     *        ),
+     *        @SWG\Property(
+     *             property="adaptive_downsampling",
+     *             type="boolean",
+     *             description="Request that time series be down-sampled. Helps reduce query latency and result size.",
+     *             default=true
      *        )
      *     ),
      *     @SWG\Schema(ref=@Model(type=\App\Expression\PathExpression::class, groups={"public"})),
@@ -153,12 +159,15 @@ class TimeseriesController extends ApiController
                                 new RequestParameter('until', RequestParameter::DATETIME, new QueryTime('now'), false),
                                 new RequestParameter('aggregation_func', RequestParameter::STRING, 'avg', false),
                                 new RequestParameter('annotate', RequestParameter::BOOL, false, false),
+                                new RequestParameter('adaptive_downsampling', RequestParameter::BOOL, true, false),
                             ],
                             $request
         );
         if ($env->getError()) {
             return $this->json($env, 400);
         }
+
+        // TODO: adaptive_downsampling should be protected by authorization role?
 
         // we need either expression or expressions
         $oneExp = $env->getParam('expression');
@@ -193,7 +202,8 @@ class TimeseriesController extends ApiController
                 $env->getParam('from'),
                 $env->getParam('until'),
                 $env->getParam('aggregation_func'),
-                $env->getParam('annotate')
+                $env->getParam('annotate'),
+                $env->getParam('adaptive_downsampling')
             );
             $env->setData($tss);
         } catch (BackendException $ex) {

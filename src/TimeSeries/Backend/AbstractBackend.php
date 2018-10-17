@@ -31,6 +31,7 @@ abstract class AbstractBackend
      * @param QueryTime $until
      * @param string $aggrFunc
      * @param bool $annotate
+     * @param bool $adaptiveDownsampling
      *
      * @return TimeSeriesSet
      * @throws BackendException
@@ -38,5 +39,6 @@ abstract class AbstractBackend
     abstract public function tsQuery(array $expressions,
                                      QueryTime $from, QueryTime $until,
                                      string $aggrFunc,
-                                     bool $annotate): TimeSeriesSet;
+                                     bool $annotate,
+                                     bool $adaptiveDownsampling): TimeSeriesSet;
 }
