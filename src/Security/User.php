@@ -2,24 +2,27 @@
 
 namespace App\Security;
 
+use Symfony\Component\Security\Core\User\EquatableInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
-class User implements UserInterface
+class User implements UserInterface, EquatableInterface
 {
-    private $subject;
+    private $jwt;
 
     private $roles = [];
 
-    public function getSubject(): ?string
+    public function __construct($jwt, $roles)
     {
-        return $this->subject;
     }
 
-    public function setSubject(string $subject): self
+    public function getSubject(): ?string
     {
-        $this->subject = $subject;
+        return $this->jwt ? $this->jwt->sub : null;
+    }
 
-        return $this;
+    public function getEmail(): ?string
+    {
+        return $this->jwt ? $this->jwt->email : null;
     }
 
     /**
@@ -27,9 +30,9 @@ class User implements UserInterface
      *
      * @see UserInterface
      */
-    public function getUsername(): string
+    public function getUsername(): ?string
     {
-        return (string) $this->subject;
+        return $this->getSubject();
     }
 
     /**
@@ -37,11 +40,7 @@ class User implements UserInterface
      */
     public function getRoles(): array
     {
-        $roles = $this->roles;
-        // guarantee every user at least has ROLE_USER
-        $roles[] = 'ROLE_USER';
-
-        return array_unique($roles);
+        return $this->roles;
     }
 
     public function setRoles(array $roles): self
@@ -74,5 +73,16 @@ class User implements UserInterface
     {
         // If you store any temporary, sensitive data on the user, clear it here
         // $this->plainPassword = null;
+    }
+
+    public function isEqualTo(UserInterface $user)
+    {
+        if (!$user instanceof User) {
+            return false;
+        }
+        if ($this->getUsername() !== $user->getUsername()) {
+            return false;
+        }
+        return true;
     }
 }
