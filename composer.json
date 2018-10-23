@@ -5,6 +5,7 @@
         "php": "^7.2",
         "ext-curl": "^7.2",
         "ext-iconv": "*",
+        "auth0/jwt-auth-bundle": "^3.1",
         "nelmio/api-doc-bundle": "^3.2",
         "nelmio/cors-bundle": "^1.5",
         "sensio/framework-extra-bundle": "^5.2",
@@ -13,6 +14,7 @@
         "symfony/flex": "^1.0",
         "symfony/framework-bundle": "^4.1",
         "symfony/orm-pack": "^1.0",
+        "symfony/security-bundle": "^4.1",
         "symfony/serializer": "^4.1",
         "symfony/twig-bundle": "^4.1",
         "symfony/yaml": "^4.1"
