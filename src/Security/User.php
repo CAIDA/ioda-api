@@ -13,6 +13,8 @@ class User implements UserInterface, EquatableInterface
 
     public function __construct($jwt, $roles)
     {
+        $this->jwt = $jwt;
+        $this->roles = $roles;
     }
 
     public function getSubject(): ?string

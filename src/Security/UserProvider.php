@@ -18,6 +18,8 @@ class UserProvider implements JWTUserProviderInterface
     public function loadUserByJWT($jwt)
     {
         // $data = $this->auth0Service->getUserProfileByA0UID($jwt->token,$jwt->sub);
+        // TODO: convert scopes to roles
+        // (this will require us defining rules to limit scopes to users)
         $roles = ['ROLE_OAUTH_AUTHENTICATED', 'ROLE_USER'];
         /*
         if (isset($jwt->scope)) {

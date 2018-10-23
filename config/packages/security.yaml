@@ -4,7 +4,7 @@ security:
             id: App\Security\UserProvider
     firewalls:
         dev:
-            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            pattern: ^/%env(API_VERSION)%/(_(profiler|wdt)|css|images|js)/
             security: false
         main:
             pattern: ^/
