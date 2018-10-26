@@ -185,7 +185,7 @@ class PathExpression extends AbstractExpression
     }
 
     public function getCanonicalHumanized(?AbstractExpression $excludeRoot = null,
-                                   ?AbstractExpression $excludeLeaf = null): string
+                                   ?AbstractExpression $excludeLeaf = null): ?string
     {
         /* TODO: I'm not sure about this logic... need to check */
         $nameNodes = $this->getHumanNodes();

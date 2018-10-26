@@ -123,7 +123,7 @@ class FunctionExpression extends AbstractExpression
     }
 
     public function getCanonicalHumanized(?AbstractExpression $excludeRoot = null,
-                                          ?AbstractExpression $excludeLeaf = null): string
+                                          ?AbstractExpression $excludeLeaf = null): ?string
     {
         // strip the root expression off this expression before using
         if ($excludeRoot) {

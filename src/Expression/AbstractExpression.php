@@ -67,7 +67,7 @@ abstract class AbstractExpression
      * @return string
      */
     abstract public function getCanonicalHumanized(?AbstractExpression $excludeRoot = null,
-                                                   ?AbstractExpression $excludeLeaf = null): string;
+                                                   ?AbstractExpression $excludeLeaf = null): ?string;
 
     /**
      * Flatten the expression into the canonical "graphite" representation

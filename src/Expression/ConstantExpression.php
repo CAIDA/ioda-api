@@ -67,7 +67,7 @@ class ConstantExpression extends AbstractExpression
     }
 
     public function getCanonicalHumanized(AbstractExpression $excludeRoot = null,
-                                          AbstractExpression $excludeLeaf = null): string
+                                          AbstractExpression $excludeLeaf = null): ?string
     {
         // if either the root or leaf exclusions match us, then return nothing
         if ($excludeRoot && $this->getCommonRoot($excludeRoot) ||
