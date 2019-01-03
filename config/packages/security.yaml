@@ -14,4 +14,4 @@ security:
 
     access_control:
         - { path: ^/%env(API_VERSION)%/docs, roles: IS_AUTHENTICATED_ANONYMOUSLY }
-        - { path: ^/, roles: ROLE_OAUTH_AUTHENTICATED }
+        - { path: ^/, roles: 'ROLE_api:query' }

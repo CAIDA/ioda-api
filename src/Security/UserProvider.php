@@ -17,18 +17,16 @@ class UserProvider implements JWTUserProviderInterface
 
     public function loadUserByJWT($jwt)
     {
-        // $data = $this->auth0Service->getUserProfileByA0UID($jwt->token,$jwt->sub);
-        // TODO: convert scopes to roles
-        // (this will require us defining rules to limit scopes to users)
-        $roles = ['ROLE_OAUTH_AUTHENTICATED', 'ROLE_USER'];
-        /*
-        if (isset($jwt->scope)) {
-            $scopes = explode(' ', $jwt->scope);
-            if (array_search('read:messages', $scopes) !== false) {
-                $roles[] = 'ROLE_OAUTH_READER';
+        $profile = $this->auth0Service->getUserProfileByA0UID($jwt->token,$jwt->sub);
+        // NOTE: What we (Auth0) call 'permissions', symfony calls 'roles'
+        // also, Symfony requires roles start with ROLE_ (sigh)
+        $roles = [];
+        if (array_key_exists('https://hicube.caida.org/auth', $profile)) {
+            $perms = $profile['https://hicube.caida.org/auth']['permissions'];
+            foreach ($perms as $perm) {
+                $roles[] = "ROLE_$perm";
             }
         }
-        */
         return new User($jwt, $roles);
     }
 
