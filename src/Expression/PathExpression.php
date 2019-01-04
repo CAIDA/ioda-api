@@ -308,9 +308,7 @@ class PathExpression extends AbstractExpression
                 if (count($prevNodes)) {
                     $pr .= '\\.';
                 }
-                if ($node === '*') {
-                    $node = '[^\.]+';
-                }
+                $node = str_replace('*', '[^\.]+', $node);
                 $pr .= $node.'$';
             }
             $regex = '"^'.$pr.'"';
