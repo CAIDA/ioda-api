@@ -11,6 +11,7 @@ use App\TimeSeries\Annotation\AnnotationFactory;
 use App\TimeSeries\TimeSeries;
 use App\TimeSeries\TimeSeriesSet;
 use App\Utils\QueryTime;
+use Swagger\Annotations\Path;
 
 class GraphiteBackend extends AbstractBackend
 {
@@ -30,26 +31,29 @@ class GraphiteBackend extends AbstractBackend
         'sum',
     ];
 
-    // TODO: search for uses of this and replace with whitelists built based
-    // TODO: on regexes generated from path auth permissions
-    const DEBUG_WHITELIST = [
-        "\"^bgp$\"",
-        "\"^bgp\\.prefix-visibility$\"",
-        "\"^bgp\\.prefix-visibility\\.geo$\"",
-        "\"^bgp\\.prefix-visibility\\.geo\\.netacuity(\\.|$)\"",
-    ];
-
+    private $authPathWhitelist = [];
 
     private $expFactory;
 
-    private function checkPathAuth($wlRegex, $path)
+    private function generateAuthPathWhitelist()
     {
-        // treat no white list as allowing nothing
-        if (!count($wlRegex)) {
-            return false;
+        // TODO: replace this with expressions extracted from permissions
+        /** @var PathExpression[] $authPaths */
+        $authPaths = [
+            new PathExpression('bgp.prefix-visibility.geo.netacuity.**'),
+        ];
+
+        foreach ($authPaths as $authPath) {
+            $this->authPathWhitelist =
+                array_unique(array_merge($this->authPathWhitelist,
+                                         $authPath->generateWhitelist()));
         }
+    }
+
+    private function checkAuthPathWhitelist($path)
+    {
         $allowed = false;
-        foreach ($wlRegex as $regex) {
+        foreach ($this->authPathWhitelist as $regex) {
             if (preg_match($regex, $path)) {
                 $allowed = true;
                 break;
@@ -94,6 +98,7 @@ class GraphiteBackend extends AbstractBackend
     public function __construct(ExpressionFactory $expFactory)
     {
         $this->expFactory = $expFactory;
+        $this->generateAuthPathWhitelist();
     }
 
     public function pathListQuery(PathExpression $pathExp,
@@ -123,8 +128,7 @@ class GraphiteBackend extends AbstractBackend
             $np = $node['path'];
 
             // check that this user can see this path
-            if (!$this->checkPathAuth(GraphiteBackend::DEBUG_WHITELIST,
-                                      $np)) {
+            if (!$this->checkAuthPathWhitelist($np)) {
                 continue;
             }
 
@@ -199,7 +203,7 @@ class GraphiteBackend extends AbstractBackend
 
         $graphiteExpressions = [];
         foreach ($expressions as $exp) {
-            $exp->applyPathWhitelist(GraphiteBackend::DEBUG_WHITELIST);
+            $exp->applyPathWhitelist($this->authPathWhitelist);
             $graphiteExpressions[] = $exp->getCanonicalStr();
         }
 
