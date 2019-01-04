@@ -222,6 +222,13 @@ class FunctionExpression extends AbstractExpression
         return $common;
     }
 
+    public function applyPathWhitelist(array $whitelist): void
+    {
+        foreach ($this->getArgs() as $arg) {
+            $arg->applyPathWhitelist($whitelist);
+        }
+    }
+
     public static function createFromJson(ExpressionFactory $expFactory,
                                           array $json): ?AbstractExpression
     {

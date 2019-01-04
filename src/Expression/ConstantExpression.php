@@ -103,6 +103,12 @@ class ConstantExpression extends AbstractExpression
             $this->getCommonRoot($that) : new ConstantExpression($this->getValue());
     }
 
+    public function applyPathWhitelist(array $whitelist): void
+    {
+        // cannot apply path whitelists to a constant
+        return;
+    }
+
     public static function createFromJson(ExpressionFactory $expFactory,
                                           array $json): ?AbstractExpression
     {

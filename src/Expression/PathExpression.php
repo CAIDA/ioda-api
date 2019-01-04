@@ -185,7 +185,7 @@ class PathExpression extends AbstractExpression
     }
 
     public function getCanonicalHumanized(?AbstractExpression $excludeRoot = null,
-                                   ?AbstractExpression $excludeLeaf = null): ?string
+                                          ?AbstractExpression $excludeLeaf = null): ?string
     {
         /* TODO: I'm not sure about this logic... need to check */
         $nameNodes = $this->getHumanNodes();
@@ -277,6 +277,11 @@ class PathExpression extends AbstractExpression
         return $this->getCommonPath($this->getPathNodes(),
                                     $that->getPathNodes(),
                                     true);
+    }
+
+    public function applyPathWhitelist(array $whitelist): void
+    {
+        $this->setPath('grep('.$this->getPath().','.implode(',', $whitelist).')');
     }
 
     public static function createFromJson(ExpressionFactory $expFactory,

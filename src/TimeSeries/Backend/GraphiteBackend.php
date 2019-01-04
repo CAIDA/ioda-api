@@ -30,6 +30,8 @@ class GraphiteBackend extends AbstractBackend
         'sum',
     ];
 
+    // TODO: search for uses of this and replace with whitelists built based
+    // TODO: on regexes generated from path auth permissions
     const DEBUG_WHITELIST = [
         "\"^bgp$\"",
         "\"^bgp\\.prefix-visibility$\"",
@@ -197,6 +199,7 @@ class GraphiteBackend extends AbstractBackend
 
         $graphiteExpressions = [];
         foreach ($expressions as $exp) {
+            $exp->applyPathWhitelist(GraphiteBackend::DEBUG_WHITELIST);
             $graphiteExpressions[] = $exp->getCanonicalStr();
         }
 

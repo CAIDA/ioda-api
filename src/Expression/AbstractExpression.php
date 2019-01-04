@@ -119,6 +119,13 @@ abstract class AbstractExpression
     abstract public function getCommonLeaf(?AbstractExpression $that): ?AbstractExpression;
 
     /**
+     * Wrap all PathExpressions contained in this Expression in a grep function.
+     *
+     * @param string[] $whitelist
+     */
+    abstract public function applyPathWhitelist(array $whitelist): void;
+
+    /**
      * Factory method for creating Expression instances from a deserialized
      * JSON object
      *
