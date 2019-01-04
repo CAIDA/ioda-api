@@ -5,6 +5,7 @@ namespace App\TimeSeries\Backend;
 
 use App\Expression\AbstractExpression;
 use App\Expression\ExpressionFactory;
+use App\Expression\ParsingException;
 use App\Expression\PathExpression;
 use App\Timeseries\TimeSeriesSet;
 use App\Utils\QueryTime;
@@ -30,6 +31,7 @@ abstract class AbstractBackend
      *
      * @return PathExpression[]
      * @throws BackendException
+     * @throws ParsingException
      */
     abstract public function pathListQuery(PathExpression $expression,
                                            bool $absolute_paths): array;

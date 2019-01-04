@@ -3,17 +3,25 @@
 namespace App\Expression;
 
 
+use App\TimeSeries\Humanize\Humanizer;
+
 class ExpressionFactory
 {
-    protected $expressionClasses = [
+    private $expressionClasses = [
         ConstantExpression::TYPE => 'App\Expression\ConstantExpression',
         FunctionExpression::TYPE => 'App\Expression\FunctionExpression',
         PathExpression::TYPE => 'App\Expression\PathExpression',
     ];
 
-    public function __construct()
+    private $humanizer;
+
+    public function __construct(Humanizer $humanizer)
     {
-        // TODO: add humanizer?
+        $this->humanizer = $humanizer;
+    }
+
+    public function getHumanizer(): ?Humanizer {
+        return $this->humanizer;
     }
 
     /**

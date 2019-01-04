@@ -3,6 +3,7 @@
 namespace App\Expression;
 
 
+use App\TimeSeries\Humanize\Humanizer;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
@@ -17,9 +18,12 @@ abstract class AbstractExpression
      */
     protected $type;
 
-    public function __construct(string $type)
+    protected $humanizer;
+
+    public function __construct(string $type, ?Humanizer $humanizer)
     {
         $this->setType($type);
+        $this->humanizer = $humanizer;
     }
 
     public function setType(string $type)

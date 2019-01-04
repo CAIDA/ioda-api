@@ -3,6 +3,7 @@
 namespace App\Expression;
 
 
+use App\TimeSeries\Humanize\Humanizer;
 use Swagger\Annotations as SWG;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -32,11 +33,12 @@ class FunctionExpression extends AbstractExpression
     /**
      * Constructor
      *
-     * @param $func
+     * @param Humanizer $humanizer
+     * @param string $func
      */
-    public function __construct(string $func)
+    public function __construct(Humanizer $humanizer, string $func)
     {
-        parent::__construct($this::TYPE);
+        parent::__construct($this::TYPE, $humanizer);
         $this->setFunc($func);
     }
 
@@ -179,7 +181,7 @@ class FunctionExpression extends AbstractExpression
             if ($this->getFunc() == $that->getFunc() &&
                 count($this->getArgs()) == count($that->getArgs())
             ) {
-                $common = new FunctionExpression($this->getFunc());
+                $common = new FunctionExpression($this->humanizer, $this->getFunc());
                 $thisArgs = $this->getArgs();
                 $thatArgs = $that->getArgs();
                 foreach ($thisArgs as $i => $arg) {
@@ -235,7 +237,8 @@ class FunctionExpression extends AbstractExpression
         AbstractExpression::checkJsonAttributes("Function", ['func', 'args'],
                                                 $json);
         // TODO: validate function name/args against the Registry
-        $expression = new FunctionExpression($json['func']);
+        $expression = new FunctionExpression($expFactory->getHumanizer(),
+                                             $json['func']);
         if (!is_array($json['args'])) {
             throw new ParsingException("Function expression 'args' parameter must be an array");
         }
@@ -265,7 +268,8 @@ class FunctionExpression extends AbstractExpression
         }
         $pos = strpos($expStr, '(');
         $funcName = substr($expStr, 0, $pos);
-        $expression = new FunctionExpression($funcName);
+        $expression = new FunctionExpression($expFactory->getHumanizer(),
+                                             $funcName);
         /* extract arguments as comma-separated string */
         $args = preg_replace('/^.+?\((.*)\)$/', '$1', $expStr);
         $argsExps = $expFactory->createFromCanonical($args);

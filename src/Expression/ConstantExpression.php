@@ -3,6 +3,7 @@
 namespace App\Expression;
 
 
+use App\TimeSeries\Humanize\Humanizer;
 use Swagger\Annotations as SWG;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -27,11 +28,12 @@ class ConstantExpression extends AbstractExpression
 
     /**
      * PathExpression constructor.
+     * @param Humanizer $humanizer
      * @param mixed $value
      */
-    public function __construct($value)
+    public function __construct(Humanizer $humanizer, $value)
     {
-        parent::__construct($this::TYPE);
+        parent::__construct($this::TYPE, $humanizer);
         $this->setValue($value);
     }
 
@@ -91,7 +93,7 @@ class ConstantExpression extends AbstractExpression
         // and even if it is another constant, it needs to be the same value
         // TODO: see if we can just return $this to save creating a new object
         return ($this->getValue() == $that->getValue()) ?
-            new ConstantExpression($this->getValue()) : null;
+            new ConstantExpression($this->humanizer, $this->getValue()) : null;
     }
 
     public function getCommonLeaf(?AbstractExpression $that): ?AbstractExpression
@@ -100,7 +102,8 @@ class ConstantExpression extends AbstractExpression
         // if there is no "that", then consider ourselves in common
         // (AK: i'm not sure why this is the case)
         return ($that) ?
-            $this->getCommonRoot($that) : new ConstantExpression($this->getValue());
+            $this->getCommonRoot($that) :
+            new ConstantExpression($this->humanizer, $this->getValue());
     }
 
     public function applyPathWhitelist(array $whitelist): void
@@ -113,7 +116,8 @@ class ConstantExpression extends AbstractExpression
                                           array $json): ?AbstractExpression
     {
         AbstractExpression::checkJsonAttributes("Constant", ['value'], $json);
-        return new ConstantExpression($json['value']);
+        return new ConstantExpression($expFactory->getHumanizer(),
+                                      $json['value']);
     }
 
     public static function createFromCanonical(ExpressionFactory $expFactory,
@@ -134,7 +138,7 @@ class ConstantExpression extends AbstractExpression
             $valid = 1;
         }
         if ($valid) {
-            return new ConstantExpression($expStr);
+            return new ConstantExpression($expFactory->getHumanizer(), $expStr);
         } else {
             throw new ParsingException("Malformed constant: '$expStr'");
         }

@@ -9,6 +9,7 @@ use App\Response\Envelope;
 use App\Response\RequestParameter;
 use App\TimeSeries\Backend\BackendException;
 use App\TimeSeries\Backend\GraphiteBackend;
+use App\TimeSeries\Humanize\Humanizer;
 use App\Utils\QueryTime;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
@@ -292,11 +293,12 @@ class TimeseriesController extends ApiController
      * @var Request $request
      * @var SerializerInterface $serializer
      * @var GraphiteBackend $tsBackend
+     * @var Humanizer $humanizer
      *
      * @return JsonResponse
      */
     public function list(Request $request, SerializerInterface $serializer,
-                         GraphiteBackend $tsBackend)
+                         GraphiteBackend $tsBackend, Humanizer $humanizer)
     {
         $env = new Envelope('ts.list',
                             'query',
@@ -311,13 +313,17 @@ class TimeseriesController extends ApiController
         }
 
         // parse the given path expression
-        $pathExp = new PathExpression($env->getParam('path'));
+        $pathExp = new PathExpression($humanizer, $env->getParam('path'));
         // ask the time series backend to find us a list of paths
         try {
             $paths = $tsBackend->pathListQuery($pathExp,
                                                $env->getParam('absolute_paths'));
             $env->setData($paths);
         } catch (BackendException $ex) {
+            $env->setError($ex->getMessage());
+            // TODO: check HTTP error codes used
+            return $this->json($env, 400);
+        } catch (ParsingException $ex) {
             $env->setError($ex->getMessage());
             // TODO: check HTTP error codes used
             return $this->json($env, 400);

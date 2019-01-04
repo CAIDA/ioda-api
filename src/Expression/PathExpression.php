@@ -3,6 +3,7 @@
 namespace App\Expression;
 
 
+use App\TimeSeries\Humanize\Humanizer;
 use Swagger\Annotations as SWG;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -78,17 +79,24 @@ class PathExpression extends AbstractExpression
      */
     protected $pathCount;
 
+    private $isRelative = false;
+
     /**
      * PathExpression constructor.
+     *
+     * @param Humanizer $humanizer
      * @param string $path
      */
-    public function __construct(string $path)
+    public function __construct(?Humanizer $humanizer, string $path)
     {
-        /* TODO: implement the humanizer */
-        parent::__construct($this::TYPE);
+        parent::__construct($this::TYPE, $humanizer);
         $this->setPath($path);
         $this->pathCount = 1;
         $this->leaf = false;
+    }
+
+    public function setRelative() {
+        $this->isRelative = true;
     }
 
     public static function nodesToString($nodes, $isName)
@@ -132,13 +140,15 @@ class PathExpression extends AbstractExpression
     {
         $this->pathNodes = explode($this::SEPARATOR, $path);
         $this->path = null; // remove any previously cached string
-        $this->humanNodes = $this->pathNodes; // TODO: $this->humanizer->humanizeFqid($this->pathNodes, true);
+        $this->humanNodes = $this->humanizer ?
+            $this->humanizer->humanizeFqid($this->pathNodes, true) :
+            $this->pathNodes;
         $this->humanName = null;
     }
 
     public function getPathNodes()
     {
-        return $this->pathNodes;
+        return ($this->isRelative) ? [end($this->pathNodes)] : $this->pathNodes;
     }
 
     public function getHumanName(): string
@@ -151,7 +161,7 @@ class PathExpression extends AbstractExpression
 
     public function getHumanNodes()
     {
-        return $this->humanNodes;
+        return ($this->isRelative) ? [end($this->humanNodes)] : $this->humanNodes;
     }
 
     public function isLeaf(): bool
@@ -248,7 +258,8 @@ class PathExpression extends AbstractExpression
             if ($reverse) {
                 $commonPathNodes = array_reverse($commonPathNodes);
             }
-            return new PathExpression(implode($this::SEPARATOR, $commonPathNodes));
+            return new PathExpression($this->humanizer,
+                                      implode($this::SEPARATOR, $commonPathNodes));
         } else {
             return null;
         }
@@ -268,7 +279,7 @@ class PathExpression extends AbstractExpression
     public function getCommonLeaf(?AbstractExpression $that): ?AbstractExpression
     {
         if (!$that) {
-            return new PathExpression($this->getPath());
+            return new PathExpression($this->humanizer, $this->getPath());
         }
         if (self::TYPE != $that->getType()) {
             return null;
@@ -332,13 +343,13 @@ class PathExpression extends AbstractExpression
                                           array $json): ?AbstractExpression
     {
         AbstractExpression::checkJsonAttributes("Path", ['path'], $json);
-        return new PathExpression($json['path']);
+        return new PathExpression($expFactory->getHumanizer(), $json['path']);
     }
 
     public static function createFromCanonical(ExpressionFactory $expFactory,
                                                string $expStr): ?AbstractExpression
     {
         // TODO: check for illegal characters in path
-        return new PathExpression($expStr);
+        return new PathExpression($expFactory->getHumanizer(), $expStr);
     }
 }

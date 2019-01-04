@@ -43,7 +43,7 @@ class GraphiteBackend extends AbstractBackend
         $this->authPathWhitelist = [];
         foreach ($roles as $role) {
             if (substr($role, 0, $pfxLen) === $pfx) {
-                $ap = new PathExpression(substr($role, $pfxLen));
+                $ap = new PathExpression(null, substr($role, $pfxLen));
                 $this->authPathWhitelist =
                     array_unique(array_merge($this->authPathWhitelist,
                                              $ap->generateWhitelist()));
@@ -145,12 +145,10 @@ class GraphiteBackend extends AbstractBackend
             // TODO: is relative, so only the last node is used?
 
             // graphite gives us absolute paths
-            if ($absolute_paths) {
-                $nodePath = new PathExpression($node['path']);
-            } else {
-                $pathExp = new PathExpression($np);
-                $pn = $pathExp->getPathNodes();
-                $nodePath = new PathExpression(end($pn));
+            /** @var PathExpression $nodePath */
+            $nodePath = PathExpression::createFromCanonical($this->expFactory, $np);
+            if (!$absolute_paths) {
+                $nodePath->setRelative();
             }
 
             // future-proof so that there can be a leaf and a node with
@@ -246,7 +244,8 @@ class GraphiteBackend extends AbstractBackend
                 $exp = $this->expFactory->createFromCanonical($element['name']);
             } catch (ParsingException $ex) {
                 // failed to parse the expression, make it a path
-                $exp = new PathExpression($element['name']);
+                $exp = new PathExpression($this->expFactory->getHumanizer(),
+                                          $element['name']);
             }
 
             $commonRoot = ($first) ? $exp : $exp->getCommonRoot($commonRoot);
