@@ -4,20 +4,34 @@ namespace App\Security;
 
 use Auth0\JWTAuthBundle\Security\Auth0Service;
 use Auth0\JWTAuthBundle\Security\Core\JWTUserProviderInterface;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 class UserProvider implements JWTUserProviderInterface
 {
     protected $auth0Service;
+    protected $cache;
 
     public function __construct(Auth0Service $auth0Service)
     {
         $this->auth0Service = $auth0Service;
+        // TODO: replace this with a better cache
+        $this->cache = new FilesystemAdapter();
     }
 
     public function loadUserByJWT($jwt)
     {
-        $profile = $this->auth0Service->getUserProfileByA0UID($jwt->token,$jwt->sub);
+        // check the cache first
+        $cachedProfile = $this->cache->getItem('A0Profile|'.$jwt->sub.md5($jwt->token));
+        if (!$cachedProfile->isHit()) {
+            $profile = $this->auth0Service->getUserProfileByA0UID($jwt->token, $jwt->sub);
+            $cachedProfile->expiresAfter(300);
+            $cachedProfile->set($profile);
+            $this->cache->save($cachedProfile);
+        } else {
+            $profile = $cachedProfile->get();
+        }
+
         // NOTE: What we (Auth0) call 'permissions', symfony calls 'roles'
         // also, Symfony requires roles start with ROLE_ (sigh)
         $roles = [];
