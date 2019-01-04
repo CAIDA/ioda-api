@@ -7,6 +7,7 @@ namespace App\TimeSeries\Humanize;
 use App\Expression\PathExpression;
 use App\TimeSeries\Humanize\Provider\AbstractHumanizeProvider;
 use App\TimeSeries\Humanize\Provider\DefaultHumanizeProvider;
+use App\TimeSeries\Humanize\Provider\DirectHumanizeProvider;
 
 class Humanizer
 {
@@ -15,7 +16,7 @@ class Humanizer
     public function __construct()
     {
         $this->providers = [
-            //new DirectHumanizeProvider(),
+            new DirectHumanizeProvider(),
             //new GeoHumanizeProvider(),
             //new InternetIdHumanizeProvider(),
             new DefaultHumanizeProvider(),
