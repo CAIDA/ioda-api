@@ -8,6 +8,7 @@ use App\Expression\PathExpression;
 use App\TimeSeries\Humanize\Provider\AbstractHumanizeProvider;
 use App\TimeSeries\Humanize\Provider\DefaultHumanizeProvider;
 use App\TimeSeries\Humanize\Provider\DirectHumanizeProvider;
+use App\TimeSeries\Humanize\Provider\GeoHumanizeProvider;
 
 class Humanizer
 {
@@ -17,7 +18,7 @@ class Humanizer
     {
         $this->providers = [
             new DirectHumanizeProvider(),
-            //new GeoHumanizeProvider(),
+            new GeoHumanizeProvider(),
             //new InternetIdHumanizeProvider(),
             new DefaultHumanizeProvider(),
         ];
