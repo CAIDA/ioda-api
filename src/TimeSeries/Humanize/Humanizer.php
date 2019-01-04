@@ -9,6 +9,7 @@ use App\TimeSeries\Humanize\Provider\AbstractHumanizeProvider;
 use App\TimeSeries\Humanize\Provider\DefaultHumanizeProvider;
 use App\TimeSeries\Humanize\Provider\DirectHumanizeProvider;
 use App\TimeSeries\Humanize\Provider\GeoHumanizeProvider;
+use App\TimeSeries\Humanize\Provider\InternetIdHumanizeProvider;
 
 class Humanizer
 {
@@ -19,7 +20,7 @@ class Humanizer
         $this->providers = [
             new DirectHumanizeProvider(),
             new GeoHumanizeProvider(),
-            //new InternetIdHumanizeProvider(),
+            new InternetIdHumanizeProvider(),
             new DefaultHumanizeProvider(),
         ];
     }
