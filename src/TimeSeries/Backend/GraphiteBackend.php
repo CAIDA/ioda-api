@@ -30,8 +30,31 @@ class GraphiteBackend extends AbstractBackend
         'sum',
     ];
 
+    const DEBUG_WHITELIST = [
+        "\"^bgp$\"",
+        "\"^bgp\\.prefix-visibility$\"",
+        "\"^bgp\\.prefix-visibility\\.geo$\"",
+        "\"^bgp\\.prefix-visibility\\.geo\\.netacuity(\\.|$)\"",
+    ];
+
 
     private $expFactory;
+
+    private function checkPathAuth($wlRegex, $path)
+    {
+        // treat no white list as allowing nothing
+        if (!count($wlRegex)) {
+            return false;
+        }
+        $allowed = false;
+        foreach ($wlRegex as $regex) {
+            if (preg_match($regex, $path)) {
+                $allowed = true;
+                break;
+            }
+        }
+        return $allowed;
+    }
 
     /**
      * Make a query to the graphite backend service.
@@ -96,6 +119,12 @@ class GraphiteBackend extends AbstractBackend
         $pathTree = [];
         foreach ($jsonResult as $node) {
             $np = $node['path'];
+
+            // check that this user can see this path
+            if (!$this->checkPathAuth(GraphiteBackend::DEBUG_WHITELIST,
+                                      $np)) {
+                continue;
+            }
 
             if (array_key_exists($np, $pathTree)) {
                 continue;
