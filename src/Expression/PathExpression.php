@@ -296,6 +296,7 @@ class PathExpression extends AbstractExpression
     {
         $nodes = $this->getPathNodes();
         $wl = [];
+        $pwl = null;
         $prevNodes = [];
         foreach ($nodes as $node) {
             $pr = implode('\\.', $prevNodes);
@@ -312,10 +313,14 @@ class PathExpression extends AbstractExpression
                 }
                 $pr .= $node.'$';
             }
-            $wl[] = '"^'.$pr.'"';
+            $regex = '"^'.$pr.'"';
             if ($recursive) {
+                $wl[] = $regex;
                 break;
+            } elseif ($pwl) {
+                $wl[] = $pwl;
             }
+            $pwl = $regex;
             $prevNodes[] = $node;
         }
         return $wl;
