@@ -294,6 +294,10 @@ class PathExpression extends AbstractExpression
      */
     public function generateWhitelist(): array
     {
+        // special case for all-data path
+        if ($this->getPath() === '**') {
+            return ['"^.+$"'];
+        }
         $nodes = $this->getPathNodes();
         $wl = [];
         $pwl = null;
