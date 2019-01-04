@@ -23,9 +23,9 @@ class PathExpression extends AbstractExpression
 
     /**
      * @Groups({"public"})
-     * @SWG\Parameter(
+     * @SWG\Property(
      *     type="string",
-     *     enum={"path"}
+     *     example="path"
      * )
      */
     protected $type;
@@ -282,6 +282,43 @@ class PathExpression extends AbstractExpression
     public function applyPathWhitelist(array $whitelist): void
     {
         $this->setPath('grep('.$this->getPath().','.implode(',', $whitelist).')');
+    }
+
+    /**
+     * Generate a list of regexes that can be used as a whitelist for this
+     * Path Expression.
+     * The special glob wildcard '**' can be used in the last node to allow
+     * any subsequent nodes to be matched (whereas '*' only matches one node).
+     *
+     * @return string[]
+     */
+    public function generateWhitelist(): array
+    {
+        $nodes = $this->getPathNodes();
+        $wl = [];
+        $prevNodes = [];
+        foreach ($nodes as $node) {
+            $pr = implode('\\.', $prevNodes);
+            $recursive = false;
+            if ($node === '**') {
+                $recursive = true;
+                $pr .= '(\\.|$)';
+            } else {
+                if (count($prevNodes)) {
+                    $pr .= '\\.';
+                }
+                if ($node === '*') {
+                    $node = '[^\.]+';
+                }
+                $pr .= $node.'$';
+            }
+            $wl[] = '"^'.$pr.'"';
+            if ($recursive) {
+                break;
+            }
+            $prevNodes[] = $node;
+        }
+        return $wl;
     }
 
     public static function createFromJson(ExpressionFactory $expFactory,

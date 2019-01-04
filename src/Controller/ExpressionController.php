@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Expression\ExpressionFactory;
 use App\Expression\Functions\Registry;
 use App\Expression\ParsingException;
+use App\Expression\PathExpression;
 use App\Response\Envelope;
 use App\Response\RequestParameter;
 use Nelmio\ApiDocBundle\Annotation\Model;
@@ -282,6 +283,114 @@ class ExpressionController extends ApiController
         try {
             $exp = $expressionFactory->createFromCanonical($env->getParam('expression_canonical'));
             $env->setData($exp);
+            return $this->json($env);
+        } catch (ParsingException $exception) {
+            $env->setError($exception->getMessage());
+            return $this->json($env, 400);
+        }
+    }
+
+    /**
+     * Whitelist Path Expression
+     *
+     * Generate authorization whitelist regexes for the given JSON-formatted
+     * path expression object.
+     *
+     * @Route("/whitelist/", methods={"POST"}, name="whitelist")
+     * @SWG\Tag(name="Expression")
+     * @SWG\Parameter(
+     *     name="query",
+     *     in="body",
+     *     type="object",
+     *     description="Path Expression object",
+     *     required=true,
+     *     @SWG\Schema(
+     *         @SWG\Property(
+     *             property="expression",
+     *             type="object",
+     *             description="JSON-encoded expression object.",
+     *             ref=@Model(type=\App\Expression\PathExpression::class, groups={"public"})
+     *        )
+     *     )
+     * )
+     * @SWG\Response(
+     *     response=200,
+     *     description="List of regexes that can be used to whitelist the given Path Expression",
+     *     @SWG\Schema(
+     *         allOf={
+     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
+     *             @SWG\Schema(
+     *                 @SWG\Property(
+     *                     property="type",
+     *                     type="string",
+     *                     enum={"expression.whitelist"}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="error",
+     *                     type="string",
+     *                     enum={}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="data",
+     *                     type="array",
+     *                     items=@SWG\Schema(ref=@Model(type=\App\Expression\PathExpression::class, groups={"public"}))
+     *                 )
+     *             )
+     *         }
+     *     )
+     * )
+     * @SWG\Response(
+     *     response=400,
+     *     description="Indicates that the given expression could not be validated.",
+     *     @SWG\Schema(
+     *         allOf={
+     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
+     *             @SWG\Schema(
+     *                 @SWG\Property(
+     *                     property="type",
+     *                     type="string",
+     *                     enum={"expression.whitelist"}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="error",
+     *                     type="string",
+     *                     enum={"Validation error: unknown function 'foo'"}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="data",
+     *                     type="string",
+     *                     enum={}
+     *                 )
+     *             )
+     *         }
+     *     )
+     * )
+     *
+     * @var Request $request
+     * @var SerializerInterface $serializer
+     * @var ExpressionFactory $expressionFactory
+     *
+     * @return JsonResponse
+     */
+    public function whitelist(Request $request, SerializerInterface $serializer,
+                              ExpressionFactory $expressionFactory)
+    {
+        $env = new Envelope('expression.whitelist',
+                            'body',
+                            [
+                                new RequestParameter('expression', RequestParameter::ARRAY, null, true),
+                            ],
+                            $request
+        );
+        if ($env->getError()) {
+            return $this->json($env, 400);
+        }
+
+        try {
+            $exp = PathExpression::createFromJson($expressionFactory,
+                                                  $env->getParam('expression'));
+            /** @var PathExpression $exp */
+            $env->setData($exp->generateWhitelist());
             return $this->json($env);
         } catch (ParsingException $exception) {
             $env->setError($exception->getMessage());
