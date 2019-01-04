@@ -12,6 +12,7 @@ use App\TimeSeries\TimeSeries;
 use App\TimeSeries\TimeSeriesSet;
 use App\Utils\QueryTime;
 use Swagger\Annotations\Path;
+use Symfony\Component\Security\Core\Security;
 
 class GraphiteBackend extends AbstractBackend
 {
@@ -33,20 +34,20 @@ class GraphiteBackend extends AbstractBackend
 
     private $authPathWhitelist = [];
 
-    private $expFactory;
-
     private function generateAuthPathWhitelist()
     {
-        // TODO: replace this with expressions extracted from permissions
-        /** @var PathExpression[] $authPaths */
-        $authPaths = [
-            new PathExpression('bgp.prefix-visibility.geo.netacuity.**'),
-        ];
-
-        foreach ($authPaths as $authPath) {
-            $this->authPathWhitelist =
-                array_unique(array_merge($this->authPathWhitelist,
-                                         $authPath->generateWhitelist()));
+        // get all roles with the api:ts:path: prefix
+        $roles = $this->user->getRoles();
+        $pfx = 'ROLE_api:ts:path:';
+        $pfxLen = strlen($pfx);
+        $this->authPathWhitelist = [];
+        foreach ($roles as $role) {
+            if (substr($role, 0, $pfxLen) === $pfx) {
+                $ap = new PathExpression(substr($role, $pfxLen));
+                $this->authPathWhitelist =
+                    array_unique(array_merge($this->authPathWhitelist,
+                                             $ap->generateWhitelist()));
+            }
         }
     }
 
@@ -95,9 +96,10 @@ class GraphiteBackend extends AbstractBackend
         return $result;
     }
 
-    public function __construct(ExpressionFactory $expFactory)
+    public function __construct(Security $security,
+                                ExpressionFactory $expFactory)
     {
-        $this->expFactory = $expFactory;
+        parent::__construct($security, $expFactory);
         $this->generateAuthPathWhitelist();
     }
 

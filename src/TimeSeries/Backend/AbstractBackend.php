@@ -4,12 +4,23 @@ namespace App\TimeSeries\Backend;
 
 
 use App\Expression\AbstractExpression;
+use App\Expression\ExpressionFactory;
 use App\Expression\PathExpression;
 use App\Timeseries\TimeSeriesSet;
 use App\Utils\QueryTime;
+use Symfony\Component\Security\Core\Security;
 
 abstract class AbstractBackend
 {
+    protected $expFactory = null;
+    protected $user = null;
+
+    public function __construct(Security $security,
+                                ExpressionFactory $expFactory) {
+        $this->expFactory = $expFactory;
+        $this->user = $security->getUser();
+    }
+
     /**
      * Perform a metadata query to identify paths that match the given path
      * expression.
