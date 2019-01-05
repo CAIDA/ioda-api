@@ -22,6 +22,7 @@ class UserProvider implements JWTUserProviderInterface
     public function loadUserByJWT($jwt)
     {
         // check the cache first
+        // TODO: replace this with local user profile, authorization info etc.
         $cachedProfile = $this->cache->getItem('A0Profile|'.$jwt->sub.md5($jwt->token));
         if (!$cachedProfile->isHit()) {
             $profile = $this->auth0Service->getUserProfileByA0UID($jwt->token, $jwt->sub);
