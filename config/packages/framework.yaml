@@ -30,4 +30,4 @@ framework:
         #app: cache.adapter.apcu
 
     assets:
-        base_path: '/%env(API_VERSION)%'
+        base_path: '/%env(CH_API_VERSION)%'

@@ -18,4 +18,4 @@ nelmio_api_doc:
 
     areas: # to filter documented areas
         path_patterns:
-            - ^/%env(API_VERSION)%(?!/docs|/_)/
+            - ^/%env(CH_API_VERSION)%(?!/docs|/_)/
