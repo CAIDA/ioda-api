@@ -4,7 +4,7 @@ security:
             id: App\Security\UserProvider
     firewalls:
         dev:
-            pattern: ^/%env(API_VERSION)%/(_(profiler|wdt)|css|images|js)/
+            pattern: ^/%env(CH_API_VERSION)%/(_(profiler|wdt)|css|images|js)/
             security: false
         main:
             pattern: ^/
@@ -13,5 +13,5 @@ security:
                 authenticator: jwt_auth.jwt_authenticator
 
     access_control:
-        - { path: ^/%env(API_VERSION)%/docs, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/%env(CH_API_VERSION)%/docs, roles: IS_AUTHENTICATED_ANONYMOUSLY }
         - { path: ^/, roles: 'ROLE_api:query' }
