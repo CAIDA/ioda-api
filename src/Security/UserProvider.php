@@ -36,7 +36,8 @@ class UserProvider implements JWTUserProviderInterface
         // NOTE: What we (Auth0) call 'permissions', symfony calls 'roles'
         // also, Symfony requires roles start with ROLE_ (sigh)
         $roles = [];
-        if (array_key_exists('https://hicube.caida.org/auth', $profile)) {
+        if (array_key_exists('https://hicube.caida.org/auth', $profile) &&
+            array_key_exists('permissions', $profile['https://hicube.caida.org/auth'])) {
             $perms = $profile['https://hicube.caida.org/auth']['permissions'];
             foreach ($perms as $perm) {
                 $roles[] = "ROLE_$perm";
