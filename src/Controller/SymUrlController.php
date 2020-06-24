@@ -57,7 +57,7 @@ class SymUrlController extends ApiController
      *                 ),
      *                 @SWG\Property(
      *                     property="data",
-     *                     ref=@Model(type=\App\Entity\SymUrl::class, groups={"public"})
+     *                     ref=@Model(type=\App\Entity\Ioda\SymUrl::class, groups={"public"})
      *                 )
      *             )
      *         }
@@ -142,7 +142,7 @@ class SymUrlController extends ApiController
      *                 ),
      *                 @SWG\Property(
      *                     property="data",
-     *                     ref=@Model(type=\App\Entity\SymUrl::class, groups={"public"})
+     *                     ref=@Model(type=\App\Entity\Ioda\SymUrl::class, groups={"public"})
      *                 )
      *             )
      *         }

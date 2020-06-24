@@ -7,17 +7,38 @@ parameters:
 
 doctrine:
     dbal:
-        driver: 'pdo_mysql'
-        server_version: '9.4'
-        url: '%env(resolve:DATABASE_URL)%'
+        default_connection: default
+        connections:
+          default:
+            driver: 'pdo_mysql'
+            server_version: '9.4'
+            url: '%env(resolve:DATABASE_URL)%'
+          alerts:
+            driver: 'pdo_mysql'
+            server_version: '9.4'
+            url: '%env(resolve:DATABASE_ALERTS_URL)%'
     orm:
         auto_generate_proxy_classes: '%kernel.debug%'
-        naming_strategy: doctrine.orm.naming_strategy.underscore
-        auto_mapping: true
-        mappings:
-            App:
+        # auto_mapping: true
+        default_entity_manager: default
+        entity_managers:
+          default:
+            connection: default
+            naming_strategy: doctrine.orm.naming_strategy.underscore
+            mappings:
+                App:
+                    is_bundle: false
+                    type: annotation
+                    dir: '%kernel.project_dir%/src/Entity/Ioda'
+                    prefix: 'App\Entity\Ioda'
+                    alias: Ioda
+          alerts:
+            connection: alerts
+            naming_strategy: doctrine.orm.naming_strategy.underscore
+            mappings:
+              Alerts:
                 is_bundle: false
                 type: annotation
-                dir: '%kernel.project_dir%/src/Entity'
-                prefix: 'App\Entity'
-                alias: App
+                dir: '%kernel.project_dir%/src/Entity/Alerts'
+                prefix: 'App\Entity\Alerts'
+                alias: Alerts

@@ -4,7 +4,7 @@
 namespace App\SymUrl;
 
 
-use App\Entity\SymUrl;
+use App\Entity\Ioda\SymUrl;
 use App\Repository\SymUrlRepository;
 
 class SymUrlService
