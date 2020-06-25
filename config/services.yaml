@@ -28,6 +28,11 @@ services:
         public: false
         tags: [serializer.normalizer]
 
+    metadata_entity_normalizer:
+        class: App\Entity\Alerts\MetadataEntityNormalizer
+        public: false
+        tags: [serializer.normalizer]
+
     get_set_method_normalizer:
         class: Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer
         public: false

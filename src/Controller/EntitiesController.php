@@ -48,7 +48,7 @@ class EntitiesController extends ApiController
         $env = new Envelope('entities.tests',
             'query',
             [
-                new RequestParameter('relatedTo', RequestParameter::STRING, "", false),
+                new RequestParameter('relatedTo', RequestParameter::STRING, null, false),
             ],
             $request
         );
