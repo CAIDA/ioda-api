@@ -33,11 +33,11 @@ services:
         public: false
         tags: [serializer.normalizer]
 
-    get_set_method_normalizer:
-        class: Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer
-        public: false
-        tags: [serializer.normalizer]
-        arguments:
-            $nameConverter: '@serializer.name_converter.camel_case_to_snake_case'
+    # get_set_method_normalizer:
+    #     class: Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer
+    #     public: false
+    #     tags: [serializer.normalizer]
+    #     arguments:
+    #         $nameConverter: '@serializer.name_converter.camel_case_to_snake_case'
 
     Auth0\JWTAuthBundle\Security\Auth0Service: '@jwt_auth.auth0_service'
