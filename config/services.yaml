@@ -29,7 +29,7 @@ services:
         tags: [serializer.normalizer]
 
     metadata_entity_normalizer:
-        class: App\Entity\Alerts\MetadataEntityNormalizer
+        class: App\Entity\Outages\MetadataEntityNormalizer
         public: false
         tags: [serializer.normalizer]
 

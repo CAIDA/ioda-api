@@ -7,23 +7,20 @@ parameters:
 
 doctrine:
     dbal:
-        default_connection: default
         connections:
-          default:
+          ioda_db:
             driver: 'pdo_mysql'
             server_version: '9.4'
             url: '%env(resolve:DATABASE_URL)%'
-          alerts:
+          outages_db:
             driver: 'pdo_mysql'
             server_version: '9.4'
             url: '%env(resolve:DATABASE_ALERTS_URL)%'
     orm:
         auto_generate_proxy_classes: '%kernel.debug%'
-        # auto_mapping: true
-        default_entity_manager: default
         entity_managers:
-          default:
-            connection: default
+          ioda:
+            connection: ioda_db
             naming_strategy: doctrine.orm.naming_strategy.underscore
             mappings:
                 App:
@@ -32,13 +29,13 @@ doctrine:
                     dir: '%kernel.project_dir%/src/Entity/Ioda'
                     prefix: 'App\Entity\Ioda'
                     alias: Ioda
-          alerts:
-            connection: alerts
+          outages:
+            connection: outages_db
             naming_strategy: doctrine.orm.naming_strategy.underscore
             mappings:
               Alerts:
                 is_bundle: false
                 type: annotation
-                dir: '%kernel.project_dir%/src/Entity/Alerts'
-                prefix: 'App\Entity\Alerts'
-                alias: Alerts
+                dir: '%kernel.project_dir%/src/Entity/Outages'
+                prefix: 'App\Entity\Outages'
+                alias: Outages

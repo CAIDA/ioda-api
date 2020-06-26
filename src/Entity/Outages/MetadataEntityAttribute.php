@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entity\Alerts;
+namespace App\Entity\Outages;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;

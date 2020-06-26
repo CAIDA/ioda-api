@@ -1,5 +1,5 @@
 <?php
-namespace App\Entity\Alerts;
+namespace App\Entity\Outages;
 
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\ContextAwareNormalizerInterface;

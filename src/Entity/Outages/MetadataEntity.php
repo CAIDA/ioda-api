@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Entity\Alerts;
+namespace App\Entity\Outages;
 
-use App\Entity\Alerts\MetadataEntityAttribute;
+use App\Entity\Outages\MetadataEntityAttribute;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
