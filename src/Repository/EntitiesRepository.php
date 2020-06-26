@@ -84,8 +84,8 @@ class EntitiesRepository extends ServiceEntityRepository
         $em = $this->getEntityManager();
 
         $rsm = new ResultSetMappingBuilder($em, ResultSetMappingBuilder::COLUMN_RENAMING_INCREMENT);
-        $rsm->addRootEntityFromClassMetadata('App\Entity\Alerts\MetadataEntity', 'm');
-        $rsm->addJoinedEntityFromClassMetadata('App\Entity\Alerts\MetadataEntity', 'om', 'm', 'relationships');
+        $rsm->addRootEntityFromClassMetadata('App\Entity\Outages\MetadataEntity', 'm');
+        $rsm->addJoinedEntityFromClassMetadata('App\Entity\Outages\MetadataEntity', 'om', 'm', 'relationships');
 
         $parameters = array_filter(
             [
