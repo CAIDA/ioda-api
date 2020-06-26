@@ -5,7 +5,6 @@ namespace App\Controller;
 use App\MetadataEntities\MetadataEntitiesService;
 use App\Response\Envelope;
 use App\Response\RequestParameter;
-use App\SymUrl\SymUrlService;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\ORMException;
 use Nelmio\ApiDocBundle\Annotation\Model;

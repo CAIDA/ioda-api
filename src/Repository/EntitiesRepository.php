@@ -2,10 +2,7 @@
 
 namespace App\Repository;
 
-use App\Entity\Alerts\MetadataEntity;
-use App\Entity\Alerts\MetadataEntityAttribute;
-use App\Entity\Alerts\MetadataEntityType;
-use App\Entity\Alerts\WatchtowerAlert;
+use App\Entity\Outages\MetadataEntity;
 use Doctrine\ORM\Query\ResultSetMappingBuilder;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
