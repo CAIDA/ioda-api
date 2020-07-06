@@ -79,7 +79,7 @@ class EntitiesRepository extends ServiceEntityRepository
     /**
      * Return all relationships between two sets of entities along with the entities that have the relationships
      */
-    public function findRelationships($type=null, $code=null, $relatedType=null, $relatedCode=null)
+    public function findRelationships($type=null, $code=null, $relatedType=null, $relatedCode=null, $limit=null)
     {
         $em = $this->getEntityManager();
 
@@ -102,7 +102,8 @@ class EntitiesRepository extends ServiceEntityRepository
                 INNER JOIN mddb_entity_relationship r ON m.id = r.from_id
                 INNER JOIN mddb_entity om ON om.id = r.to_id
                 INNER JOIN mddb_entity_type omt ON om.type_id = omt.id'
-            . (!empty($parameters) ? ' WHERE ' . implode(' AND ', $parameters) : '');
+            . (!empty($parameters) ? ' WHERE ' . implode(' AND ', $parameters) : '')
+            . (($limit) ? ' LIMIT ' . $limit: '');
 
         $q = $em->createNativeQuery($sql, $rsm)
             ->setParameters([

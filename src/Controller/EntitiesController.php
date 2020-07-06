@@ -22,32 +22,27 @@ use Symfony\Component\Serializer\SerializerInterface;
 class EntitiesController extends ApiController
 {
     /**
-     * Expand an existing short URL
-     *
-     * Returns a JSON object with metadata about the given short URL. Note that
-     * this also updates last-used times and counters unless the "no_stats"
-     * parameter is provided.
-     *
-     * @Route("/{entityType}/{entityCode}", methods={"GET"}, name="get", defaults={"entityCode"=null, "relatedTo"=null})
+     * @Route("/{entityType}/{entityCode}", methods={"GET"}, name="get", defaults={"entityCode"=null})
      *
      * @var string $entityType
      * @var string|null $entityCode
-     * @var string|null $relatedTo
      * @var Request $request
      * @var SerializerInterface $serializer
      * @var MetadataEntitiesService
      * @return JsonResponse
      */
     public function lookup(
-        string $entityType, ?string $entityCode, ?string $relatedTo,
+        string $entityType, ?string $entityCode,
         Request $request,
         SerializerInterface $serializer,
         MetadataEntitiesService $service
     ){
-        $env = new Envelope('entities.tests',
+        $env = new Envelope('entities.lookup',
             'query',
             [
                 new RequestParameter('relatedTo', RequestParameter::STRING, null, false),
+                new RequestParameter('search', RequestParameter::STRING, null, false),
+                new RequestParameter('limit', RequestParameter::INTEGER, null, false),
             ],
             $request
         );
@@ -56,7 +51,15 @@ class EntitiesController extends ApiController
         }
 
         /* LOCAL PARAM PARSING */
+        $search = $env->getParam('search');
         $relatedTo = $env->getParam('relatedTo');
+        $limit = $env->getParam('limit');
+        if($search){
+            $entity = $service->search($entityType, null, $search, $limit, true);
+            $env->setData($entity);
+            return $this->json($env);
+        }
+
         if ($relatedTo) {
             $relatedTo = explode('/', $relatedTo);
             if (count($relatedTo) > 2) {
@@ -71,7 +74,7 @@ class EntitiesController extends ApiController
             $relatedTo = [null, null];
         }
 
-        $entity = $service->lookup($entityType, $entityCode, $relatedTo[0], $relatedTo[1]);
+        $entity = $service->lookup($entityType, $entityCode, $relatedTo[0], $relatedTo[1], $limit);
         $env->setData($entity);
         return $this->json($env);
     }

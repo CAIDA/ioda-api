@@ -444,7 +444,8 @@ class MddbUpdater:
         ipm = pyipmeta.IpMeta(provider="netacq-edge", provider_config=" ".join(configs))
 
         # ipmeta-lookup for all prefixes.
-        # multi-threaded.
+        # in
+        multi-threaded.
         prefix_geo = {}
         cpu_count = multiprocessing.cpu_count()
         logging.info("launching %d processes to do ipmeta lookup" % cpu_count)

@@ -27,13 +27,13 @@ class MetadataEntitiesService
      * @return MetadataEntity[]
      */
     public
-    function lookup($type, $code=null, $relatedToType=null, $relatedToCode=null)
+    function lookup($type, $code=null, $relatedToType=null, $relatedToCode=null, $limit=null)
     {
         if ($relatedToType) {
             /* @var $metas MetadataEntity[] */
             $metas =
                 $this->repo->findRelationships($type, $code,
-                    $relatedToType, $relatedToCode);
+                    $relatedToType, $relatedToCode, $limit);
             if ($relatedToCode) {
                 // if an exact relation was given, there can be at most
                 // one 'related' entity
@@ -50,13 +50,16 @@ class MetadataEntitiesService
     }
 
     /**
-     * @var string $type
-     * @var string $code
-     * @return MetadataEntity|null
-     * @throws \Doctrine\ORM\NonUniqueResultException
+     * @param $type
+     * @param null $code
+     * @param null $name
+     * @param integer $limit
+     * @param bool $wildcard
+     * @return MetadataEntity[]
      */
-    public function getOne(string $type, string $code): ?MetadataEntity
+    public
+    function search($type, $code = null, $name = null, $limit=null, $wildcard=false)
     {
-        return $this->repo->findName($type, $code);
+        return $this->repo->findMetadata($type, $code, $name, $limit, $wildcard);
     }
 }
