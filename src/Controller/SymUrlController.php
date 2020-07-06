@@ -110,13 +110,13 @@ class SymUrlController extends ApiController
      *     required=true,
      *     @SWG\Schema(
      *         @SWG\Property(
-     *                     property="long_url",
+     *                     property="longUrl",
      *                     type="string",
      *                     example="https://hicube.caida.org",
      *                     description="Long URL to be shortened"
      *         ),
      *         @SWG\Property(
-     *                     property="short_tag",
+     *                     property="shortTag",
      *                     type="string",
      *                     example="myurl",
      *                     description="Short tag to use instead of auto-generated tag [optional]"
@@ -162,16 +162,16 @@ class SymUrlController extends ApiController
         $env = new Envelope('sym.create',
                             'body',
                             [
-                                new RequestParameter('long_url', RequestParameter::STRING, null, true),
-                                new RequestParameter('short_tag', RequestParameter::STRING, null, false),
+                                new RequestParameter('longUrl', RequestParameter::STRING, null, true),
+                                new RequestParameter('shortTag', RequestParameter::STRING, null, false),
                             ],
                             $request
         );
         if ($env->getError()) {
             return $this->json($env, 400);
         }
-        $env->setData($symUrlService->createOrGet($env->getParam('long_url'),
-                                                  $env->getParam('short_tag')));
+        $env->setData($symUrlService->createOrGet($env->getParam('longUrl'),
+                                                  $env->getParam('shortTag')));
         return $this->json($env);
     }
 }
