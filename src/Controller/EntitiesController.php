@@ -22,9 +22,9 @@ use Symfony\Component\Serializer\SerializerInterface;
 class EntitiesController extends ApiController
 {
     /**
-     * @Route("/{entityType}/{entityCode}", methods={"GET"}, name="get", defaults={"entityCode"=null})
+     * @Route("/{entityType}/{entityCode}", methods={"GET"}, name="get", defaults={"entityType"=null,"entityCode"=null})
      *
-     * @var string $entityType
+     * @var string|null $entityType
      * @var string|null $entityCode
      * @var Request $request
      * @var SerializerInterface $serializer
@@ -32,7 +32,7 @@ class EntitiesController extends ApiController
      * @return JsonResponse
      */
     public function lookup(
-        string $entityType, ?string $entityCode,
+        ?string $entityType, ?string $entityCode,
         Request $request,
         SerializerInterface $serializer,
         MetadataEntitiesService $service
