@@ -291,6 +291,21 @@ class OutagesAlert
         return $this;
     }
 
+    /**
+     */
+    public function getEntity()
+    {
+        return $this->entity;
+    }
+
+    /**
+     */
+    public function setEntity($entity)
+    {
+        $this->entity = $entity;
+        return $this;
+    }
+
     //////////////////////////
     //////////////////////////
     // VARIABLE DEFINITIONS //
@@ -401,6 +416,12 @@ class OutagesAlert
      * @var string
      */
     private $metaCode;
+
+    /**
+     * @Groups({"public"})
+     * @var string
+     */
+    private $entity;
 
 
 }

@@ -5,7 +5,9 @@ namespace App\Outages;
 
 
 use App\Entity\Outages\OutagesAlert;
+use App\MetadataEntities\MetadataEntitiesService;
 use App\Repository\OutagesAlertsRepository;
+use CAIDA\Charthouse\WatchtowerBundle\Entity\WatchtowerAlert;
 
 class OutagesAlertsService
 {
@@ -14,9 +16,15 @@ class OutagesAlertsService
      */
     private $repo;
 
-    public function __construct(OutagesAlertsRepository $outagesAlertsRepository)
+    /**
+     * @var MetadataEntitiesService
+     */
+    private $metadataService;
+
+    public function __construct(OutagesAlertsRepository $outagesAlertsRepository, MetadataEntitiesService $metadataEntitiesService)
     {
         $this->repo = $outagesAlertsRepository;
+        $this->metadataService = $metadataEntitiesService;
     }
 
     /**
@@ -31,6 +39,15 @@ class OutagesAlertsService
      */
     public function findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit, $page)
     {
-        return $this->repo->findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit, $page);
+        $alerts = $this->repo->findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit, $page);
+
+        foreach($alerts as &$alert){
+            $type = $alert->getMetaType();
+            $code = $alert->getMetaCode();
+            $metas = $this->metadataService->lookup($type, $code);
+            $alert->setEntity($metas[0]);
+        }
+
+        return $alerts;
     }
 }

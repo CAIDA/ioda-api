@@ -29,8 +29,7 @@ class OutagesAlertNormalizer implements ContextAwareNormalizerInterface
             $datasource = "ping-slash24";
         }
         $res["datasource"]=$datasource;
-        $res["entityType"] = $data["metaType"];
-        $res["entityCode"] = $data["metaCode"];
+        $res["entity"] = $data["entity"];
         $res["time"] = $data["time"];
         $res["level"] = $data["level"];
         $res["condition"] = $data["condition"];

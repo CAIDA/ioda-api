@@ -50,6 +50,7 @@ class MetadataEntitiesService
     }
 
     /**
+     * TODO: deprecate this function, and merge with `lookup`
      * @param $type
      * @param null $code
      * @param null $name
@@ -57,8 +58,7 @@ class MetadataEntitiesService
      * @param bool $wildcard
      * @return MetadataEntity[]
      */
-    public
-    function search($type, $code = null, $name = null, $limit=null, $wildcard=false)
+    public function search($type, $code = null, $name = null, $limit=null, $wildcard=false)
     {
         return $this->repo->findMetadata($type, $code, $name, $limit, $wildcard);
     }
