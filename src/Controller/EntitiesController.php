@@ -15,7 +15,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 
 /**
- * Class SymUrlController
+ * Class EntitiesController
  * @package App\Controller
  * @Route("/entities", name="entities_")
  */

@@ -9,10 +9,10 @@ use Symfony\Component\Serializer\Annotation\Groups;
 // TODO: GeneratedValue()?
 // TODO: ORM\Table?
 /**
- * @ORM\Entity(repositoryClass="App\Repository\AlertRepository")
- * @ORM\Table(indexes={@ORM\Index(name="long_url_idx", columns={"long_url"})})
+ * @ORM\Entity(repositoryClass="App\Repository\OutagersAlertsRepository")
+ * @ORM\Table(name="watchtower_alert")
  */
-class WatchtowerAlert
+class OutagesAlert
 {
 
     /////////////////////
@@ -31,9 +31,9 @@ class WatchtowerAlert
 
     /**
      * @param int $id
-     * @return WatchtowerAlert
+     * @return OutagesAlert
      */
-    public function setId(int $id): WatchtowerAlert
+    public function setId(int $id): OutagesAlert
     {
         $this->id = $id;
         return $this;
@@ -49,9 +49,9 @@ class WatchtowerAlert
 
     /**
      * @param string $fqid
-     * @return WatchtowerAlert
+     * @return OutagesAlert
      */
-    public function setFqid(string $fqid): WatchtowerAlert
+    public function setFqid(string $fqid): OutagesAlert
     {
         $this->fqid = $fqid;
         return $this;
@@ -67,9 +67,9 @@ class WatchtowerAlert
 
     /**
      * @param string $name
-     * @return WatchtowerAlert
+     * @return OutagesAlert
      */
-    public function setName(string $name): WatchtowerAlert
+    public function setName(string $name): OutagesAlert
     {
         $this->name = $name;
         return $this;
@@ -85,9 +85,9 @@ class WatchtowerAlert
 
     /**
      * @param int $queryTime
-     * @return WatchtowerAlert
+     * @return OutagesAlert
      */
-    public function setQueryTime(int $queryTime): WatchtowerAlert
+    public function setQueryTime(int $queryTime): OutagesAlert
     {
         $this->queryTime = $queryTime;
         return $this;
@@ -103,9 +103,9 @@ class WatchtowerAlert
 
     /**
      * @param int $time
-     * @return WatchtowerAlert
+     * @return OutagesAlert
      */
-    public function setTime(int $time): WatchtowerAlert
+    public function setTime(int $time): OutagesAlert
     {
         $this->time = $time;
         return $this;
@@ -121,9 +121,9 @@ class WatchtowerAlert
 
     /**
      * @param string $level
-     * @return WatchtowerAlert
+     * @return OutagesAlert
      */
-    public function setLevel(string $level): WatchtowerAlert
+    public function setLevel(string $level): OutagesAlert
     {
         $this->level = $level;
         return $this;
@@ -139,9 +139,9 @@ class WatchtowerAlert
 
     /**
      * @param string $method
-     * @return WatchtowerAlert
+     * @return OutagesAlert
      */
-    public function setMethod(string $method): WatchtowerAlert
+    public function setMethod(string $method): OutagesAlert
     {
         $this->method = $method;
         return $this;
@@ -157,9 +157,9 @@ class WatchtowerAlert
 
     /**
      * @param string $expression
-     * @return WatchtowerAlert
+     * @return OutagesAlert
      */
-    public function setExpression(string $expression): WatchtowerAlert
+    public function setExpression(string $expression): OutagesAlert
     {
         $this->expression = $expression;
         return $this;
@@ -175,9 +175,9 @@ class WatchtowerAlert
 
     /**
      * @param string $queryExpression
-     * @return WatchtowerAlert
+     * @return OutagesAlert
      */
-    public function setQueryExpression(string $queryExpression): WatchtowerAlert
+    public function setQueryExpression(string $queryExpression): OutagesAlert
     {
         $this->queryExpression = $queryExpression;
         return $this;
@@ -193,9 +193,9 @@ class WatchtowerAlert
 
     /**
      * @param string $historyQueryExpression
-     * @return WatchtowerAlert
+     * @return OutagesAlert
      */
-    public function setHistoryQueryExpression(string $historyQueryExpression): WatchtowerAlert
+    public function setHistoryQueryExpression(string $historyQueryExpression): OutagesAlert
     {
         $this->historyQueryExpression = $historyQueryExpression;
         return $this;
@@ -204,16 +204,16 @@ class WatchtowerAlert
     /**
      * @return string
      */
-    public function getCondition(): string
+    public function getCondition(): ?string
     {
         return $this->condition;
     }
 
     /**
      * @param string $condition
-     * @return WatchtowerAlert
+     * @return OutagesAlert
      */
-    public function setCondition(string $condition): WatchtowerAlert
+    public function setCondition(string $condition): OutagesAlert
     {
         $this->condition = $condition;
         return $this;
@@ -229,9 +229,9 @@ class WatchtowerAlert
 
     /**
      * @param float $value
-     * @return WatchtowerAlert
+     * @return OutagesAlert
      */
-    public function setValue(float $value): WatchtowerAlert
+    public function setValue(float $value): OutagesAlert
     {
         $this->value = $value;
         return $this;
@@ -247,9 +247,9 @@ class WatchtowerAlert
 
     /**
      * @param float $historyValue
-     * @return WatchtowerAlert
+     * @return OutagesAlert
      */
-    public function setHistoryValue(float $historyValue): WatchtowerAlert
+    public function setHistoryValue(float $historyValue): OutagesAlert
     {
         $this->historyValue = $historyValue;
         return $this;
@@ -265,9 +265,9 @@ class WatchtowerAlert
 
     /**
      * @param string $metaType
-     * @return WatchtowerAlert
+     * @return OutagesAlert
      */
-    public function setMetaType(string $metaType): WatchtowerAlert
+    public function setMetaType(string $metaType): OutagesAlert
     {
         $this->metaType = $metaType;
         return $this;
@@ -283,9 +283,9 @@ class WatchtowerAlert
 
     /**
      * @param string $metaCode
-     * @return WatchtowerAlert
+     * @return OutagesAlert
      */
-    public function setMetaCode(string $metaCode): WatchtowerAlert
+    public function setMetaCode(string $metaCode): OutagesAlert
     {
         $this->metaCode = $metaCode;
         return $this;
@@ -299,7 +299,6 @@ class WatchtowerAlert
 
     /**
      * @ORM\Id()
-     * @ORM\GeneratedValue()
      * @ORM\Column(type="integer")
      * @var integer
      */
