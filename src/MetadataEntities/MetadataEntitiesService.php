@@ -60,14 +60,6 @@ class MetadataEntitiesService
     public
     function search($type, $code = null, $name = null, $limit=null, $wildcard=false)
     {
-        if($type) {
-            return $this->repo->findMetadata($type, $code, $name, $limit, $wildcard);
-        } else {
-            $res = array();
-            foreach(array("country", "continent", "asn", "region", "county") as &$t){
-                $res = array_merge($res, $this->repo->findMetadata($t, $code, $name, $limit, $wildcard));
-            }
-            return $res;
-        }
+        return $this->repo->findMetadata($type, $code, $name, $limit, $wildcard);
     }
 }

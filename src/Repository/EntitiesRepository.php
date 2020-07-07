@@ -41,12 +41,14 @@ class EntitiesRepository extends ServiceEntityRepository
     /**
      * Return a sets of entities
      */
-    public function findMetadata($type, $code=null, $name=null, $limit=null, $wildcard=false)
+    public function findMetadata($type=null, $code=null, $name=null, $limit=null, $wildcard=false)
     {
         $qb = $this->createQueryBuilder('m')
             ->innerJoin('m.type', 't');
 
-        $qb->andWhere('t.type = :type')->setParameter('type', $type);
+        if (!empty($type)) {
+            $qb->andWhere('t.type = :type')->setParameter('type', $type);
+        }
         if (!empty($code)) {
             if ($wildcard) {
                 $code = '%'.$code.'%';
