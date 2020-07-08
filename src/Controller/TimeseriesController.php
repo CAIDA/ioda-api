@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Expression\ExpressionFactory;
 use App\Expression\ParsingException;
 use App\Expression\PathExpression;
+use App\MetadataEntities\MetadataEntitiesService;
 use App\Response\Envelope;
 use App\Response\RequestParameter;
 use App\TimeSeries\Backend\BackendException;
@@ -21,132 +22,10 @@ use Symfony\Component\Serializer\SerializerInterface;
 /**
  * Class TimeseriesController
  * @package App\Controller\Timeseries
- * @Route("/ts", name="ts_")
+ * @Route("/signals", name="signals_")
  */
 class TimeseriesController extends ApiController
 {
-    /**
-     * Perform a query for time series data
-     *
-     * TODO: figure out how to correctly add "required" to properties
-     *
-     * @Route("/query/", methods={"POST"}, name="query")
-     * @SWG\Tag(name="Time Series")
-     * @SWG\Parameter(
-     *     name="query",
-     *     in="body",
-     *     type="object",
-     *     description="Query object. Due to limitations in the current API documentation, the full expression schema cannot be properly described. See the various `*Expression` model definitions for more information about types of supported expressions.",
-     *     required=true,
-     *     @SWG\Schema(
-     *         @SWG\Property(
-     *             property="expression",
-     *             type="object",
-     *             description="JSON-encoded expression object. To query for multiple expressions, use the `expressions` parameter instead.",
-     *             ref=@Model(type=\App\Expression\AbstractExpression::class, groups={"public"}),
-     *        ),
-     *        @SWG\Property(
-     *             property="expressions",
-     *             type="array",
-     *             description="Array of JSON-encoded expression objects.",
-     *             items=@SWG\Schema(ref=@Model(type=\App\Expression\AbstractExpression::class, groups={"public"})),
-     *        ),
-     *        @SWG\Property(
-     *             property="from",
-     *             type="string",
-     *             description="Start time of the query (inclusive). Times can be either absolute (e.g., '2018-08-31T16:08:18Z') or relative (e.g. '-24h')",
-     *             default="-7d"
-     *        ),
-     *        @SWG\Property(
-     *             property="until",
-     *             type="string",
-     *             description="End time of the query (exclusive). Times can be either absolute (e.g., '2018-08-31T16:08:18Z') or relative (e.g. '-24h')",
-     *             default="now"
-     *        ),
-     *        @SWG\Property(
-     *             property="aggregation_func",
-     *             type="string",
-     *             default="avg",
-     *             enum={"avg", "sum"},
-     *             description="Aggregation function to use when down-sampling data points",
-     *        ),
-     *        @SWG\Property(
-     *             property="annotate",
-     *             type="boolean",
-     *             description="Annotate time series with metadata (e.g., geographic information)",
-     *             default=false
-     *        ),
-     *        @SWG\Property(
-     *             property="adaptive_downsampling",
-     *             type="boolean",
-     *             description="Request that time series be down-sampled. Helps reduce query latency and result size.",
-     *             default=true
-     *        )
-     *     ),
-     *     @SWG\Schema(ref=@Model(type=\App\Expression\PathExpression::class, groups={"public"})),
-     *     @SWG\Schema(ref=@Model(type=\App\Expression\ConstantExpression::class, groups={"public"})),
-     *     @SWG\Schema(ref=@Model(type=\App\Expression\FunctionExpression::class, groups={"public"}))
-     * )
-     * @SWG\Response(
-     *     response=200,
-     *     description="Contains an array of time series that matched the given query.",
-     *     @SWG\Schema(
-     *         allOf={
-     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
-     *             @SWG\Schema(
-     *                 @SWG\Property(
-     *                     property="type",
-     *                     type="string",
-     *                     enum={"ts.query"}
-     *                 ),
-     *                 @SWG\Property(
-     *                     property="error",
-     *                     type="string",
-     *                     enum={}
-     *                 ),
-     *                 @SWG\Property(
-     *                     property="data",
-     *                     type="array",
-     *                     items=@SWG\Schema(ref=@Model(type=\App\TimeSeries\TimeSeries::class, groups={"public"}))
-     *                 )
-     *             )
-     *         }
-     *     )
-     * )
-     * @SWG\Response(
-     *     response=400,
-     *     description="Indicates that the query failed.",
-     *     @SWG\Schema(
-     *         allOf={
-     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
-     *             @SWG\Schema(
-     *                 @SWG\Property(
-     *                     property="type",
-     *                     type="string",
-     *                     enum={"ts.query"}
-     *                 ),
-     *                 @SWG\Property(
-     *                     property="error",
-     *                     type="string",
-     *                     enum={"Backend failure: foo"}
-     *                 ),
-     *                 @SWG\Property(
-     *                     property="data",
-     *                     type="string",
-     *                     enum={}
-     *                 )
-     *             )
-     *         }
-     *     )
-     * )
-     *
-     * @var Request $request
-     * @var SerializerInterface $serializer
-     * @var ExpressionFactory $expressionFactory
-     * @var GraphiteBackend $tsBackend
-     *
-     * @return JsonResponse
-     */
     public function query(Request $request, SerializerInterface $serializer,
                           ExpressionFactory $expressionFactory,
                           GraphiteBackend $tsBackend)
@@ -329,5 +208,46 @@ class TimeseriesController extends ApiController
             return $this->json($env, 400);
         }
         return $this->json($env, 200, [], ['groups' => ['public', 'list']]);
+    }
+
+    /**
+     * @Route("/{entityType}/{entityCode}", methods={"GET"}, name="get")
+     *
+     * @var string $entityType
+     * @var string $entityCode
+     * @var Request $request
+     * @var SerializerInterface $serializer
+     * @var MetadataEntitiesService
+     * @return JsonResponse
+     */
+    public function lookup(
+        ?string $entityType, ?string $entityCode,
+        Request $request,
+        SerializerInterface $serializer,
+        ExpressionFactory $expressionFactory,
+        GraphiteBackend $tsBackend)
+    {
+        $env = new Envelope('signals',
+            'query',
+            [
+                new RequestParameter('from', RequestParameter::INTEGER, null, true),
+                new RequestParameter('until', RequestParameter::INTEGER, null, true),
+                new RequestParameter('datasource', RequestParameter::STRING, null, false),
+                new RequestParameter('maxPoints', RequestParameter::INTEGER, null, false),
+            ],
+            $request
+        );
+        if ($env->getError()) {
+            return $this->json($env, 400);
+        }
+
+        /* LOCAL PARAM PARSING */
+        $from = $env->getParam('from');
+        $until = $env->getParam('until');
+        $datasource = $env->getParam('datasource');
+        $maxPoints = $env->getParam('maxPoints');
+
+        $env->setData("lala");
+        return $this->json($env);
     }
 }

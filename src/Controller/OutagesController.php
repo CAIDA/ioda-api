@@ -139,7 +139,8 @@ class OutagesController extends ApiController
 
         $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, $datasource);
 
-        $events = $eventsService->buildEventsFromAlerts($alerts, $includeAlerts, $summarize, $format, $from, $until, $limit, $page);
+        // $events = $eventsService->buildEventsFromAlerts($alerts, $includeAlerts, $summarize, $format, $from, $until, $limit, $page);
+        $events = $eventsService->buildEventsSimple($alerts, $includeAlerts, $summarize, $format, $from, $until, $limit, $page);
 
         $env->setData($events);
         return $this->json($env);

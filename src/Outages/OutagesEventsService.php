@@ -92,32 +92,19 @@ class OutagesEventsService
         return $merged;
     }
 
-    private function computeOverallScore(&$mergedEvents)
+    private function computeOverallScore(&$events)
     {
         $total = 0;
-        foreach ($mergedEvents as $event) {
+        foreach ($events as $event) {
             $total += $event['score'];
         }
         return $total;
     }
 
-    private function computerTimeRange(&$mergedEvents)
-    {
-        $total = 0;
-        foreach ($mergedEvents as $event) {
-            $total += $event['score'];
-        }
-        return [$mergedEvents[0]['from'], end($mergedEvents)['until']];
-    }
-
-    private function groupAlertsByEntity($alerts, $byDatasource){
+    private function groupAlertsByEntity($alerts){
         $res = [];
         foreach($alerts as $alert){
             $entity_id = $alert->getMetaType() . $alert->getMetaCode();
-            if($byDatasource){
-                $entity_id = $entity_id . $alert->getDatasource();
-            }
-            // $entity_id = $alert->getEntity();
             if(!array_key_exists($entity_id, $res)){
                 $res[$entity_id] = array();
             }
@@ -168,23 +155,30 @@ class OutagesEventsService
         return $squashed;
     }
 
-    public function buildEventsFromAlerts($alerts, $includeAlerts, $summarize, $format, $from, $until, $limit, $page=0){
-        $alerts = $this->squashAlerts($alerts);
+    public function buildEventsSimple($alerts, $includeAlerts, $summarize, $format, $from, $until, $limit, $page=0){
         $res = [];
-        $byDatasource = $format=="ioda" && $summarize;
-        $grouped = $this->groupAlertsByEntity($alerts, $byDatasource);
-        foreach ($grouped as $entity_id => $alerts) {
-            // hax: alerts have been jammed into relationships ;)
-            $events = $this->buildEvents($alerts, $from, $until);
-            $merged = $this->mergeEvents($events);
-            $score = $this->computeOverallScore($merged);
-            $range  = $this->computerTimeRange($merged);
 
-            $res[] = new OutagesEvent($range[0], $range[1], $alerts, $score, $format, $includeAlerts);
+        if($summarize && $format=="ioda"){
+            $groups = $this->groupAlertsByEntity($alerts);
+            foreach($groups as $entity_id => $alerts){
+                $eventmap = $this->buildEvents($alerts, $from, $until);
+                foreach ($eventmap as $id => $events) {
+                    $score = $this->computeOverallScore($events);
+                    $res[] = new OutagesEvent(0, 0,
+                        $this->squashAlerts($alerts), $score, $format, $includeAlerts);
+                }
+            }
+        } else {
+            $eventmap = $this->buildEvents($alerts, $from, $until);
+            foreach ($eventmap as $id => $events) {
+                foreach($events as $event){
+                    $res[] = new OutagesEvent($event['from'], $event['until'],
+                        $this->squashAlerts($event['alerts']), $event['score'], $format, $includeAlerts);
+                }
+            }
         }
 
         usort($res, [ "App\Outages\OutagesEventsService","cmpEventObj"]);
-
         if ($limit) {
             $res = array_slice($res, $limit*$page, $limit);
         }
@@ -193,6 +187,7 @@ class OutagesEventsService
     }
 
     private function buildEvents($alerts, $from, $until){
+        // sort alerts by time
         usort($alerts, ["App\Outages\OutagesEventsService","cmpAlert"]);
 
         # EVENT: "location" "start" "duration" "uncertainty" "status" "fraction" "score" "location_name" "overlaps_window"
@@ -225,6 +220,7 @@ class OutagesEventsService
                 $cE['score'] += $cE['prevDrop'] * $interAlertMins;
                 $cE['prevTime'] = $time;
                 $cE['prevDrop'] = $drop;
+                $cE['alerts'][] = $a;
 
                 if ($level === "normal") {
                     $cE['until'] = $time;
@@ -243,6 +239,7 @@ class OutagesEventsService
                         'metaType' => $a->getMetaType(),
                         'metaCode' => $a->getMetaCode(),
                         'from' => $time,
+                        'alerts' => [$a],
                         // until will be set at end
                         'score' => 0,
 

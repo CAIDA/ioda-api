@@ -55,8 +55,11 @@ class OutagesEvent
     /**
      * @return MetadataEntity
      */
-    public function getEntity(): MetadataEntity
+    public function getEntity(): ?MetadataEntity
     {
+        if(!$this->alerts){
+            return null;
+        }
         return $this->alerts[0]->getEntity();
     }
 
@@ -117,7 +120,7 @@ class OutagesEvent
     /**
      * @return OutagesAlert[]
      */
-    public function getAlerts(): array
+    public function getAlerts(): ?array
     {
         return $this->alerts;
     }
@@ -133,15 +136,11 @@ class OutagesEvent
     }
 
     /**
-     * @return string[]
+     * @return string
      */
-    public function getDatasource()
+    public function getDatasource(): string
     {
-        $set = [];
-        foreach($this->alerts as &$alert){
-            $set[$alert->getDatasource()] = 1;
-        }
-        return array_keys($set);
+        return $this->alerts[0]->getDatasource();
     }
 
     //////////////////////////

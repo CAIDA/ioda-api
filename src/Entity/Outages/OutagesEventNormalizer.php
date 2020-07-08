@@ -30,12 +30,18 @@ class OutagesEventNormalizer implements ContextAwareNormalizerInterface
             $res["status"] = 0;
             $res["fraction"] = null;
             $res["score"] = $event->getScore();
-            $res["location_namexxx"] = $data["entity"]['name'];
+            $res["location_name"] = $data["entity"]['name'];
             $res["overlaps_window"] = false;
 
         } elseif ($event->getFormat()=="ioda"){
             if(!$event->isIncludeAlerts()){
                 unset($data['alerts']);
+            }
+            if($data['from']==0){
+                unset($data['from']);
+            }
+            if($data['until']==0){
+                unset($data['until']);
             }
             $res = $data;
         } else {
