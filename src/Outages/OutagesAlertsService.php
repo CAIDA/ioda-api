@@ -37,7 +37,7 @@ class OutagesAlertsService
      * @param $page
      * @return OutagesAlert[]
      */
-    public function findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit, $page)
+    public function findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit=null, $page=null)
     {
         $alerts = $this->repo->findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit, $page);
 
@@ -46,6 +46,16 @@ class OutagesAlertsService
             $code = $alert->getMetaCode();
             $metas = $this->metadataService->lookup($type, $code);
             $alert->setEntity($metas[0]);
+
+            $datasource = $alert->getFqid();
+            if(strpos($datasource,"bgp")!==false){
+                $datasource = "bgp";
+            } elseif (strpos($datasource,"ucsd-nt")!==false){
+                $datasource = "ucsd-nt";
+            } elseif (strpos($datasource,"ping-slash24")!==false){
+                $datasource = "ping-slash24";
+            }
+            $alert->setDatasource($datasource);
         }
 
         return $alerts;

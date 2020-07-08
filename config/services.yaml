@@ -38,6 +38,11 @@ services:
         public: false
         tags: [serializer.normalizer]
 
+    outages_event_normalizer:
+        class: App\Entity\Outages\OutagesEventNormalizer
+        public: false
+        tags: [serializer.normalizer]
+
     # get_set_method_normalizer:
     #     class: Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer
     #     public: false

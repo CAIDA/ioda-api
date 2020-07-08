@@ -293,7 +293,7 @@ class OutagesAlert
 
     /**
      */
-    public function getEntity()
+    public function getEntity(): MetadataEntity
     {
         return $this->entity;
     }
@@ -303,6 +303,21 @@ class OutagesAlert
     public function setEntity($entity)
     {
         $this->entity = $entity;
+        return $this;
+    }
+
+    /**
+     */
+    public function getDatasource()
+    {
+        return $this->datasource;
+    }
+
+    /**
+     */
+    public function setDatasource($datasource)
+    {
+        $this->datasource = $datasource;
         return $this;
     }
 
@@ -419,9 +434,14 @@ class OutagesAlert
 
     /**
      * @Groups({"public"})
-     * @var string
+     * @var MetadataEntity
      */
     private $entity;
 
+    /**
+     * @Groups({"public"})
+     * @var string
+     */
+    private $datasource;
 
 }

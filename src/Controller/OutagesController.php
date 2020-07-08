@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\MetadataEntities\MetadataEntitiesService;
 use App\Outages\OutagesAlertsService;
+use App\Outages\OutagesEventsService;
 use App\Response\Envelope;
 use App\Response\RequestParameter;
 use Doctrine\ORM\NonUniqueResultException;
@@ -29,6 +30,7 @@ class OutagesController extends ApiController
         }
         return null;
     }
+
     /**
      * @Route("/alerts/{entityType}/{entityCode}", methods={"GET"}, name="alerts", defaults={"entityType"=null,"entityCode"=null})
      *
@@ -83,64 +85,63 @@ class OutagesController extends ApiController
     }
 
     /**
-     * @Route("/events/{entityType}/{entityCode}", methods={"GET"}, name="events")
+     * @Route("/events/{entityType}/{entityCode}", methods={"GET"}, name="events", defaults={"entityType"=null,"entityCode"=null})
      *
      * @var string|null $entityType
      * @var string|null $entityCode
      * @var Request $request
      * @var SerializerInterface $serializer
-     * @var MetadataEntitiesService
+     * @var OutagesEventsService
      * @return JsonResponse
      */
     public function events(
         ?string $entityType, ?string $entityCode,
         Request $request,
         SerializerInterface $serializer,
-        MetadataEntitiesService $service
+        OutagesEventsService $eventsService,
+        OutagesAlertsService $alertsService
     ){
         $env = new Envelope('outages.alerts',
             'query',
             [
-                new RequestParameter('from', RequestParameter::INTEGER, null, true),
-                new RequestParameter('until', RequestParameter::INTEGER, null, true),
+                new RequestParameter('from', RequestParameter::STRING, null, true),
+                new RequestParameter('until', RequestParameter::STRING, null, true),
+                new RequestParameter('datasource', RequestParameter::STRING, null, false),
+                new RequestParameter('summarize', RequestParameter::BOOL, false, false),
+                new RequestParameter('includeAlerts', RequestParameter::BOOL, false, false),
+                new RequestParameter('format', RequestParameter::STRING, "codf", false),
                 new RequestParameter('limit', RequestParameter::INTEGER, null, false),
                 new RequestParameter('page', RequestParameter::INTEGER, null, false),
-                new RequestParameter('datasource', RequestParameter::STRING, null, false),
-                new RequestParameter('includeAlerts', RequestParameter::BOOL, null, false),
-                new RequestParameter('format', RequestParameter::STRING, "codf", false),
             ],
             $request
         );
-        if ($env->getError()) {
-            return $this->json($env, 400);
-        }
 
         /* LOCAL PARAM PARSING */
-        $search = $env->getParam('search');
-        $relatedTo = $env->getParam('relatedTo');
+        $from = $this->parseTimestampParameter($env->getParam('from'));
+        $until = $this->parseTimestampParameter($env->getParam('until'));
+        if(!isset($from)){
+            throw new \InvalidArgumentException(
+                "'from' timestamp must be set"
+            );
+        }
+        if(!isset($until)){
+            throw new \InvalidArgumentException(
+                "'until' timestamp must be set"
+            );
+        }
+
+        $datasource = $env->getParam('datasource');
+        $summarize = $env->getParam('summarize');
+        $includeAlerts = $env->getParam('includeAlerts');
+        $format = $env->getParam('format');
         $limit = $env->getParam('limit');
-        if($search){
-            $entity = $service->search($entityType, null, $search, $limit, true);
-            $env->setData($entity);
-            return $this->json($env);
-        }
+        $page = $env->getParam('page');
 
-        if ($relatedTo) {
-            $relatedTo = explode('/', $relatedTo);
-            if (count($relatedTo) > 2) {
-                throw new \InvalidArgumentException(
-                    "relatedTo parameter must be in the form 'type[/code]'"
-                );
-            }
-            if (count($relatedTo) == 1) {
-                $relatedTo[] = null;
-            }
-        } else {
-            $relatedTo = [null, null];
-        }
+        $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, $datasource);
 
-        $entity = $service->lookup($entityType, $entityCode, $relatedTo[0], $relatedTo[1], $limit);
-        $env->setData($entity);
+        $events = $eventsService->buildEventsFromAlerts($alerts, $includeAlerts, $summarize, $format, $from, $until, $limit, $page);
+
+        $env->setData($events);
         return $this->json($env);
     }
 }

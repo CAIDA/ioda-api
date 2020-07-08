@@ -20,15 +20,7 @@ class OutagesAlertNormalizer implements ContextAwareNormalizerInterface
     {
         $data = $this->normalizer->normalize($alert, $format, $context);
         $res = array();
-        $datasource = $data["fqid"];
-        if(strpos($datasource,"bgp")!==false){
-            $datasource = "bgp";
-        } elseif (strpos($datasource,"ucsd-nt")!==false){
-            $datasource = "ucsd-nt";
-        } elseif (strpos($datasource,"ping-slash24")!==false){
-            $datasource = "ping-slash24";
-        }
-        $res["datasource"]=$datasource;
+        $res["datasource"]=$data["datasource"];
         $res["entity"] = $data["entity"];
         $res["time"] = $data["time"];
         $res["level"] = $data["level"];
