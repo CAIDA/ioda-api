@@ -1,11 +1,11 @@
 <?php
 
 
-namespace App\Outages;
+namespace App\Service;
 
 
 use App\Entity\Outages\OutagesAlert;
-use App\MetadataEntities\MetadataEntitiesService;
+use App\Service\MetadataEntitiesService;
 use App\Repository\OutagesAlertsRepository;
 use CAIDA\Charthouse\WatchtowerBundle\Entity\WatchtowerAlert;
 
@@ -96,15 +96,15 @@ class OutagesAlertsService
             $alert->setEntity($metas[0]);
 
             // map datasources to short names
-            $datasource = $alert->getFqid();
-            if(strpos($datasource,"bgp")!==false){
-                $datasource = "bgp";
+            $ds = $alert->getFqid();
+            if(strpos($ds,"bgp")!==false){
+                $ds = "bgp";
             } elseif (strpos($datasource,"ucsd-nt")!==false){
-                $datasource = "ucsd-nt";
+                $ds = "ucsd-nt";
             } elseif (strpos($datasource,"ping-slash24")!==false){
-                $datasource = "ping-slash24";
+                $ds = "ping-slash24";
             }
-            $alert->setDatasource($datasource);
+            $alert->setDatasource($ds);
             $res[] = $alert;
         }
 

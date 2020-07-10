@@ -2,7 +2,7 @@
 
 namespace App\Controller;
 
-use App\MetadataEntities\MetadataEntitiesService;
+use App\Service\MetadataEntitiesService;
 use App\Response\Envelope;
 use App\Response\RequestParameter;
 use Doctrine\ORM\NonUniqueResultException;

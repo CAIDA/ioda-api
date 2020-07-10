@@ -1,7 +1,7 @@
 <?php
 
 
-namespace App\MetadataEntities;
+namespace App\Service;
 
 
 use App\Entity\Outages\MetadataEntity;

@@ -4,7 +4,7 @@ namespace App\Controller;
 
 use App\Response\Envelope;
 use App\Response\RequestParameter;
-use App\SymUrl\SymUrlService;
+use App\Service\SymUrlService;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\ORMException;
 use Nelmio\ApiDocBundle\Annotation\Model;

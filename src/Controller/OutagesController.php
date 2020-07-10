@@ -2,9 +2,9 @@
 
 namespace App\Controller;
 
-use App\MetadataEntities\MetadataEntitiesService;
-use App\Outages\OutagesAlertsService;
-use App\Outages\OutagesEventsService;
+use App\Service\MetadataEntitiesService;
+use App\Service\OutagesAlertsService;
+use App\Service\OutagesEventsService;
 use App\Response\Envelope;
 use App\Response\RequestParameter;
 use Doctrine\ORM\NonUniqueResultException;
@@ -101,7 +101,7 @@ class OutagesController extends ApiController
         OutagesEventsService $eventsService,
         OutagesAlertsService $alertsService
     ){
-        $env = new Envelope('outages.alerts',
+        $env = new Envelope('outages.events',
             'query',
             [
                 new RequestParameter('from', RequestParameter::STRING, null, true),
@@ -160,7 +160,7 @@ class OutagesController extends ApiController
         OutagesEventsService $eventsService,
         OutagesAlertsService $alertsService
     ){
-        $env = new Envelope('outages.alerts',
+        $env = new Envelope('outages.summary',
             'query',
             [
                 new RequestParameter('from', RequestParameter::STRING, null, true),

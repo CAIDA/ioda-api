@@ -3,7 +3,7 @@
 namespace App\Controller;
 
 use App\Response\Envelope;
-use App\Topo\TopoService;
+use App\Service\TopoService;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;

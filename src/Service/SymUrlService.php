@@ -1,7 +1,7 @@
 <?php
 
 
-namespace App\SymUrl;
+namespace App\Service;
 
 
 use App\Entity\Ioda\SymUrl;

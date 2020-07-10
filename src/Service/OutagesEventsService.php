@@ -1,13 +1,13 @@
 <?php
 
 
-namespace App\Outages;
+namespace App\Service;
 
 
 use App\Entity\Outages\OutagesAlert;
 use App\Entity\Outages\OutagesEvent;
 use App\Entity\Outages\OutagesSummary;
-use App\MetadataEntities\MetadataEntitiesService;
+use App\Service\MetadataEntitiesService;
 use App\Repository\OutagesAlertsRepository;
 use CAIDA\Charthouse\WatchtowerBundle\Entity\WatchtowerAlert;
 
@@ -53,7 +53,7 @@ class OutagesEventsService
 
         // sort by from time
         usort($allEvents, [
-            'App\Outages\OutagesEventsService',
+            'App\Service\OutagesEventsService',
             'cmpEvent'
         ]);
 
@@ -122,7 +122,7 @@ class OutagesEventsService
             }
         }
 
-        usort($res, [ "App\Outages\OutagesEventsService","cmpEventObj"]);
+        usort($res, [ "App\Service\OutagesEventsService","cmpEventObj"]);
         if ($limit) {
             $res = array_slice($res, $limit*$page, $limit);
         }
