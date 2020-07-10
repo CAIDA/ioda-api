@@ -6,6 +6,7 @@ namespace App\Outages;
 
 use App\Entity\Outages\OutagesAlert;
 use App\Entity\Outages\OutagesEvent;
+use App\Entity\Outages\OutagesSummary;
 use App\MetadataEntities\MetadataEntitiesService;
 use App\Repository\OutagesAlertsRepository;
 use CAIDA\Charthouse\WatchtowerBundle\Entity\WatchtowerAlert;
@@ -88,15 +89,6 @@ class OutagesEventsService
         return $merged;
     }
 
-    private function computeOverallScore(&$events)
-    {
-        $total = 0;
-        foreach ($events as $event) {
-            $total += $event['score'];
-        }
-        return $total;
-    }
-
     private function groupAlertsByEntity($alerts){
         $res = [];
         foreach($alerts as $alert){
@@ -109,27 +101,24 @@ class OutagesEventsService
         return $res;
     }
 
-    public function buildEventsSimple($alerts, $includeAlerts, $summarize, $format, $from, $until, $limit, $page=0){
+    /**
+     * @param $alerts
+     * @param $includeAlerts
+     * @param $format
+     * @param $from
+     * @param $until
+     * @param $limit
+     * @param int $page
+     * @return OutagesEvent[]
+     */
+    public function buildEventsSimple($alerts, $includeAlerts, $format, $from, $until, $limit, $page=0){
         $res = [];
 
-        if($summarize && $format=="ioda"){
-            // TODO: rewrite the ioda format based on updated api-spec
-            $groups = $this->groupAlertsByEntity($alerts);
-            foreach($groups as $entity_id => $alerts){
-                $eventmap = $this->buildEvents($alerts, $from, $until);
-                foreach ($eventmap as $id => $events) {
-                    $score = $this->computeOverallScore($events);
-                    $res[] = new OutagesEvent(0, 0,
-                        $alerts, $score, $format, $includeAlerts);
-                }
-            }
-        } else {
-            $eventmap = $this->buildEvents($alerts, $from, $until);
-            foreach ($eventmap as $id => $events) {
-                foreach($events as $event){
-                    $res[] = new OutagesEvent($event['from'], $event['until'],
-                        $event['alerts'], $event['score'], $format, $includeAlerts, $event['X-Overlaps-Window']);
-                }
+        $eventmap = $this->buildEvents($alerts, $from, $until);
+        foreach ($eventmap as $id => $events) {
+            foreach($events as $event){
+                $res[] = new OutagesEvent($event['from'], $event['until'],
+                    $event['alerts'], $event['score'], $format, $includeAlerts, $event['X-Overlaps-Window']);
             }
         }
 
@@ -138,6 +127,57 @@ class OutagesEventsService
             $res = array_slice($res, $limit*$page, $limit);
         }
 
+        return $res;
+    }
+
+    /**
+     * @param array $events
+     *
+     * @return array
+     */
+    private function computeScores(&$events)
+    {
+        $res = [];
+        foreach (array_keys($events) as $aId) {
+            foreach ($events[$aId] as &$e) {
+                $fqid = $e['fqid'];
+                if (!array_key_exists($fqid, $res)) {
+                    $res[$fqid] = 0;
+                }
+                $res[$fqid] += $e['score'];
+            }
+        }
+
+        $merged = $this->mergeEvents($events);
+        $total = 0;
+        foreach ($merged as $event) {
+            $total += $event['score'];
+        }
+        $res["total"] = $total;
+        return $res;
+    }
+
+    /**
+     * @param $alerts
+     * @param $from
+     * @param $until
+     * @param $limit
+     * @param int $page
+     * @return OutagesEvent[]
+     */
+    public function buildEventsSummary($alerts, $from, $until, $limit, $page=0){
+        $res = [];
+
+        $alertGroups = $this->groupAlertsByEntity($alerts);
+        foreach($alertGroups as $entity_id => $alerts){
+            // all alerts here have the entity
+            $eventmap = $this->buildEvents($alerts, $from, $until);
+            $scores = $this->computeScores($eventmap);
+            $res[] = new OutagesSummary($from, $until, $scores, $alerts[0]->getEntity());
+        }
+        if ($limit) {
+            $res = array_slice($res, $limit*$page, $limit);
+        }
         return $res;
     }
 

@@ -107,7 +107,6 @@ class OutagesController extends ApiController
                 new RequestParameter('from', RequestParameter::STRING, null, true),
                 new RequestParameter('until', RequestParameter::STRING, null, true),
                 new RequestParameter('datasource', RequestParameter::STRING, null, false),
-                new RequestParameter('summarize', RequestParameter::BOOL, false, false),
                 new RequestParameter('includeAlerts', RequestParameter::BOOL, false, false),
                 new RequestParameter('format', RequestParameter::STRING, "codf", false),
                 new RequestParameter('limit', RequestParameter::INTEGER, null, false),
@@ -131,7 +130,6 @@ class OutagesController extends ApiController
         }
 
         $datasource = $env->getParam('datasource');
-        $summarize = $env->getParam('summarize');
         $includeAlerts = $env->getParam('includeAlerts');
         $format = $env->getParam('format');
         $limit = $env->getParam('limit');
@@ -139,8 +137,60 @@ class OutagesController extends ApiController
 
         $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, $datasource);
 
-        // $events = $eventsService->buildEventsFromAlerts($alerts, $includeAlerts, $summarize, $format, $from, $until, $limit, $page);
-        $events = $eventsService->buildEventsSimple($alerts, $includeAlerts, $summarize, $format, $from, $until, $limit, $page);
+        $events = $eventsService->buildEventsSimple($alerts, $includeAlerts, $format, $from, $until, $limit, $page);
+
+        $env->setData($events);
+        return $this->json($env);
+    }
+
+    /**
+     * @Route("/summary/{entityType}/{entityCode}", methods={"GET"}, name="summary", defaults={"entityType"=null,"entityCode"=null})
+     *
+     * @var string|null $entityType
+     * @var string|null $entityCode
+     * @var Request $request
+     * @var SerializerInterface $serializer
+     * @var OutagesEventsService
+     * @return JsonResponse
+     */
+    public function summary(
+        ?string $entityType, ?string $entityCode,
+        Request $request,
+        SerializerInterface $serializer,
+        OutagesEventsService $eventsService,
+        OutagesAlertsService $alertsService
+    ){
+        $env = new Envelope('outages.alerts',
+            'query',
+            [
+                new RequestParameter('from', RequestParameter::STRING, null, true),
+                new RequestParameter('until', RequestParameter::STRING, null, true),
+                new RequestParameter('limit', RequestParameter::INTEGER, null, false),
+                new RequestParameter('page', RequestParameter::INTEGER, null, false),
+            ],
+            $request
+        );
+
+        /* LOCAL PARAM PARSING */
+        $from = $this->parseTimestampParameter($env->getParam('from'));
+        $until = $this->parseTimestampParameter($env->getParam('until'));
+        if(!isset($from)){
+            throw new \InvalidArgumentException(
+                "'from' timestamp must be set"
+            );
+        }
+        if(!isset($until)){
+            throw new \InvalidArgumentException(
+                "'until' timestamp must be set"
+            );
+        }
+
+        $limit = $env->getParam('limit');
+        $page = $env->getParam('page');
+
+        $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, null);
+
+        $events = $eventsService->buildEventsSummary($alerts, $from, $until, $limit, $page);
 
         $env->setData($events);
         return $this->json($env);
