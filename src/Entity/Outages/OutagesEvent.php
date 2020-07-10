@@ -10,7 +10,7 @@ class OutagesEvent
     /**
      * Constructor
      */
-    public function __construct($from, $until, $alerts, $score, $format, $includeAlerts)
+    public function __construct($from, $until, $alerts, $score, $format, $includeAlerts, $overlap)
     {
         $this->from = $from;
         $this->until = $until;
@@ -18,6 +18,7 @@ class OutagesEvent
         $this->score = $score;
         $this->format = $format;
         $this->includeAlerts = $includeAlerts;
+        $this->overlap = $overlap;
     }
 
     /////////////////////
@@ -143,6 +144,24 @@ class OutagesEvent
         return $this->alerts[0]->getDatasource();
     }
 
+    /**
+     * @return bool
+     */
+    public function isOverlap(): bool
+    {
+        return $this->overlap;
+    }
+
+    /**
+     * @param bool $overlap
+     * @return OutagesEvent
+     */
+    public function setOverlap(bool $overlap): OutagesEvent
+    {
+        $this->overlap = $overlap;
+        return $this;
+    }
+
     //////////////////////////
     //////////////////////////
     // VARIABLE DEFINITIONS //
@@ -194,4 +213,10 @@ class OutagesEvent
      * @var bool
      */
     private $includeAlerts;
+
+    /**
+     * @var bool
+     */
+    private $overlap;
+
 }

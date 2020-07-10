@@ -128,7 +128,7 @@ class OutagesEventsService
             foreach ($eventmap as $id => $events) {
                 foreach($events as $event){
                     $res[] = new OutagesEvent($event['from'], $event['until'],
-                        $this->squashAlerts($event['alerts']), $event['score'], $format, $includeAlerts);
+                        $event['alerts'], $event['score'], $format, $includeAlerts, $event['X-Overlaps-Window']);
                 }
             }
         }
@@ -143,7 +143,7 @@ class OutagesEventsService
 
     private function buildEvents($alerts, $from, $until){
         // sort alerts by time
-        usort($alerts, ["App\Outages\OutagesEventsService","cmpAlert"]);
+        // usort($alerts, ["App\Outages\OutagesEventsService","cmpAlert"]);
 
         # EVENT: "location" "start" "duration" "uncertainty" "status" "fraction" "score" "location_name" "overlaps_window"
 
@@ -195,6 +195,7 @@ class OutagesEventsService
                         'metaCode' => $a->getMetaCode(),
                         'from' => $time,
                         'alerts' => [$a],
+                        'X-Overlaps-Window' => false,
                         // until will be set at end
                         'score' => 0,
 

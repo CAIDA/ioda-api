@@ -31,7 +31,7 @@ class OutagesEventNormalizer implements ContextAwareNormalizerInterface
             $res["fraction"] = null;
             $res["score"] = $event->getScore();
             $res["location_name"] = $data["entity"]['name'];
-            $res["overlaps_window"] = false;
+            $res["overlaps_window"] = $event->isOverlap();
 
         } elseif ($event->getFormat()=="ioda"){
             if(!$event->isIncludeAlerts()){
