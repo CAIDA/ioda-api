@@ -21,10 +21,18 @@ class OutagesAlertsService
      */
     private $metadataService;
 
-    public function __construct(OutagesAlertsRepository $outagesAlertsRepository, MetadataEntitiesService $metadataEntitiesService)
+    /**
+     * @var DatasourceService
+     */
+    private $datasourceService;
+
+    public function __construct(OutagesAlertsRepository $outagesAlertsRepository,
+                                MetadataEntitiesService $metadataEntitiesService,
+                                DatasourceService $datasourceService)
     {
         $this->repo = $outagesAlertsRepository;
         $this->metadataService = $metadataEntitiesService;
+        $this->datasourceService = $datasourceService;
     }
 
     /**
@@ -94,17 +102,7 @@ class OutagesAlertsService
                 continue;
             }
             $alert->setEntity($metas[0]);
-
-            // map datasources to short names
-            $ds = $alert->getFqid();
-            if(strpos($ds,"bgp")!==false){
-                $ds = "bgp";
-            } elseif (strpos($datasource,"ucsd-nt")!==false){
-                $ds = "ucsd-nt";
-            } elseif (strpos($datasource,"ping-slash24")!==false){
-                $ds = "ping-slash24";
-            }
-            $alert->setDatasource($ds);
+            $alert->setDatasource($this->datasourceService->fqidToDatasourceName($alert->getFqid()));
             $res[] = $alert;
         }
 

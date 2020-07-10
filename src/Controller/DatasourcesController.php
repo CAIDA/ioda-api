@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Response\Envelope;
+use App\Service\DatasourceService;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,24 +17,6 @@ use Symfony\Component\Serializer\SerializerInterface;
  */
 class DatasourcesController extends ApiController
 {
-    const DATASOURCES = [
-        "ucsd-nt" => [
-            "datasource" => "ucsd-nt",
-            "name" => "UCSD Network Telescope",
-            "units" => "Unique Source IPs"
-        ],
-        "bgp" => [
-            "datasource" => "bgp",
-            "name" => "BGP",
-            "units" => "Visible /24s"
-        ],
-        "ping-slash24" => [
-            "datasource" => "ping-slash24",
-            "name" => "Active Probing",
-            "units" => "Up /24s"
-        ],
-    ];
-
     /**
      * Get all datasources
      *
@@ -45,7 +28,7 @@ class DatasourcesController extends ApiController
      * @var SerializerInterface $serializer
      * @return JsonResponse
      */
-    public function datasources(Request $request)
+    public function datasources(Request $request, DatasourceService $service)
     {
         $env = new Envelope('datasources',
             'query',
@@ -55,7 +38,7 @@ class DatasourcesController extends ApiController
         if ($env->getError()) {
             return $this->json($env, 400);
         }
-        $env->setData(array_values(self::DATASOURCES));
+        $env->setData(array_values($service->getDatasources()));
         return $this->json($env);
     }
 
@@ -71,7 +54,7 @@ class DatasourcesController extends ApiController
      * @var SerializerInterface $serializer
      * @return JsonResponse
      */
-    public function datasourceLookup(string $datasource, Request $request)
+    public function datasourceLookup(string $datasource, Request $request, DatasourceService $datasourceService)
     {
         $env = new Envelope('datasources',
             'query',
@@ -82,11 +65,12 @@ class DatasourcesController extends ApiController
             return $this->json($env, 400);
         }
 
+        $datasources = $datasourceService->getDatasources();
         try {
-            if (!array_key_exists($datasource, self::DATASOURCES)) {
+            if (!array_key_exists($datasource, $datasources)) {
                 throw new \InvalidArgumentException("Unknown datasource '$datasource'");
             }
-            $env->setData(self::DATASOURCES[$datasource]);
+            $env->setData($datasources[$datasource]);
         } catch (\InvalidArgumentException $ex) {
             $env->setError($ex->getMessage());
             return $this->json($env, 400);

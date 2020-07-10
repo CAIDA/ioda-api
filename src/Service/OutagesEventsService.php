@@ -18,9 +18,15 @@ class OutagesEventsService
      */
     private $repo;
 
-    public function __construct(OutagesAlertsRepository $outagesAlertsRepository)
+    /**
+     * @var DatasourceService
+     */
+    private $datasourceService;
+
+    public function __construct(OutagesAlertsRepository $outagesAlertsRepository, DatasourceService $datasourceService)
     {
         $this->repo = $outagesAlertsRepository;
+        $this->datasourceService = $datasourceService;
     }
 
     private function cmpEvent($a, $b) {
