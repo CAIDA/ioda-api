@@ -35,6 +35,9 @@ class OutagesAlertsRepository extends ServiceEntityRepository
         if ($until) {
             $qb->andWhere('a.time < :until')->setParameter('until', $until);
         }
+        if ($datasource){
+            $qb->andWhere('a.fqid LIKE :datasource')->setParameter('datasource', "%".$datasource."%");
+        }
         if (isset($entityType)) {
             $qb->andWhere('a.metaType = :metaType')
                 ->setParameter('metaType', $entityType);
