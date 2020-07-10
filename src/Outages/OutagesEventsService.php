@@ -22,10 +22,6 @@ class OutagesEventsService
         $this->repo = $outagesAlertsRepository;
     }
 
-    private function cmpAlert($a, $b) {
-        return $a->getTime() - $b->getTime();
-    }
-
     private function cmpEvent($a, $b) {
         return $a['from'] - $b['from'];
     }

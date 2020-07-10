@@ -76,16 +76,26 @@ class OutagesAlertsService
      * @param $page
      * @return OutagesAlert[]
      */
-    public function findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit=null, $page=null)
+    public function findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit=null, $page=0)
     {
-        $alerts = $this->repo->findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit, $page);
+        // find alerts, already sorted by time
+        $alerts = $this->repo->findAlerts($from, $until, $entityType, $entityCode, $datasource);
 
+        // squash alerts
+        $alerts = $this->squashAlerts($alerts);
+
+        $res = [];
         foreach($alerts as &$alert){
+            // TODO: eventually, find a way to let doctrine to the work.
             $type = $alert->getMetaType();
             $code = $alert->getMetaCode();
             $metas = $this->metadataService->lookup($type, $code);
+            if(count($metas)==0){
+                continue;
+            }
             $alert->setEntity($metas[0]);
 
+            // map datasources to short names
             $datasource = $alert->getFqid();
             if(strpos($datasource,"bgp")!==false){
                 $datasource = "bgp";
@@ -95,8 +105,13 @@ class OutagesAlertsService
                 $datasource = "ping-slash24";
             }
             $alert->setDatasource($datasource);
+            $res[] = $alert;
         }
 
-        return $alerts;
+        if ($limit) {
+            $res = array_slice($res, $limit*$page, $limit);
+        }
+
+        return $res;
     }
 }
