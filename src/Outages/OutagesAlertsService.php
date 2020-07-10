@@ -28,6 +28,45 @@ class OutagesAlertsService
     }
 
     /**
+     * @param OutagesAlert[] $alerts
+     *
+     * @return OutagesAlert[]
+     *
+     * This function takes a series of alerts, groups them by fqid, meta
+     * type/code, and then coalesces adjacent alerts based on the following
+     * criteria:
+     *  - if the alert level is the same as the previous alert, drop
+     *  - if the alert level is a transition from "critical" -> !"normal", drop
+     * That is, the only allowed transitions are:
+     *   N->W[->C], N->C, C->N
+     */
+    private function squashAlerts(&$alerts)
+    {
+        $squashed = [];
+        $currentLevel = [];
+
+        foreach ($alerts as &$alert) {
+            $alertId = $alert->getFqid() . $alert->getMetaType() . $alert->getMetaCode();
+            $level = $alert->getLevel();
+            if (!array_key_exists($alertId, $currentLevel)) {
+                $currentLevel[$alertId] = $level;
+                $squashed[] = $alert;
+                continue;
+            }
+            $cl = $currentLevel[$alertId];
+            if (($cl == "critical" && $level == "normal") ||
+                ($cl != "critical" && $cl != $level)) {
+                // N->W[->C], N->C, C->N
+                $currentLevel[$alertId] = $level;
+                $squashed[] = $alert;
+                continue;
+            }
+        }
+
+        return $squashed;
+    }
+
+    /**
      * @param $from
      * @param $until
      * @param $entityType
