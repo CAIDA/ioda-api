@@ -5,9 +5,6 @@ namespace App\Entity\Outages;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
-// TODO: Groups public?
-// TODO: GeneratedValue()?
-// TODO: ORM\Table?
 /**
  * @ORM\Entity(repositoryClass="App\Repository\OutagersAlertsRepository")
  * @ORM\Table(name="watchtower_alert")
@@ -292,15 +289,18 @@ class OutagesAlert
     }
 
     /**
+     * @return MetadataEntity|null
      */
-    public function getEntity(): MetadataEntity
+    public function getEntity(): ?MetadataEntity
     {
         return $this->entity;
     }
 
     /**
+     * @param MetadataEntity $entity
+     * @return OutagesAlert
      */
-    public function setEntity($entity)
+    public function setEntity(MetadataEntity $entity): OutagesAlert
     {
         $this->entity = $entity;
         return $this;
