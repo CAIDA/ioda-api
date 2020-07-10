@@ -146,11 +146,11 @@ class OutagesEventsService
         $res = [];
         foreach (array_keys($events) as $aId) {
             foreach ($events[$aId] as &$e) {
-                $fqid = $e['fqid'];
-                if (!array_key_exists($fqid, $res)) {
-                    $res[$fqid] = 0;
+                $ds = $this->datasourceService->fqidToDatasourceName($e['fqid']);
+                if (!array_key_exists($ds, $res)) {
+                    $res[$ds] = 0;
                 }
-                $res[$fqid] += $e['score'];
+                $res[$ds] += $e['score'];
             }
         }
 
@@ -159,7 +159,7 @@ class OutagesEventsService
         foreach ($merged as $event) {
             $total += $event['score'];
         }
-        $res["total"] = $total;
+        $res["overall"] = $total;
         return $res;
     }
 
@@ -179,7 +179,7 @@ class OutagesEventsService
             // all alerts here have the entity
             $eventmap = $this->buildEvents($alerts, $from, $until);
             $scores = $this->computeScores($eventmap);
-            $res[] = new OutagesSummary($from, $until, $scores, $alerts[0]->getEntity());
+            $res[] = new OutagesSummary($scores, $alerts[0]->getEntity());
         }
         if ($limit) {
             $res = array_slice($res, $limit*$page, $limit);
