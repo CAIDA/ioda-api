@@ -31,7 +31,7 @@ class SymUrlController extends ApiController
      * @Route("/{short}/", methods={"GET"}, name="get")
      * @SWG\Tag(name="URL Shortener")
      * @SWG\Parameter(
-     *     name="no_stats",
+     *     name="noStats",
      *     in="query",
      *     type="boolean",
      *     description="Do not update usage stats (counter, last-used time, etc.)",
@@ -78,7 +78,7 @@ class SymUrlController extends ApiController
         $env = new Envelope('sym.get',
                             'query',
                             [
-                                new RequestParameter('no_stats', RequestParameter::BOOL, false, false),
+                                new RequestParameter('noStats', RequestParameter::BOOL, false, false),
                             ],
                             $request
         );
@@ -86,7 +86,7 @@ class SymUrlController extends ApiController
             return $this->json($env, 400);
         }
         $env->setData($symUrlService->getExisting($short,
-                                                  !$env->getParam('no_stats')));
+                                                  !$env->getParam('noStats')));
         return $this->json($env);
     }
 
