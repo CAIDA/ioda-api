@@ -4,7 +4,7 @@
 namespace App\Service;
 
 
-use App\Entity\Outages\MetadataEntity;
+use App\Entity\Ioda\MetadataEntity;
 use App\Repository\EntitiesRepository;
 
 class MetadataEntitiesService

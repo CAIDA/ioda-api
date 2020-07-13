@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entity\Outages;
+namespace App\Entity\Ioda;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;

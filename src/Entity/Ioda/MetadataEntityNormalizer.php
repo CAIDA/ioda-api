@@ -1,5 +1,5 @@
 <?php
-namespace App\Entity\Outages;
+namespace App\Entity\Ioda;
 
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\ContextAwareNormalizerInterface;

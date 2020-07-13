@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Entity\Outages;
+namespace App\Entity\Ioda;
 
-use App\Entity\Outages\MetadataEntityAttribute;
+use App\Entity\Ioda\MetadataEntityAttribute;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
