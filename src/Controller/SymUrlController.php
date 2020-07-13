@@ -71,7 +71,7 @@ class SymUrlController extends ApiController
      * @return JsonResponse
      * @throws NonUniqueResultException
      */
-    public function getInfo(string $short, Request $request,
+    public function getShortUrl(string $short, Request $request,
                             SerializerInterface $serializer,
                             SymUrlService $symUrlService)
     {
@@ -133,7 +133,7 @@ class SymUrlController extends ApiController
      *                 @SWG\Property(
      *                     property="type",
      *                     type="string",
-     *                     enum={"sym.create"}
+     *                     enum={"sym.post"}
      *                 ),
      *                 @SWG\Property(
      *                     property="error",
@@ -155,11 +155,11 @@ class SymUrlController extends ApiController
      * @return JsonResponse
      * @throws ORMException
      */
-    public function new(Request $request,
+    public function post(Request $request,
                         SerializerInterface $serializer,
                         SymUrlService $symUrlService)
     {
-        $env = new Envelope('sym.create',
+        $env = new Envelope('sym.post',
                             'body',
                             [
                                 new RequestParameter('longUrl', RequestParameter::STRING, null, true),
