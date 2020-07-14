@@ -2,30 +2,25 @@
 
 
 namespace App\Service;
+use App\Entity\Ioda\DatasourceEntity;
 
 
 class DatasourceService
 {
-    const DATASOURCES = [
-        "ucsd-nt" => [
-            "datasource" => "ucsd-nt",
-            "name" => "UCSD Network Telescope",
-            "units" => "Unique Source IPs"
-        ],
-        "bgp" => [
-            "datasource" => "bgp",
-            "name" => "BGP",
-            "units" => "Visible /24s"
-        ],
-        "ping-slash24" => [
-            "datasource" => "ping-slash24",
-            "name" => "Active Probing",
-            "units" => "Up /24s"
-        ],
-    ];
+
+    public function __construct()
+    {
+        $this->DATASOURCES_ENTITIES = [
+            "ucsd-nt" => new DatasourceEntity("ucsd-nt", "UCSD Network Telescope", "Unique Source IPs"),
+            "bgp" => new DatasourceEntity("bgp", "BGP", "Visible /24s"),
+            "ping-slash24" => new DatasourceEntity("ping-slash24", "Active Probing", "Up /24s"),
+        ];
+    }
+
+
 
     public function getDatasources(){
-        return self::DATASOURCES;
+        return $this->DATASOURCES_ENTITIES;
     }
 
     public function fqidToDatasourceName($fqid){

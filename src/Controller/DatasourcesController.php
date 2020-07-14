@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Response\Envelope;
 use App\Service\DatasourceService;
 use Nelmio\ApiDocBundle\Annotation\Model;
+use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -20,9 +21,31 @@ class DatasourcesController extends ApiController
     /**
      * Get all datasources
      *
-     * @Route("/",
-     *     methods={"GET"},
-     *     name="listall")
+     * @Route("/", methods={"GET"}, name="listall")
+     * @SWG\Tag(name="Data Sources")
+     * @SWG\Response(
+     *     response=200,
+     *     description="Return an array of all data sources used by IODA",
+     *     @SWG\Schema(
+     *         allOf={
+     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
+     *             @SWG\Schema(
+     *                 @SWG\Property(
+     *                     property="type",
+     *                     type="string",
+     *                     enum={"datasources.all"}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="data",
+     *                     type="array",
+     *                     @SWG\Items(
+     *                          ref=@Model(type=\App\Entity\Ioda\DatasourceEntity::class, groups={"public"})
+     *                     )
+     *                 )
+     *             )
+     *         }
+     *     )
+     * )
      *
      * @var Request $request
      * @var SerializerInterface $serializer
@@ -30,7 +53,7 @@ class DatasourcesController extends ApiController
      */
     public function datasources(Request $request, DatasourceService $service)
     {
-        $env = new Envelope('datasources',
+        $env = new Envelope('datasources.all',
             'query',
             [],
             $request
@@ -45,9 +68,33 @@ class DatasourcesController extends ApiController
     /**
      * Get all datasources
      *
-     * @Route("/{datasource}",
-     *     methods={"GET"},
-     *     name="findone")
+     * @Route("/{datasource}", methods={"GET"}, name="findone")
+     * @SWG\Tag(name="Data Sources")
+     * @SWG\Response(
+     *     response=200,
+     *     description="Return data source matched by the lookup term",
+     *     @SWG\Schema(
+     *         allOf={
+     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
+     *             @SWG\Schema(
+     *                 @SWG\Property(
+     *                     property="type",
+     *                     type="string",
+     *                     enum={"datasources.lookup"}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="error",
+     *                     type="string",
+     *                     enum={}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="data",
+     *                     ref=@Model(type=\App\Entity\Ioda\DatasourceEntity::class, groups={"public"})
+     *                 )
+     *             )
+     *         }
+     *     )
+     * )
      *
      * @var datasource
      * @var Request $request
@@ -56,7 +103,7 @@ class DatasourcesController extends ApiController
      */
     public function datasourceLookup(string $datasource, Request $request, DatasourceService $datasourceService)
     {
-        $env = new Envelope('datasources',
+        $env = new Envelope('datasources.lookup',
             'query',
             [],
             $request
