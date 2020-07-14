@@ -21,13 +21,40 @@ class TopoController extends ApiController
     /**
      * Get topographic database information
      *
-     * @Route("/{entityType}",
-     *     methods={"GET"},
-     *     name="get")
+     * @Route("/{entityType}", methods={"GET"}, name="get")
      * @SWG\Tag(name="Topographic")
      * @SWG\Response(
      *     response=200,
-     *     description="Returns information about the given topographic database"
+     *     description="Returns information about the given topographic database",
+     *     @SWG\Schema(
+     *         allOf={
+     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
+     *             @SWG\Schema(
+     *                 @SWG\Property(
+     *                     property="type",
+     *                     type="string",
+     *                     enum={"topo.get"}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="data",
+     *                     type="object",
+     *                     description="The corresponding topographic data",
+     *                     @SWG\Property(
+     *                         property="entityType",
+     *                         type="string"
+     *                     ),
+     *                     @SWG\Property(
+     *                         property="idField",
+     *                         type="string"
+     *                     ),
+     *                     @SWG\Property(
+     *                         property="topology",
+     *                         type="object"
+     *                     ),
+     *                 )
+     *             )
+     *         }
+     *     )
      * )
      * @var string $entityType
      * @var Request $request
@@ -39,7 +66,7 @@ class TopoController extends ApiController
                           SerializerInterface $serializer,
                           TopoService $topoService)
     {
-        $env = new Envelope('topo.topojson',
+        $env = new Envelope('topo.get',
             'query',
             [],
             $request
