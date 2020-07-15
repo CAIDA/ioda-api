@@ -4,6 +4,7 @@ namespace App\Entity\Outages;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use App\Entity\Ioda\MetadataEntity;
 
 class OutagesSummary
 {
