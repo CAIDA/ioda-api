@@ -144,7 +144,7 @@ class TimeseriesController extends ApiController
      *     name="until",
      *     in="query",
      *     type="string",
-     *     description="Unix timestamp until when the alerts should begin after",
+     *     description="Unix timestamp until when the alerts should end before",
      *     required=true
      * )
      * @SWG\Parameter(
