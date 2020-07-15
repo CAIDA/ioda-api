@@ -43,6 +43,16 @@ services:
         public: false
         tags: [serializer.normalizer]
 
+    timeseries_normalizer:
+        class: App\TimeSeries\TimeSeriesNormalizer
+        public: false
+        tags: [serializer.normalizer]
+
+    timeseries_set_normalizer:
+        class: App\TimeSeries\TimeSeriesSetNormalizer
+        public: false
+        tags: [serializer.normalizer]
+
     # get_set_method_normalizer:
     #     class: Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer
     #     public: false

@@ -3,6 +3,7 @@
 namespace App\TimeSeries;
 
 
+use App\Entity\Ioda\MetadataEntity;
 use App\Expression\AbstractExpression;
 use App\TimeSeries\Annotation\AbstractAnnotation;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -92,6 +93,38 @@ class TimeSeries
      * @Groups("public")
      */
     protected $values;
+
+    /**
+     * @var string
+     *  @Groups("public")
+     */
+    protected $datasource;
+
+    /**
+     * @var MetadataEntity
+     * @Groups("public")
+     */
+    protected $metadataEntity;
+
+    public function setDatasource(string $datasource)
+    {
+        $this->datasource = $datasource;
+    }
+
+    public function getDatasource(): string
+    {
+        return $this->datasource;
+    }
+
+    public function setMetadataEntity(MetadataEntity $metadataEntity)
+    {
+        $this->metadataEntity = $metadataEntity;
+    }
+
+    public function getMetadataEntity(): MetadataEntity
+    {
+        return $this->metadataEntity;
+    }
 
     /**
      * TimeSeries constructor.

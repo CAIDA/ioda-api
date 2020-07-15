@@ -5,7 +5,7 @@ namespace App\Controller;
 use App\Expression\ExpressionFactory;
 use App\Expression\ParsingException;
 use App\Expression\PathExpression;
-use App\MetadataEntities\MetadataEntitiesService;
+use App\Service\MetadataEntitiesService;
 use App\Response\Envelope;
 use App\Response\RequestParameter;
 use App\TimeSeries\Backend\BackendException;
@@ -26,72 +26,89 @@ use Symfony\Component\Serializer\SerializerInterface;
  */
 class TimeseriesController extends ApiController
 {
-    public function query(Request $request, SerializerInterface $serializer,
-                          ExpressionFactory $expressionFactory,
-                          GraphiteBackend $tsBackend)
-    {
-        $env = new Envelope('ts.query',
-                            'body',
+
+    /**
+     * @var MetadataEntitiesService
+     */
+    private $metadataService;
+
+    public function __construct(MetadataEntitiesService $metadataEntitiesService){
+        $this->metadataService = $metadataEntitiesService;
+    }
+
+    private function buildExpression($entity, $datasource){
+        $fqid = $entity->getAttribute("fqid");
+        $queryJsons = [
+            "bgp" => [
+                "type" => "function",
+                "func" => "alias",
+                "args" => [
+                    [
+                        "type"=> "path",
+                        "path"=> sprintf("bgp.prefix-visibility.%s.v4.visibility_threshold.min_50%%_ff_peer_asns.visible_slash24_cnt",$fqid)
+                    ],
+                    [
+                        "type"=> "constant",
+                        "value"=> "bgp"
+                    ]
+                ]
+            ],
+            "ucsd-nt" => [
+                "type" => "function",
+                "func" => "alias",
+                "args" => [
+                    [
+                        "type" => "path",
+                        "path" => sprintf("darknet.ucsd-nt.non-erratic.%s.uniq_src_ip", $fqid)
+                    ],
+                    [
+                        "type" => "constant",
+                        "value" => "ucsd-nt"
+                    ]
+                ]
+            ],
+            "ping-slash24" => [
+                "type" => "function",
+                "func" => "alias",
+                "args" => [
+                    [
+                        "type" => "function",
+                        "func" => "sumSeries",
+                        "args" => [
                             [
-                                new RequestParameter('expression', RequestParameter::ARRAY, null, false),
-                                new RequestParameter('expressions', RequestParameter::ARRAY, null, false),
-                                new RequestParameter('from', RequestParameter::DATETIME, new QueryTime('-24h'), false),
-                                new RequestParameter('until', RequestParameter::DATETIME, new QueryTime('now'), false),
-                                new RequestParameter('aggregation_func', RequestParameter::STRING, 'avg', false),
-                                new RequestParameter('annotate', RequestParameter::BOOL, false, false),
-                                new RequestParameter('adaptive_downsampling', RequestParameter::BOOL, true, false),
-                            ],
-                            $request
-        );
-        if ($env->getError()) {
-            return $this->json($env, 400);
-        }
+                                "type" => "function",
+                                "func" => "keepLastValue",
+                                "args" => [
+                                    [
+                                        "type" => "path",
+                                        "path" => "active.ping-slash24.geo.netacuity.NA.KN.probers.team-1.caida-sdsc.*.up_slash24_cnt"
+                                    ], [
+                                        "type" => "constant",
+                                        "value" => 1
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ],
+                    [
+                        "type" => "constant",
+                        "value" => "ping-slash24"
+                    ]
+                ]
+            ],
+        ];
 
-        // TODO: adaptive_downsampling should be protected by authorization role?
-
-        // we need either expression or expressions
-        $oneExp = $env->getParam('expression');
-        $manyExps = $env->getParam('expressions');
-
-        if ($oneExp && $manyExps) {
-            $env->setError("Only one of 'expression' or 'expressions' parameters can be set");
-            return $this->json($env, 400);
-        }
-
-        if ($oneExp) {
-            $rawExps = [$oneExp];
-        } elseif ($manyExps) {
-            $rawExps = $manyExps;
+        if(!$datasource){
+            return array_values($queryJsons);
         } else {
-            $env->setError("Either 'expression' or 'expressions' parameters must be set");
-            return $this->json($env, 400);
-        }
-        $exps = [];
-        try {
-            foreach ($rawExps as $exp) {
-                $exps[] = $expressionFactory->createFromJson($exp);
+            if(!array_key_exists($datasource, $queryJsons)){
+                throw new \InvalidArgumentException(
+                    sprintf("Unknown datasource %s, must be one of [%s]", $datasource,join(", ",array_keys($queryJsons)))
+                );
+            } else {
+                return [$queryJsons[$datasource]];
             }
-        } catch (ParsingException $ex) {
-            $env->setError($ex->getMessage());
-            return $this->json($env, 400);
         }
-        // ask the time series backend to perform the query
-        try {
-            $tss = $tsBackend->tsQuery(
-                $exps,
-                $env->getParam('from'),
-                $env->getParam('until'),
-                $env->getParam('aggregation_func'),
-                $env->getParam('annotate'),
-                $env->getParam('adaptive_downsampling')
-            );
-            $env->setData($tss);
-        } catch (BackendException $ex) {
-            $env->setError($ex->getMessage());
-            // TODO: check HTTP error codes used
-            return $this->json($env, 400);
-        }
-        return $this->json($env);
     }
 
     /**
@@ -112,14 +129,14 @@ class TimeseriesController extends ApiController
         GraphiteBackend $tsBackend)
     {
         $env = new Envelope('signals',
-            'query',
-            [
-                new RequestParameter('from', RequestParameter::INTEGER, null, true),
-                new RequestParameter('until', RequestParameter::INTEGER, null, true),
-                new RequestParameter('datasource', RequestParameter::STRING, null, false),
-                new RequestParameter('maxPoints', RequestParameter::INTEGER, null, false),
-            ],
-            $request
+                            'query',
+                            [
+                                new RequestParameter('from', RequestParameter::STRING, null, true),
+                                new RequestParameter('until', RequestParameter::STRING, null, true),
+                                new RequestParameter('datasource', RequestParameter::STRING, null, false),
+                                new RequestParameter('maxPoints', RequestParameter::INTEGER, null, false),
+                            ],
+                            $request
         );
         if ($env->getError()) {
             return $this->json($env, 400);
@@ -130,8 +147,69 @@ class TimeseriesController extends ApiController
         $until = $env->getParam('until');
         $datasource = $env->getParam('datasource');
         $maxPoints = $env->getParam('maxPoints');
+        if(!isset($from)){
+            throw new \InvalidArgumentException(
+                "'from' timestamp must be set"
+            );
+        }
+        if(!isset($until)){
+            throw new \InvalidArgumentException(
+                "'until' timestamp must be set"
+            );
+        }
+        $from = new QueryTime($from);
+        $until = new QueryTime($until);
 
-        $env->setData("lala");
+        $metas = $this->metadataService->lookup($entityType, $entityCode);
+        if(count($metas)!=1){
+            return null;
+        }
+
+        /* BUILD EXPRESSIONS BASED ON ENTITY TYPE AND CODE */
+        $jsons = $this->buildExpression($metas[0], $datasource);
+        $exps = [];
+        foreach($jsons as &$json){
+            $exps[] = $expressionFactory->createFromJson($json);
+        }
+
+        /* QUERY TIMESERIES GRAPHITE BACKEND */
+        try {
+            $tss = $tsBackend->tsQuery(
+                $exps,
+                $from,
+                $until,
+                'avg',   // aggrFunc
+                false,  // annotate
+                true,   // adaptiveDownsampling
+                false   // checkPathWhitelist
+            );
+        } catch (BackendException $ex) {
+            $env->setError($ex->getMessage());
+            // TODO: check HTTP error codes used
+            //
+            return $this->json($env, 400);
+        }
+
+        // TODO: sanity check timeseries data points
+        $this->dataSanityCheck($tss);
+        $tss->setMetadataEntity($metas[0]);
+        $env->setData($tss);
+        // $env->setData(array_values($tss->getSeries()));
         return $this->json($env);
+    }
+
+    private function dataSanityCheck($tss){
+        foreach($tss->getSeries() as $datasource => $ts){
+            $step = $ts->getStep();
+            $values = $ts->getValues();
+
+            $from = $ts->getFrom()->getTimestamp();
+            $until = $ts->getUntil()->getTimestamp();
+            if(count($values)>0 && ($until-$from)/($step) != count($values)){
+                throw new \InvalidArgumentException(
+                    sprintf("wrong values count %d != (%d - %d) / %d", count($values), $until, $from, $step)
+                );
+            }
+        }
     }
 }

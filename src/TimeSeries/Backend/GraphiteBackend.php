@@ -173,7 +173,8 @@ class GraphiteBackend extends AbstractBackend
                             QueryTime $from, QueryTime $until,
                             string $aggrFunc,
                             bool $annotate,
-                            bool $adaptiveDownsampling): TimeSeriesSet
+                            bool $adaptiveDownsampling,
+                            bool $checkPathWhitelist): TimeSeriesSet
     {
         // TODO: is nocache?
 
@@ -203,7 +204,9 @@ class GraphiteBackend extends AbstractBackend
 
         $graphiteExpressions = [];
         foreach ($expressions as $exp) {
-            $exp->applyPathWhitelist($this->authPathWhitelist);
+            if($checkPathWhitelist){
+                $exp->applyPathWhitelist($this->authPathWhitelist);
+            }
             $graphiteExpressions[] = $exp->getCanonicalStr();
         }
 

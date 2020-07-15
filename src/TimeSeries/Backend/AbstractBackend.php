@@ -53,5 +53,6 @@ abstract class AbstractBackend
                                      QueryTime $from, QueryTime $until,
                                      string $aggrFunc,
                                      bool $annotate,
-                                     bool $adaptiveDownsampling): TimeSeriesSet;
+                                     bool $adaptiveDownsampling,
+                                     bool $checkPathWhitelist): TimeSeriesSet;
 }
