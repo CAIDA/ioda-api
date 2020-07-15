@@ -33,6 +33,8 @@ class OutagesController extends ApiController
     }
 
     /**
+     * Retrieve IODA outage alerts.
+     *
      * @Route("/alerts/{entityType}/{entityCode}", methods={"GET"}, name="alerts", defaults={"entityType"=null,"entityCode"=null})
      * @SWG\Tag(name="Outages")
      * @SWG\Parameter(
@@ -195,6 +197,8 @@ class OutagesController extends ApiController
     }
 
     /**
+     * Retrieve IODA outage events.
+     *
      * @Route("/events/{entityType}/{entityCode}", methods={"GET"}, name="events", defaults={"entityType"=null,"entityCode"=null})
      * @SWG\Tag(name="Outages")
      * @SWG\Parameter(
@@ -381,6 +385,8 @@ class OutagesController extends ApiController
     }
 
     /**
+     * Retrieve IODA outage summaries.
+     *
      * @Route("/summary/{entityType}/{entityCode}", methods={"GET"}, name="summary", defaults={"entityType"=null,"entityCode"=null})
      * @SWG\Tag(name="Outages")
      * @SWG\Parameter(
