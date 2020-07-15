@@ -112,7 +112,112 @@ class TimeseriesController extends ApiController
     }
 
     /**
+     * Retrieve time-series signals.
+     *
      * @Route("/{entityType}/{entityCode}", methods={"GET"}, name="get")
+     * @SWG\Tag(name="Time Series Signals")
+     * @SWG\Parameter(
+     *     name="entityType",
+     *     in="path",
+     *     type="string",
+     *     description="Type of the entity, e.g. country, region, asn",
+     *     enum={"continent", "country", "region", "county", "asn"},
+     *     required=false,
+     *     default=null
+     * )
+     * @SWG\Parameter(
+     *     name="entityCode",
+     *     in="path",
+     *     type="string",
+     *     description="Code of the entity, e.g. for United States the code is 'US'",
+     *     required=false,
+     *     default=null
+     * )
+     * @SWG\Parameter(
+     *     name="from",
+     *     in="query",
+     *     type="string",
+     *     description="Unix timestamp from when the alerts should begin after",
+     *     required=true
+     * )
+     * @SWG\Parameter(
+     *     name="until",
+     *     in="query",
+     *     type="string",
+     *     description="Unix timestamp until when the alerts should begin after",
+     *     required=true
+     * )
+     * @SWG\Parameter(
+     *     name="datasource",
+     *     in="query",
+     *     type="string",
+     *     description="Filter signals by datasource",
+     *     enum={"bgp", "ucsd-nt", "ping-slash24"},
+     *     required=false,
+     *     default=null
+     * )
+     * @SWG\Response(
+     *     response=200,
+     *     description="Return time series signals",
+     *     @SWG\Schema(
+     *         allOf={
+     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
+     *             @SWG\Schema(
+     *                 @SWG\Property(
+     *                     property="type",
+     *                     type="string",
+     *                     enum={"outages.alerts"}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="error",
+     *                     type="string",
+     *                     enum={}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="data",
+     *                     type="array",
+     *                     @SWG\Items(
+     *                          @SWG\Property(
+     *                              property="entityType",
+     *                              type="string"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="entityCode",
+     *                              type="string"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="datasource",
+     *                              type="string"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="from",
+     *                              type="number"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="until",
+     *                              type="number"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="step",
+     *                              type="number"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="nativeStep",
+     *                              type="number"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="values",
+     *                              type="array",
+     *                              @SWG\Items(
+     *                                  type="integer"
+     *                              )
+     *                          )
+     *                     )
+     *                 )
+     *             )
+     *         }
+     *     )
+     * )
      *
      * @var string $entityType
      * @var string $entityCode
