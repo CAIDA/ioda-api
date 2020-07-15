@@ -21,15 +21,16 @@ class TimeSeriesNormalizer implements ContextAwareNormalizerInterface
     public function normalize($timeSeries, $format = null, array $context = [])
     {
         $data = [];
+        $entity = $this->normalizer->normalize($timeSeries->getMetadataEntity(), $format, $context);
+
+        $data["entityType"] = $entity["type"]["type"];
+        $data["entityCode"] = $entity["code"];
         $data["datasource"] = $timeSeries->getDatasource();
         $data["from"] = $timeSeries->getFrom()->getTimestamp();
         $data["until"] = $timeSeries->getUntil()->getTimestamp();
         $data["step"] = $timeSeries->getStep();
         $data["nativeStep"] = $timeSeries->getNativeStep();
         $data["values"] = $timeSeries->getValues();
-        $entity = $this->normalizer->normalize($timeSeries->getMetadataEntity(), $format, $context);
-        $data["entityType"] = $entity["type"]["type"];
-        $data["entityCode"] = $entity["code"];
 
 
         return $data;
