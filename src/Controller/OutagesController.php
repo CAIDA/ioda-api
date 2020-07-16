@@ -5,6 +5,7 @@ namespace App\Controller;
 use Swagger\Annotations as SWG;
 use App\Service\MetadataEntitiesService;
 use App\Service\OutagesAlertsService;
+use App\Service\DatasourceService;
 use App\Service\OutagesEventsService;
 use App\Response\Envelope;
 use App\Response\RequestParameter;
@@ -30,6 +31,56 @@ class OutagesController extends ApiController
             }
         }
         return null;
+    }
+
+    private $datasourceService;
+
+    public function __construct(DatasourceService $datasourceService){
+        $this->datasourceService = $datasourceService;
+    }
+
+    private function sanitizeInputs($from, $until, $datasource, $format, $limit, $page){
+        if(!isset($from)){
+            throw new \InvalidArgumentException(
+                "'from' timestamp must be set"
+            );
+        }
+
+        if(!isset($until)){
+            throw new \InvalidArgumentException(
+                "'until' timestamp must be set"
+            );
+        }
+        if ($datasource && !$this->datasourceService->isValidDatasource($datasource)){
+            throw new \InvalidArgumentException(
+                sprintf("invalid datasource %s (must be one of the following [%s])", $datasource, join(", ", $this->datasourceService->getDatasourceNames()))
+            );
+        }
+
+        if ($format && !in_array($format, ["codf", "ioda"])) {
+            throw new \InvalidArgumentException(
+                sprintf("invalid format %s (must be one of the following ['codf', 'ioda'])", $format)
+            );
+        }
+
+        if(isset($limit) && $limit<=0){
+            throw new \InvalidArgumentException(
+                sprintf("limit must be greater than 0")
+            );
+        }
+
+        if(isset($page)){
+            if(!$limit){
+                throw new \InvalidArgumentException(
+                    sprintf("limit also needs to be set if page is set")
+                );
+            }
+            if($page<0){
+                throw new \InvalidArgumentException(
+                    sprintf("page must be greater than or equals to 0")
+                );
+            }
+        }
     }
 
     /**
@@ -157,7 +208,7 @@ class OutagesController extends ApiController
         ?string $entityType, ?string $entityCode,
         Request $request,
         SerializerInterface $serializer,
-        OutagesAlertsService $service
+        OutagesAlertsService $alertService
     ){
         $env = new Envelope('outages.alerts',
             'query',
@@ -174,24 +225,19 @@ class OutagesController extends ApiController
         /* LOCAL PARAM PARSING */
         $from = $this->parseTimestampParameter($env->getParam('from'));
         $until = $this->parseTimestampParameter($env->getParam('until'));
-        if(!isset($from)){
-            throw new \InvalidArgumentException(
-                "'from' timestamp must be set"
-            );
-        }
-        if(!isset($until)){
-            throw new \InvalidArgumentException(
-                "'until' timestamp must be set"
-            );
-        }
-
         $datasource = $env->getParam('datasource');
         $limit = $env->getParam('limit');
         $page = $env->getParam('page');
 
-        $alerts = $service->findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit, $page);
+        /* SANTIY CHECKS */
+        try {
+            $this->sanitizeInputs($from, $until, $datasource, null, $limit, $page);
+        } catch (\InvalidArgumentException $ex) {
+            $env->setError($ex->getMessage());
+            return $this->json($env, 400);
+        }
 
-        // $env->setData(array([$entityType, $entityCode, $from, $until, $datasource, $limit, $page]));
+        $alerts = $alertService->findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit, $page);
         $env->setData($alerts);
         return $this->json($env);
     }
@@ -359,25 +405,22 @@ class OutagesController extends ApiController
         /* LOCAL PARAM PARSING */
         $from = $this->parseTimestampParameter($env->getParam('from'));
         $until = $this->parseTimestampParameter($env->getParam('until'));
-        if(!isset($from)){
-            throw new \InvalidArgumentException(
-                "'from' timestamp must be set"
-            );
-        }
-        if(!isset($until)){
-            throw new \InvalidArgumentException(
-                "'until' timestamp must be set"
-            );
-        }
-
         $datasource = $env->getParam('datasource');
         $includeAlerts = $env->getParam('includeAlerts');
         $format = $env->getParam('format');
         $limit = $env->getParam('limit');
         $page = $env->getParam('page');
 
-        $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, $datasource);
+        // sanitize user inputs
+        try {
+            $this->sanitizeInputs($from, $until, $datasource, $format, $limit, $page);
+        } catch (\InvalidArgumentException $ex) {
+            $env->setError($ex->getMessage());
+            return $this->json($env, 400);
+        }
 
+        // build events
+        $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, $datasource);
         $events = $eventsService->buildEventsSimple($alerts, $includeAlerts, $format, $from, $until, $limit, $page);
 
         $env->setData($events);
@@ -514,22 +557,17 @@ class OutagesController extends ApiController
         /* LOCAL PARAM PARSING */
         $from = $this->parseTimestampParameter($env->getParam('from'));
         $until = $this->parseTimestampParameter($env->getParam('until'));
-        if(!isset($from)){
-            throw new \InvalidArgumentException(
-                "'from' timestamp must be set"
-            );
-        }
-        if(!isset($until)){
-            throw new \InvalidArgumentException(
-                "'until' timestamp must be set"
-            );
-        }
-
         $limit = $env->getParam('limit');
         $page = $env->getParam('page');
 
-        $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, null);
+        try {
+            $this->sanitizeInputs($from, $until, null, null, $limit, $page);
+        } catch (\InvalidArgumentException $ex) {
+            $env->setError($ex->getMessage());
+            return $this->json($env, 400);
+        }
 
+        $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, null);
         $events = $eventsService->buildEventsSummary($alerts, $from, $until, $limit, $page);
 
         $env->setData($events);

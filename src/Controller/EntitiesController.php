@@ -122,18 +122,23 @@ class EntitiesController extends ApiController
             return $this->json($env);
         }
 
-        if ($relatedTo) {
-            $relatedTo = explode('/', $relatedTo);
-            if (count($relatedTo) > 2) {
-                throw new \InvalidArgumentException(
-                    "relatedTo parameter must be in the form 'type[/code]'"
-                );
+        try {
+            if ($relatedTo) {
+                $relatedTo = explode('/', $relatedTo);
+                if (count($relatedTo) > 2) {
+                    throw new \InvalidArgumentException(
+                        "relatedTo parameter must be in the form 'type[/code]'"
+                    );
+                }
+                if (count($relatedTo) == 1) {
+                    $relatedTo[] = null;
+                }
+            } else {
+                $relatedTo = [null, null];
             }
-            if (count($relatedTo) == 1) {
-                $relatedTo[] = null;
-            }
-        } else {
-            $relatedTo = [null, null];
+        } catch (\InvalidArgumentException $ex) {
+            $env->setError($ex->getMessage());
+            return $this->json($env, 400);
         }
 
         $entity = $service->lookup($entityType, $entityCode, $relatedTo[0], $relatedTo[1], $limit);

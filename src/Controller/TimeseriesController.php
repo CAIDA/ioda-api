@@ -6,6 +6,7 @@ use App\Expression\ExpressionFactory;
 use App\Expression\ParsingException;
 use App\Expression\PathExpression;
 use App\Service\MetadataEntitiesService;
+use App\Service\DatasourceService;
 use App\Response\Envelope;
 use App\Response\RequestParameter;
 use App\TimeSeries\Backend\BackendException;
@@ -32,8 +33,46 @@ class TimeseriesController extends ApiController
      */
     private $metadataService;
 
-    public function __construct(MetadataEntitiesService $metadataEntitiesService){
+    private $datasourceService;
+
+    public function __construct(MetadataEntitiesService $metadataEntitiesService, DatasourceService $datasourceService){
         $this->metadataService = $metadataEntitiesService;
+        $this->datasourceService = $datasourceService;
+    }
+
+    private function sanitizeInputs(&$from, &$until, $datasource, $metas){
+        if(!isset($from)){
+            throw new \InvalidArgumentException(
+                "'from' timestamp must be set"
+            );
+        }
+
+        if(!isset($until)){
+            throw new \InvalidArgumentException(
+                "'until' timestamp must be set"
+            );
+        }
+
+        $from = new QueryTime($from);
+        $until = new QueryTime($until);
+
+        if ($from->getEpochTime() > $until->getEpochTime()){
+            throw new \InvalidArgumentException(
+                sprintf("from (%d) must be earlier than until (%d)", $from->getEpochTime(), $until->getEpochTime())
+            );
+        }
+
+        if ($datasource && !$this->datasourceService->isValidDatasource($datasource)){
+            throw new \InvalidArgumentException(
+                sprintf("invalid datasource %s (must be one of the following [%s])", $datasource, join(", ", $this->datasourceService->getDatasourceNames()))
+            );
+        }
+
+        if(count($metas)!=1){
+            throw new \InvalidArgumentException(
+                sprintf("cannot find corresponding metadata entity")
+            );
+        }
     }
 
     private function buildExpression($entity, $datasource){
@@ -252,23 +291,15 @@ class TimeseriesController extends ApiController
         $until = $env->getParam('until');
         $datasource = $env->getParam('datasource');
         $maxPoints = $env->getParam('maxPoints');
-        if(!isset($from)){
-            throw new \InvalidArgumentException(
-                "'from' timestamp must be set"
-            );
-        }
-        if(!isset($until)){
-            throw new \InvalidArgumentException(
-                "'until' timestamp must be set"
-            );
-        }
-        $from = new QueryTime($from);
-        $until = new QueryTime($until);
-
         $metas = $this->metadataService->lookup($entityType, $entityCode);
-        if(count($metas)!=1){
-            return null;
+
+        try{
+            $this->sanitizeInputs($from, $until, $datasource, $metas);
+        } catch (\InvalidArgumentException $ex) {
+            $env->setError($ex->getMessage());
+            return $this->json($env, 400);
         }
+
 
         /* BUILD EXPRESSIONS BASED ON ENTITY TYPE AND CODE */
         $jsons = $this->buildExpression($metas[0], $datasource);

@@ -23,6 +23,14 @@ class DatasourceService
         return $this->DATASOURCES_ENTITIES;
     }
 
+    public function getDatasourceNames(){
+        return array_keys($this->DATASOURCES_ENTITIES);
+    }
+
+    public function isValidDatasource(string $ds_name): bool {
+        return array_key_exists($ds_name,$this->DATASOURCES_ENTITIES);
+    }
+
     public function fqidToDatasourceName($fqid){
         $ds = null;
         if(strpos($fqid,"bgp")!==false){
