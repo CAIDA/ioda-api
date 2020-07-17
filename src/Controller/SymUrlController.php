@@ -4,7 +4,7 @@ namespace App\Controller;
 
 use App\Response\Envelope;
 use App\Response\RequestParameter;
-use App\SymUrl\SymUrlService;
+use App\Service\SymUrlService;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\ORMException;
 use Nelmio\ApiDocBundle\Annotation\Model;
@@ -31,7 +31,7 @@ class SymUrlController extends ApiController
      * @Route("/{short}/", methods={"GET"}, name="get")
      * @SWG\Tag(name="URL Shortener")
      * @SWG\Parameter(
-     *     name="no_stats",
+     *     name="noStats",
      *     in="query",
      *     type="boolean",
      *     description="Do not update usage stats (counter, last-used time, etc.)",
@@ -57,7 +57,7 @@ class SymUrlController extends ApiController
      *                 ),
      *                 @SWG\Property(
      *                     property="data",
-     *                     ref=@Model(type=\App\Entity\SymUrl::class, groups={"public"})
+     *                     ref=@Model(type=\App\Entity\Ioda\SymUrl::class, groups={"public"})
      *                 )
      *             )
      *         }
@@ -71,14 +71,14 @@ class SymUrlController extends ApiController
      * @return JsonResponse
      * @throws NonUniqueResultException
      */
-    public function getInfo(string $short, Request $request,
+    public function getShortUrl(string $short, Request $request,
                             SerializerInterface $serializer,
                             SymUrlService $symUrlService)
     {
         $env = new Envelope('sym.get',
                             'query',
                             [
-                                new RequestParameter('no_stats', RequestParameter::BOOL, false, false),
+                                new RequestParameter('noStats', RequestParameter::BOOL, false, false),
                             ],
                             $request
         );
@@ -86,7 +86,7 @@ class SymUrlController extends ApiController
             return $this->json($env, 400);
         }
         $env->setData($symUrlService->getExisting($short,
-                                                  !$env->getParam('no_stats')));
+                                                  !$env->getParam('noStats')));
         return $this->json($env);
     }
 
@@ -110,13 +110,13 @@ class SymUrlController extends ApiController
      *     required=true,
      *     @SWG\Schema(
      *         @SWG\Property(
-     *                     property="long_url",
+     *                     property="longUrl",
      *                     type="string",
      *                     example="https://hicube.caida.org",
      *                     description="Long URL to be shortened"
      *         ),
      *         @SWG\Property(
-     *                     property="short_tag",
+     *                     property="shortTag",
      *                     type="string",
      *                     example="myurl",
      *                     description="Short tag to use instead of auto-generated tag [optional]"
@@ -133,7 +133,7 @@ class SymUrlController extends ApiController
      *                 @SWG\Property(
      *                     property="type",
      *                     type="string",
-     *                     enum={"sym.create"}
+     *                     enum={"sym.post"}
      *                 ),
      *                 @SWG\Property(
      *                     property="error",
@@ -142,7 +142,7 @@ class SymUrlController extends ApiController
      *                 ),
      *                 @SWG\Property(
      *                     property="data",
-     *                     ref=@Model(type=\App\Entity\SymUrl::class, groups={"public"})
+     *                     ref=@Model(type=\App\Entity\Ioda\SymUrl::class, groups={"public"})
      *                 )
      *             )
      *         }
@@ -155,23 +155,23 @@ class SymUrlController extends ApiController
      * @return JsonResponse
      * @throws ORMException
      */
-    public function new(Request $request,
+    public function post(Request $request,
                         SerializerInterface $serializer,
                         SymUrlService $symUrlService)
     {
-        $env = new Envelope('sym.create',
+        $env = new Envelope('sym.post',
                             'body',
                             [
-                                new RequestParameter('long_url', RequestParameter::STRING, null, true),
-                                new RequestParameter('short_tag', RequestParameter::STRING, null, false),
+                                new RequestParameter('longUrl', RequestParameter::STRING, null, true),
+                                new RequestParameter('shortTag', RequestParameter::STRING, null, false),
                             ],
                             $request
         );
         if ($env->getError()) {
             return $this->json($env, 400);
         }
-        $env->setData($symUrlService->createOrGet($env->getParam('long_url'),
-                                                  $env->getParam('short_tag')));
+        $env->setData($symUrlService->createOrGet($env->getParam('longUrl'),
+                                                  $env->getParam('shortTag')));
         return $this->json($env);
     }
 }

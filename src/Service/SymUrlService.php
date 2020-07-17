@@ -1,10 +1,10 @@
 <?php
 
 
-namespace App\SymUrl;
+namespace App\Service;
 
 
-use App\Entity\SymUrl;
+use App\Entity\Ioda\SymUrl;
 use App\Repository\SymUrlRepository;
 
 class SymUrlService

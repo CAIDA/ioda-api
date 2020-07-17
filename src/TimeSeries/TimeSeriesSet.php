@@ -3,6 +3,7 @@
 namespace App\TimeSeries;
 
 
+use App\Entity\Ioda\MetadataEntity;
 use App\Expression\AbstractExpression;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -20,6 +21,12 @@ class TimeSeriesSet
      * @Groups("public")
      */
     protected $summary;
+
+    /**
+     * @var MetadataEntity
+     * @Groups("public")
+     */
+    protected $matadataEntity;
 
     public function __construct()
     {
@@ -41,6 +48,22 @@ class TimeSeriesSet
     public function setSeries(array $series): void
     {
         $this->series = $series;
+    }
+
+    /**
+     * @return MetadataEntity
+     */
+    public function getMetadataEntity(): MetadataEntity
+    {
+        return $this->metadataEntity;
+    }
+
+    /**
+     * @param MetadataEntity $metadataEntity
+     */
+    public function setMetadataEntity(MetadataEntity $metadataEntity)
+    {
+        $this->metadataEntity = $metadataEntity;
     }
 
     /**

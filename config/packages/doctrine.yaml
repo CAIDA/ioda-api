@@ -7,17 +7,35 @@ parameters:
 
 doctrine:
     dbal:
-        driver: 'pdo_mysql'
-        server_version: '9.4'
-        url: '%env(resolve:DATABASE_URL)%'
+        connections:
+          ioda_db:
+            driver: 'pdo_mysql'
+            server_version: '9.4'
+            url: '%env(resolve:DATABASE_IODA_URL)%'
+          outages_db:
+            driver: 'pdo_mysql'
+            server_version: '9.4'
+            url: '%env(resolve:DATABASE_ALERTS_URL)%'
     orm:
         auto_generate_proxy_classes: '%kernel.debug%'
-        naming_strategy: doctrine.orm.naming_strategy.underscore
-        auto_mapping: true
-        mappings:
-            App:
+        entity_managers:
+          ioda:
+            connection: ioda_db
+            naming_strategy: doctrine.orm.naming_strategy.underscore
+            mappings:
+                App:
+                    is_bundle: false
+                    type: annotation
+                    dir: '%kernel.project_dir%/src/Entity/Ioda'
+                    prefix: 'App\Entity\Ioda'
+                    alias: Ioda
+          outages:
+            connection: outages_db
+            naming_strategy: doctrine.orm.naming_strategy.underscore
+            mappings:
+              Alerts:
                 is_bundle: false
                 type: annotation
-                dir: '%kernel.project_dir%/src/Entity'
-                prefix: 'App\Entity'
-                alias: App
+                dir: '%kernel.project_dir%/src/Entity/Outages'
+                prefix: 'App\Entity\Outages'
+                alias: Outages

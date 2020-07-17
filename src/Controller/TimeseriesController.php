@@ -5,6 +5,8 @@ namespace App\Controller;
 use App\Expression\ExpressionFactory;
 use App\Expression\ParsingException;
 use App\Expression\PathExpression;
+use App\Service\MetadataEntitiesService;
+use App\Service\DatasourceService;
 use App\Response\Envelope;
 use App\Response\RequestParameter;
 use App\TimeSeries\Backend\BackendException;
@@ -21,224 +23,181 @@ use Symfony\Component\Serializer\SerializerInterface;
 /**
  * Class TimeseriesController
  * @package App\Controller\Timeseries
- * @Route("/ts", name="ts_")
+ * @Route("/signals", name="signals_")
  */
 class TimeseriesController extends ApiController
 {
+
     /**
-     * Perform a query for time series data
-     *
-     * TODO: figure out how to correctly add "required" to properties
-     *
-     * @Route("/query/", methods={"POST"}, name="query")
-     * @SWG\Tag(name="Time Series")
-     * @SWG\Parameter(
-     *     name="query",
-     *     in="body",
-     *     type="object",
-     *     description="Query object. Due to limitations in the current API documentation, the full expression schema cannot be properly described. See the various `*Expression` model definitions for more information about types of supported expressions.",
-     *     required=true,
-     *     @SWG\Schema(
-     *         @SWG\Property(
-     *             property="expression",
-     *             type="object",
-     *             description="JSON-encoded expression object. To query for multiple expressions, use the `expressions` parameter instead.",
-     *             ref=@Model(type=\App\Expression\AbstractExpression::class, groups={"public"}),
-     *        ),
-     *        @SWG\Property(
-     *             property="expressions",
-     *             type="array",
-     *             description="Array of JSON-encoded expression objects.",
-     *             items=@SWG\Schema(ref=@Model(type=\App\Expression\AbstractExpression::class, groups={"public"})),
-     *        ),
-     *        @SWG\Property(
-     *             property="from",
-     *             type="string",
-     *             description="Start time of the query (inclusive). Times can be either absolute (e.g., '2018-08-31T16:08:18Z') or relative (e.g. '-24h')",
-     *             default="-7d"
-     *        ),
-     *        @SWG\Property(
-     *             property="until",
-     *             type="string",
-     *             description="End time of the query (exclusive). Times can be either absolute (e.g., '2018-08-31T16:08:18Z') or relative (e.g. '-24h')",
-     *             default="now"
-     *        ),
-     *        @SWG\Property(
-     *             property="aggregation_func",
-     *             type="string",
-     *             default="avg",
-     *             enum={"avg", "sum"},
-     *             description="Aggregation function to use when down-sampling data points",
-     *        ),
-     *        @SWG\Property(
-     *             property="annotate",
-     *             type="boolean",
-     *             description="Annotate time series with metadata (e.g., geographic information)",
-     *             default=false
-     *        ),
-     *        @SWG\Property(
-     *             property="adaptive_downsampling",
-     *             type="boolean",
-     *             description="Request that time series be down-sampled. Helps reduce query latency and result size.",
-     *             default=true
-     *        )
-     *     ),
-     *     @SWG\Schema(ref=@Model(type=\App\Expression\PathExpression::class, groups={"public"})),
-     *     @SWG\Schema(ref=@Model(type=\App\Expression\ConstantExpression::class, groups={"public"})),
-     *     @SWG\Schema(ref=@Model(type=\App\Expression\FunctionExpression::class, groups={"public"}))
-     * )
-     * @SWG\Response(
-     *     response=200,
-     *     description="Contains an array of time series that matched the given query.",
-     *     @SWG\Schema(
-     *         allOf={
-     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
-     *             @SWG\Schema(
-     *                 @SWG\Property(
-     *                     property="type",
-     *                     type="string",
-     *                     enum={"ts.query"}
-     *                 ),
-     *                 @SWG\Property(
-     *                     property="error",
-     *                     type="string",
-     *                     enum={}
-     *                 ),
-     *                 @SWG\Property(
-     *                     property="data",
-     *                     type="array",
-     *                     items=@SWG\Schema(ref=@Model(type=\App\TimeSeries\TimeSeries::class, groups={"public"}))
-     *                 )
-     *             )
-     *         }
-     *     )
-     * )
-     * @SWG\Response(
-     *     response=400,
-     *     description="Indicates that the query failed.",
-     *     @SWG\Schema(
-     *         allOf={
-     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
-     *             @SWG\Schema(
-     *                 @SWG\Property(
-     *                     property="type",
-     *                     type="string",
-     *                     enum={"ts.query"}
-     *                 ),
-     *                 @SWG\Property(
-     *                     property="error",
-     *                     type="string",
-     *                     enum={"Backend failure: foo"}
-     *                 ),
-     *                 @SWG\Property(
-     *                     property="data",
-     *                     type="string",
-     *                     enum={}
-     *                 )
-     *             )
-     *         }
-     *     )
-     * )
-     *
-     * @var Request $request
-     * @var SerializerInterface $serializer
-     * @var ExpressionFactory $expressionFactory
-     * @var GraphiteBackend $tsBackend
-     *
-     * @return JsonResponse
+     * @var MetadataEntitiesService
      */
-    public function query(Request $request, SerializerInterface $serializer,
-                          ExpressionFactory $expressionFactory,
-                          GraphiteBackend $tsBackend)
-    {
-        $env = new Envelope('ts.query',
-                            'body',
-                            [
-                                new RequestParameter('expression', RequestParameter::ARRAY, null, false),
-                                new RequestParameter('expressions', RequestParameter::ARRAY, null, false),
-                                new RequestParameter('from', RequestParameter::DATETIME, new QueryTime('-24h'), false),
-                                new RequestParameter('until', RequestParameter::DATETIME, new QueryTime('now'), false),
-                                new RequestParameter('aggregation_func', RequestParameter::STRING, 'avg', false),
-                                new RequestParameter('annotate', RequestParameter::BOOL, false, false),
-                                new RequestParameter('adaptive_downsampling', RequestParameter::BOOL, true, false),
-                            ],
-                            $request
-        );
-        if ($env->getError()) {
-            return $this->json($env, 400);
-        }
+    private $metadataService;
 
-        // TODO: adaptive_downsampling should be protected by authorization role?
+    private $datasourceService;
 
-        // we need either expression or expressions
-        $oneExp = $env->getParam('expression');
-        $manyExps = $env->getParam('expressions');
+    public function __construct(MetadataEntitiesService $metadataEntitiesService, DatasourceService $datasourceService){
+        $this->metadataService = $metadataEntitiesService;
+        $this->datasourceService = $datasourceService;
+    }
 
-        if ($oneExp && $manyExps) {
-            $env->setError("Only one of 'expression' or 'expressions' parameters can be set");
-            return $this->json($env, 400);
-        }
-
-        if ($oneExp) {
-            $rawExps = [$oneExp];
-        } elseif ($manyExps) {
-            $rawExps = $manyExps;
-        } else {
-            $env->setError("Either 'expression' or 'expressions' parameters must be set");
-            return $this->json($env, 400);
-        }
-        $exps = [];
-        try {
-            foreach ($rawExps as $exp) {
-                $exps[] = $expressionFactory->createFromJson($exp);
-            }
-        } catch (ParsingException $ex) {
-            $env->setError($ex->getMessage());
-            return $this->json($env, 400);
-        }
-        // ask the time series backend to perform the query
-        try {
-            $tss = $tsBackend->tsQuery(
-                $exps,
-                $env->getParam('from'),
-                $env->getParam('until'),
-                $env->getParam('aggregation_func'),
-                $env->getParam('annotate'),
-                $env->getParam('adaptive_downsampling')
+    private function sanitizeInputs(&$from, &$until, $datasource, $metas){
+        if(!isset($from)){
+            throw new \InvalidArgumentException(
+                "'from' timestamp must be set"
             );
-            $env->setData($tss);
-        } catch (BackendException $ex) {
-            $env->setError($ex->getMessage());
-            // TODO: check HTTP error codes used
-            return $this->json($env, 400);
         }
-        return $this->json($env);
+
+        if(!isset($until)){
+            throw new \InvalidArgumentException(
+                "'until' timestamp must be set"
+            );
+        }
+
+        $from = new QueryTime($from);
+        $until = new QueryTime($until);
+
+        if ($from->getEpochTime() > $until->getEpochTime()){
+            throw new \InvalidArgumentException(
+                sprintf("from (%d) must be earlier than until (%d)", $from->getEpochTime(), $until->getEpochTime())
+            );
+        }
+
+        if ($datasource && !$this->datasourceService->isValidDatasource($datasource)){
+            throw new \InvalidArgumentException(
+                sprintf("invalid datasource %s (must be one of the following [%s])", $datasource, join(", ", $this->datasourceService->getDatasourceNames()))
+            );
+        }
+
+        if(count($metas)!=1){
+            throw new \InvalidArgumentException(
+                sprintf("cannot find corresponding metadata entity")
+            );
+        }
+    }
+
+    private function buildExpression($entity, $datasource){
+        $fqid = $entity->getAttribute("fqid");
+        $queryJsons = [
+            "bgp" => [
+                "type" => "function",
+                "func" => "alias",
+                "args" => [
+                    [
+                        "type"=> "path",
+                        "path"=> sprintf("bgp.prefix-visibility.%s.v4.visibility_threshold.min_50%%_ff_peer_asns.visible_slash24_cnt",$fqid)
+                    ],
+                    [
+                        "type"=> "constant",
+                        "value"=> "bgp"
+                    ]
+                ]
+            ],
+            "ucsd-nt" => [
+                "type" => "function",
+                "func" => "alias",
+                "args" => [
+                    [
+                        "type" => "path",
+                        "path" => sprintf("darknet.ucsd-nt.non-erratic.%s.uniq_src_ip", $fqid)
+                    ],
+                    [
+                        "type" => "constant",
+                        "value" => "ucsd-nt"
+                    ]
+                ]
+            ],
+            "ping-slash24" => [
+                "type" => "function",
+                "func" => "alias",
+                "args" => [
+                    [
+                        "type" => "function",
+                        "func" => "sumSeries",
+                        "args" => [
+                            [
+                                "type" => "function",
+                                "func" => "keepLastValue",
+                                "args" => [
+                                    [
+                                        "type" => "path",
+                                        "path" => "active.ping-slash24.geo.netacuity.NA.KN.probers.team-1.caida-sdsc.*.up_slash24_cnt"
+                                    ], [
+                                        "type" => "constant",
+                                        "value" => 1
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ],
+                    [
+                        "type" => "constant",
+                        "value" => "ping-slash24"
+                    ]
+                ]
+            ],
+        ];
+
+        if(!$datasource){
+            return array_values($queryJsons);
+        } else {
+            if(!array_key_exists($datasource, $queryJsons)){
+                throw new \InvalidArgumentException(
+                    sprintf("Unknown datasource %s, must be one of [%s]", $datasource,join(", ",array_keys($queryJsons)))
+                );
+            } else {
+                return [$queryJsons[$datasource]];
+            }
+        }
     }
 
     /**
-     * List available time series keys matching the given path expression
+     * Retrieve time-series signals.
      *
-     * @Route("/list/", methods={"GET"}, name="list")
-     * @SWG\Tag(name="Time Series")
+     * @Route("/{entityType}/{entityCode}", methods={"GET"}, name="get")
+     * @SWG\Tag(name="Time Series Signals")
      * @SWG\Parameter(
-     *     name="path",
-     *     in="query",
+     *     name="entityType",
+     *     in="path",
      *     type="string",
-     *     description="Path expression string",
+     *     description="Type of the entity, e.g. country, region, asn",
+     *     enum={"continent", "country", "region", "county", "asn"},
      *     required=false,
-     *     default="*",
+     *     default=null
      * )
      * @SWG\Parameter(
-     *     name="absolute_paths",
-     *     in="query",
-     *     type="boolean",
-     *     description="Return absolute paths (rather than relative)",
+     *     name="entityCode",
+     *     in="path",
+     *     type="string",
+     *     description="Code of the entity, e.g. for United States the code is 'US'",
      *     required=false,
-     *     default=false
+     *     default=null
+     * )
+     * @SWG\Parameter(
+     *     name="from",
+     *     in="query",
+     *     type="string",
+     *     description="Unix timestamp from when the alerts should begin after",
+     *     required=true
+     * )
+     * @SWG\Parameter(
+     *     name="until",
+     *     in="query",
+     *     type="string",
+     *     description="Unix timestamp until when the alerts should end before",
+     *     required=true
+     * )
+     * @SWG\Parameter(
+     *     name="datasource",
+     *     in="query",
+     *     type="string",
+     *     description="Filter signals by datasource",
+     *     enum={"bgp", "ucsd-nt", "ping-slash24"},
+     *     required=false,
+     *     default=null
      * )
      * @SWG\Response(
      *     response=200,
-     *     description="Indicates the list query succeeded.",
+     *     description="Return time series signals",
      *     @SWG\Schema(
      *         allOf={
      *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
@@ -246,7 +205,7 @@ class TimeseriesController extends ApiController
      *                 @SWG\Property(
      *                     property="type",
      *                     type="string",
-     *                     enum={"ts.list"}
+     *                     enum={"outages.alerts"}
      *                 ),
      *                 @SWG\Property(
      *                     property="error",
@@ -256,55 +215,70 @@ class TimeseriesController extends ApiController
      *                 @SWG\Property(
      *                     property="data",
      *                     type="array",
-     *                     description="Array of time series paths that match the query",
-     *                     items=@SWG\Schema(ref=@Model(type=\App\Expression\PathExpression::class, groups={"public", "list"}))
-     *                 )
-     *             )
-     *         }
-     *     )
-     * )
-     * @SWG\Response(
-     *     response=400,
-     *     description="Indicates that the given expression could not be parsed.",
-     *     @SWG\Schema(
-     *         allOf={
-     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
-     *             @SWG\Schema(
-     *                 @SWG\Property(
-     *                     property="type",
-     *                     type="string",
-     *                     enum={"ts.list"}
-     *                 ),
-     *                 @SWG\Property(
-     *                     property="error",
-     *                     type="string",
-     *                 ),
-     *                 @SWG\Property(
-     *                     property="data",
-     *                     type="string",
-     *                     enum={}
+     *                     @SWG\Items(
+     *                          @SWG\Property(
+     *                              property="entityType",
+     *                              type="string"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="entityCode",
+     *                              type="string"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="datasource",
+     *                              type="string"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="from",
+     *                              type="number"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="until",
+     *                              type="number"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="step",
+     *                              type="number"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="nativeStep",
+     *                              type="number"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="values",
+     *                              type="array",
+     *                              @SWG\Items(
+     *                                  type="integer"
+     *                              )
+     *                          )
+     *                     )
      *                 )
      *             )
      *         }
      *     )
      * )
      *
-     *
+     * @var string $entityType
+     * @var string $entityCode
      * @var Request $request
      * @var SerializerInterface $serializer
-     * @var GraphiteBackend $tsBackend
-     * @var Humanizer $humanizer
-     *
+     * @var MetadataEntitiesService
      * @return JsonResponse
      */
-    public function list(Request $request, SerializerInterface $serializer,
-                         GraphiteBackend $tsBackend, Humanizer $humanizer)
+    public function lookup(
+        ?string $entityType, ?string $entityCode,
+        Request $request,
+        SerializerInterface $serializer,
+        ExpressionFactory $expressionFactory,
+        GraphiteBackend $tsBackend)
     {
-        $env = new Envelope('ts.list',
+        $env = new Envelope('signals',
                             'query',
                             [
-                                new RequestParameter('path', RequestParameter::STRING, '*', false),
-                                new RequestParameter('absolute_paths', RequestParameter::BOOL, false),
+                                new RequestParameter('from', RequestParameter::STRING, null, true),
+                                new RequestParameter('until', RequestParameter::STRING, null, true),
+                                new RequestParameter('datasource', RequestParameter::STRING, null, false),
+                                new RequestParameter('maxPoints', RequestParameter::INTEGER, null, false),
                             ],
                             $request
         );
@@ -312,22 +286,66 @@ class TimeseriesController extends ApiController
             return $this->json($env, 400);
         }
 
-        // parse the given path expression
-        $pathExp = new PathExpression($humanizer, $env->getParam('path'));
-        // ask the time series backend to find us a list of paths
+        /* LOCAL PARAM PARSING */
+        $from = $env->getParam('from');
+        $until = $env->getParam('until');
+        $datasource = $env->getParam('datasource');
+        $maxPoints = $env->getParam('maxPoints');
+        $metas = $this->metadataService->lookup($entityType, $entityCode);
+
+        try{
+            $this->sanitizeInputs($from, $until, $datasource, $metas);
+        } catch (\InvalidArgumentException $ex) {
+            $env->setError($ex->getMessage());
+            return $this->json($env, 400);
+        }
+
+
+        /* BUILD EXPRESSIONS BASED ON ENTITY TYPE AND CODE */
+        $jsons = $this->buildExpression($metas[0], $datasource);
+        $exps = [];
+        foreach($jsons as &$json){
+            $exps[] = $expressionFactory->createFromJson($json);
+        }
+
+        /* QUERY TIMESERIES GRAPHITE BACKEND */
         try {
-            $paths = $tsBackend->pathListQuery($pathExp,
-                                               $env->getParam('absolute_paths'));
-            $env->setData($paths);
+            $tss = $tsBackend->tsQuery(
+                $exps,
+                $from,
+                $until,
+                'avg',   // aggrFunc
+                false,  // annotate
+                true,   // adaptiveDownsampling
+                false   // checkPathWhitelist
+            );
         } catch (BackendException $ex) {
             $env->setError($ex->getMessage());
             // TODO: check HTTP error codes used
-            return $this->json($env, 400);
-        } catch (ParsingException $ex) {
-            $env->setError($ex->getMessage());
-            // TODO: check HTTP error codes used
+            //
             return $this->json($env, 400);
         }
-        return $this->json($env, 200, [], ['groups' => ['public', 'list']]);
+
+        // TODO: sanity check timeseries data points
+        $this->dataSanityCheck($tss);
+        $tss->setMetadataEntity($metas[0]);
+        $env->setData($tss);
+        // $env->setData(array_values($tss->getSeries()));
+        return $this->json($env);
+    }
+
+    private function dataSanityCheck($tss){
+        foreach($tss->getSeries() as $datasource => $ts){
+            $step = $ts->getStep();
+            $values = $ts->getValues();
+
+            $from = $ts->getFrom()->getTimestamp();
+            $until = $ts->getUntil()->getTimestamp();
+            if(count($values)>0 && ($until-$from)/($step) != count($values)){
+                throw new \InvalidArgumentException(
+                    sprintf("wrong values count %d != (%d - %d) / %d", count($values), $until, $from, $step)
+                );
+            }
+        }
     }
 }
