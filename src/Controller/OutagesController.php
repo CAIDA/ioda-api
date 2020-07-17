@@ -18,7 +18,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 
 /**
- * Class EntitiesController
+ * Class OutagesController
  * @package App\Controller
  * @Route("/outages", name="outages_")
  */
