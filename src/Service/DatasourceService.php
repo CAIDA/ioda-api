@@ -17,10 +17,15 @@ class DatasourceService
         ];
     }
 
-
-
-    public function getDatasources(){
+    public function getAllDatasources(){
         return $this->DATASOURCES_ENTITIES;
+    }
+
+    public function getDatasource(String $name){
+        if (!array_key_exists($name, $this->DATASOURCES_ENTITIES)) {
+            throw new \InvalidArgumentException("Unknown datasource '$name'");
+        }
+        return $this->DATASOURCES_ENTITIES[$name];
     }
 
     public function getDatasourceNames(){
