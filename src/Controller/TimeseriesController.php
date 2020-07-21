@@ -86,22 +86,23 @@ class TimeseriesController extends ApiController
         ];
     }
 
-    private function sanitizeInputs(&$from, &$until, $datasource, $metas){
-        if(!isset($from)){
+    private function processTimestampStr(string $ts, string $name){
+        if($ts==null){
             throw new \InvalidArgumentException(
-                "'from' timestamp must be set"
+                "'$name' timestamp must be set"
+            );
+        }
+        if(!is_numeric($ts)){
+            // $ts is not a number, probably tring to use relative time like `-1d`
+            throw new \InvalidArgumentException(
+                "'$name' timestamp must be an unix-timestamp integer in seconds"
             );
         }
 
-        if(!isset($until)){
-            throw new \InvalidArgumentException(
-                "'until' timestamp must be set"
-            );
-        }
+        return new QueryTime($ts);
+    }
 
-        $from = new QueryTime($from);
-        $until = new QueryTime($until);
-
+    private function validateUserInputs(QueryTime $from, QueryTime $until, ?string $datasource, $metas){
         if ($from->getEpochTime() > $until->getEpochTime()){
             throw new \InvalidArgumentException(
                 sprintf("from (%d) must be earlier than until (%d)", $from->getEpochTime(), $until->getEpochTime())
@@ -332,8 +333,8 @@ class TimeseriesController extends ApiController
         $env = new Envelope('signals',
                             'query',
                             [
-                                new RequestParameter('from', RequestParameter::INTEGER, null, true),
-                                new RequestParameter('until', RequestParameter::INTEGER, null, true),
+                                new RequestParameter('from', RequestParameter::STRING, null, true),
+                                new RequestParameter('until', RequestParameter::STRING, null, true),
                                 new RequestParameter('datasource', RequestParameter::STRING, null, false),
                                 new RequestParameter('maxPoints', RequestParameter::INTEGER, null, false),
                             ],
@@ -351,11 +352,16 @@ class TimeseriesController extends ApiController
         $metas = $this->metadataService->lookup($entityType, $entityCode);
 
         try{
-            $this->sanitizeInputs($from, $until, $datasource, $metas);
+            $from = $this->processTimestampStr($from, "from");
+            $until = $this->processTimestampStr($until, "until");
+            $this->validateUserInputs($from, $until, $datasource, $metas);
         } catch (\InvalidArgumentException $ex) {
             $env->setError($ex->getMessage());
             return $this->json($env, 400);
         }
+
+        $from = new QueryTime($from);
+        $until = new QueryTime($until);
 
         $ts_set = new TimeSeriesSet();
         $ts_set->setMetadataEntity($metas[0]);
@@ -377,8 +383,6 @@ class TimeseriesController extends ApiController
         }
 
         $this->dataSanityCheck($ts_set);
-        // $ts_set->downSample(300, "avg");
-        // TODO: should only down sample the
         $env->setData($ts_set);
         return $this->json($env);
     }
@@ -390,7 +394,9 @@ class TimeseriesController extends ApiController
             $queryEngines = ["influx", "graphite"];
         } else {
             if(!in_array($datasource, $this->dsToQuery)){
-                // TODO: error!
+                throw new \InvalidArgumentException(
+                    sprintf("unsupported datasource %s (supported: [%s])", $datasource, join(", ", array_keys($this->dsToQuery)))
+                );
             }
             $queryEngines[] = $this->dsToQuery[$datasource];
         }
