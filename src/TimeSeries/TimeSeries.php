@@ -37,7 +37,6 @@ namespace App\TimeSeries;
 
 
 use App\Entity\Ioda\MetadataEntity;
-use App\Expression\AbstractExpression;
 use App\TimeSeries\Annotation\AbstractAnnotation;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -53,25 +52,6 @@ class TimeSeries
         604800, 1209600, 2419200, //week-level [1, 2, 4]
         31536000, 63072000, 315360000, //year-level [1, 2, 10]
     ];
-
-    /**
-     * Expression that resulted in this time series.
-     *
-     * @var AbstractExpression
-     * @Groups("public")
-     */
-    protected $expression;
-
-    /**
-     * Contextual name of this time series.
-     *
-     * Generated based on the expressions of other time series in a given
-     * TimeSeriesSet.
-     *
-     * @var string
-     * @Groups({"public"})
-     */
-    protected $contextualName;
 
     /**
      * Time of the first data point in this time series.
@@ -157,43 +137,6 @@ class TimeSeries
     public function getMetadataEntity(): MetadataEntity
     {
         return $this->metadataEntity;
-    }
-
-    /**
-     * TimeSeries constructor.
-     *
-     * TODO: Summary
-     *
-     * @param AbstractExpression $expression
-     */
-    public function __construct(AbstractExpression $expression)
-    {
-        $this->expression = $expression;
-    }
-
-    public function getExpression(): AbstractExpression
-    {
-        return $this->expression;
-    }
-
-    public function getContextualName(): string
-    {
-        return $this->contextualName;
-    }
-
-    /**
-     * Update the contextual name of this series based on a completed series
-     * summary object.
-     *
-     * @param TimeSeriesSummary $seriesSummary
-     */
-    public function updateContextualName(TimeSeriesSummary $seriesSummary): void
-    {
-        $this->contextualName =
-            $this->getExpression()->getCanonicalHumanized(
-                $seriesSummary->getCommonPrefix(),
-                $seriesSummary->getCommonSuffix()
-            );
     }
 
     /**
@@ -442,6 +385,9 @@ class TimeSeries
     public
     function downSample($ratio, $aggrFunc = 'avg')
     {
+        if ($ratio > 1) {
+            return;
+        }
         $oldStep = $this->getStep();
         // decomposed into functions to find bottleneck
         $newStep = $this->findDownSampleStep($ratio, $oldStep);

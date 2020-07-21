@@ -50,12 +50,6 @@ class TimeSeriesSet
     protected $series;
 
     /**
-     * @var TimeSeriesSummary
-     * @Groups("public")
-     */
-    protected $summary;
-
-    /**
      * @var MetadataEntity
      * @Groups("public")
      */
@@ -64,7 +58,6 @@ class TimeSeriesSet
     public function __construct()
     {
         $this->series = [];
-        $this->summary = new TimeSeriesSummary();
     }
 
     /**
@@ -100,27 +93,11 @@ class TimeSeriesSet
     }
 
     /**
-     * @return TimeSeriesSummary
-     */
-    public function getSummary(): TimeSeriesSummary
-    {
-        return $this->summary;
-    }
-
-    /**
-     * @param TimeSeriesSummary $summary
-     */
-    public function setSummary(TimeSeriesSummary $summary): void
-    {
-        $this->summary = $summary;
-    }
-
-    /**
      * @param TimeSeries $series
      */
     public function addOneSeries(TimeSeries $series): void
     {
-        $this->series[$series->getExpression()->getCanonicalStr()] = $series;
+        $this->series[$series->getDatasource()] = $series;
     }
 
     /**

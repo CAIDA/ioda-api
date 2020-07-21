@@ -56,7 +56,6 @@ class TimeSeriesSetNormalizer implements ContextAwareNormalizerInterface
     {
         $normalized = [];
         foreach($timeSeriesSet->getSeries() as $datasource => $series){
-           $series->setDatasource($datasource);
            $series->setMetadataEntity($timeSeriesSet->getMetadataEntity());
            $normalized[] = $this->normalizer->normalize($series, $format, $context);
         }

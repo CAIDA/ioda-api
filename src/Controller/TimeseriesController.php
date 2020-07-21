@@ -38,6 +38,7 @@ namespace App\Controller;
 use App\Expression\ExpressionFactory;
 use App\Expression\ParsingException;
 use App\Expression\PathExpression;
+use App\Service\InfluxService;
 use App\Service\MetadataEntitiesService;
 use App\Service\DatasourceService;
 use App\Response\Envelope;
@@ -45,6 +46,7 @@ use App\Response\RequestParameter;
 use App\TimeSeries\Backend\BackendException;
 use App\TimeSeries\Backend\GraphiteBackend;
 use App\TimeSeries\Humanize\Humanizer;
+use App\TimeSeries\TimeSeriesSet;
 use App\Utils\QueryTime;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
@@ -68,9 +70,20 @@ class TimeseriesController extends ApiController
 
     private $datasourceService;
 
-    public function __construct(MetadataEntitiesService $metadataEntitiesService, DatasourceService $datasourceService){
+    private $influxService;
+
+    public function __construct(MetadataEntitiesService $metadataEntitiesService,
+                                DatasourceService $datasourceService,
+                                InfluxService $influxService
+    ){
         $this->metadataService = $metadataEntitiesService;
         $this->datasourceService = $datasourceService;
+        $this->influxService = $influxService;
+        $this->dsToQuery = [
+            "bgp" => "graphite",
+            "ping-slash24" => "graphite",
+            "ucsd-nt" => "influx",
+        ];
     }
 
     private function sanitizeInputs(&$from, &$until, $datasource, $metas){
@@ -125,20 +138,21 @@ class TimeseriesController extends ApiController
                     ]
                 ]
             ],
-            "ucsd-nt" => [
-                "type" => "function",
-                "func" => "alias",
-                "args" => [
-                    [
-                        "type" => "path",
-                        "path" => sprintf("darknet.ucsd-nt.non-erratic.%s.uniq_src_ip", $fqid)
-                    ],
-                    [
-                        "type" => "constant",
-                        "value" => "ucsd-nt"
-                    ]
-                ]
-            ],
+            // NOTE: "ucsd-nt" migrated to using influxdb
+            // "ucsd-nt" => [
+            //     "type" => "function",
+            //     "func" => "alias",
+            //     "args" => [
+            //         [
+            //             "type" => "path",
+            //             "path" => sprintf("darknet.ucsd-nt.non-erratic.%s.uniq_src_ip", $fqid)
+            //         ],
+            //         [
+            //             "type" => "constant",
+            //             "value" => "ucsd-nt"
+            //         ]
+            //     ]
+            // ],
             "ping-slash24" => [
                 "type" => "function",
                 "func" => "alias",
@@ -208,14 +222,14 @@ class TimeseriesController extends ApiController
      * @SWG\Parameter(
      *     name="from",
      *     in="query",
-     *     type="string",
+     *     type="integer",
      *     description="Unix timestamp from when the alerts should begin after",
      *     required=true
      * )
      * @SWG\Parameter(
      *     name="until",
      *     in="query",
-     *     type="string",
+     *     type="integer",
      *     description="Unix timestamp until when the alerts should end before",
      *     required=true
      * )
@@ -225,6 +239,14 @@ class TimeseriesController extends ApiController
      *     type="string",
      *     description="Filter signals by datasource",
      *     enum={"bgp", "ucsd-nt", "ping-slash24"},
+     *     required=false,
+     *     default=null
+     * )
+     * @SWG\Parameter(
+     *     name="maxPoints",
+     *     in="query",
+     *     type="integer",
+     *     description="Maximum number of points per time-series",
      *     required=false,
      *     default=null
      * )
@@ -291,12 +313,14 @@ class TimeseriesController extends ApiController
      *     )
      * )
      *
-     * @var string $entityType
-     * @var string $entityCode
+     * @param string|null $entityType
+     * @param string|null $entityCode
+     * @param ExpressionFactory $expressionFactory
+     * @param GraphiteBackend $tsBackend
+     * @return JsonResponse
+     * @throws ParsingException
      * @var Request $request
      * @var SerializerInterface $serializer
-     * @var MetadataEntitiesService
-     * @return JsonResponse
      */
     public function lookup(
         ?string $entityType, ?string $entityCode,
@@ -308,8 +332,8 @@ class TimeseriesController extends ApiController
         $env = new Envelope('signals',
                             'query',
                             [
-                                new RequestParameter('from', RequestParameter::STRING, null, true),
-                                new RequestParameter('until', RequestParameter::STRING, null, true),
+                                new RequestParameter('from', RequestParameter::INTEGER, null, true),
+                                new RequestParameter('until', RequestParameter::INTEGER, null, true),
                                 new RequestParameter('datasource', RequestParameter::STRING, null, false),
                                 new RequestParameter('maxPoints', RequestParameter::INTEGER, null, false),
                             ],
@@ -333,48 +357,71 @@ class TimeseriesController extends ApiController
             return $this->json($env, 400);
         }
 
+        $ts_set = new TimeSeriesSet();
+        $ts_set->setMetadataEntity($metas[0]);
+
+        $queryEngines = $this->getQueryEngines($datasource);
+        try{
+            if(in_array("graphite", $queryEngines)){
+                foreach($this->graphiteQuery($tsBackend, $expressionFactory, $from, $until, $metas[0], $datasource, $maxPoints) as $ts){
+                    $ts_set->addOneSeries($ts);
+                }
+            }
+            if(in_array("influx", $queryEngines)){
+                $ts = $this->influxService->getInfluxDataPoints($metas[0], $from, $until, $maxPoints);
+                $ts_set->addOneSeries($ts);
+            }
+        } catch (Exception $ex) {
+            $env->setError($ex->getMessage());
+            return $this->json($env, 400);
+        }
+
+        $this->dataSanityCheck($ts_set);
+        // $ts_set->downSample(300, "avg");
+        // TODO: should only down sample the
+        $env->setData($ts_set);
+        return $this->json($env);
+    }
+
+    private function getQueryEngines(?string $datasource){
+        $queryEngines = [];
+        if($datasource == null) {
+            // query all
+            $queryEngines = ["influx", "graphite"];
+        } else {
+            if(!in_array($datasource, $this->dsToQuery)){
+                // TODO: error!
+            }
+            $queryEngines[] = $this->dsToQuery[$datasource];
+        }
+        return $queryEngines;
+    }
+
+    private function graphiteQuery($tsBackend, $expressionFactory, $from, $until, $entity, $datasource, $maxPoints): array {
 
         /* BUILD EXPRESSIONS BASED ON ENTITY TYPE AND CODE */
-        $jsons = $this->buildExpression($metas[0], $datasource);
+        $jsons = $this->buildExpression($entity, $datasource);
         $exps = [];
         foreach($jsons as &$json){
             $exps[] = $expressionFactory->createFromJson($json);
         }
 
         /* QUERY TIMESERIES GRAPHITE BACKEND */
-        try {
-            $tss = $tsBackend->tsQuery(
-                $exps,
-                $from,
-                $until,
-                'avg',   // aggrFunc
-                false,  // annotate
-                true,   // adaptiveDownsampling
-                false   // checkPathWhitelist
-            );
-        } catch (BackendException $ex) {
-            $env->setError($ex->getMessage());
-            // TODO: check HTTP error codes used
-            //
-            return $this->json($env, 400);
-        }
+        $tss = $tsBackend->tsQuery($exps, $from, $until, $maxPoints);
 
-        // TODO: sanity check timeseries data points
-        $this->dataSanityCheck($tss);
-        $tss->setMetadataEntity($metas[0]);
-        $env->setData($tss);
-        // $env->setData(array_values($tss->getSeries()));
-        return $this->json($env);
+        return $tss;
     }
 
     private function dataSanityCheck($tss){
+
         foreach($tss->getSeries() as $datasource => $ts){
             $step = $ts->getStep();
             $values = $ts->getValues();
 
             $from = $ts->getFrom()->getTimestamp();
             $until = $ts->getUntil()->getTimestamp();
-            if(count($values)>0 && ($until-$from)/($step) != count($values)){
+            if(count($values)>0 && abs(($until-$from)/($step) - count($values))>1){
+                // note that for influx datapoints, it could be ($until-$from)/($step)+1
                 throw new \InvalidArgumentException(
                     sprintf("wrong values count %d != (%d - %d) / %d", count($values), $until, $from, $step)
                 );
