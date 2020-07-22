@@ -111,6 +111,9 @@ class InfluxService
         return $step;
     }
 
+    /**
+     * process JSON response get from influxdb instance
+     */
     private function processResponseJson($responseJson): TimeSeries {
         if(
             count($responseJson['results'])!=1 ||
@@ -132,6 +135,7 @@ class InfluxService
 
         $values = [];
         foreach($data['values'] as $value_pair){
+            // use the first two iterations to calculate the step from the returned data
             if($step==0){
                 $cur_ts = $value_pair[0]/1000;  // influx returns timestamp in miliseconds
                 if($prev_ts==0){
@@ -140,12 +144,13 @@ class InfluxService
                     $step = $cur_ts - $prev_ts;
                 }
             }
+            // save the actual datapoint value to array
             $values[] = $value_pair[1];
         }
 
+        // create new TimeSeries object accordingly
         $newSeries = new TimeSeries();
-        $newSeries->setDatasource('ucsd-nt-influx');
-
+        $newSeries->setDatasource('ucsd-nt');
         $newSeries->setFrom($from);
         $newSeries->setUntil($until);
         $newSeries->setStep($step);
