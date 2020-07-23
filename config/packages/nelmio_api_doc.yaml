@@ -3,8 +3,8 @@ nelmio_api_doc:
         host: api.hicube.caida.org
         schemes: [https]
         info:
-            title: Hi3 HTTP API
-            description: Data and metadata API for the Hi3 platform.
+            title: IODA HTTP API
+            description: Data and metadata API for IODA project.
             version: 1.0.0
         tags:
         - name: Time Series Signals
