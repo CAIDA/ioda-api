@@ -1,6 +1,6 @@
 nelmio_api_doc:
     documentation:
-        host: api.hicube.caida.org
+        host: api.ioda.caida.org
         schemes: [https]
         info:
             title: IODA HTTP API
