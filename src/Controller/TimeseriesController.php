@@ -38,14 +38,13 @@ namespace App\Controller;
 use App\Expression\ExpressionFactory;
 use App\Expression\ParsingException;
 use App\Expression\PathExpression;
-use App\Service\InfluxService;
 use App\Service\MetadataEntitiesService;
 use App\Service\DatasourceService;
 use App\Response\Envelope;
 use App\Response\RequestParameter;
 use App\TimeSeries\Backend\BackendException;
+use App\TimeSeries\Backend\InfluxBackend;
 use App\TimeSeries\Backend\GraphiteBackend;
-use App\TimeSeries\Humanize\Humanizer;
 use App\TimeSeries\TimeSeriesSet;
 use App\Utils\QueryTime;
 use Nelmio\ApiDocBundle\Annotation\Model;
@@ -72,9 +71,11 @@ class TimeseriesController extends ApiController
 
     private $influxService;
 
+    private $dsToQuery;
+
     public function __construct(MetadataEntitiesService $metadataEntitiesService,
                                 DatasourceService $datasourceService,
-                                InfluxService $influxService
+                                InfluxBackend $influxService
     ){
         $this->metadataService = $metadataEntitiesService;
         $this->datasourceService = $datasourceService;
@@ -377,7 +378,7 @@ class TimeseriesController extends ApiController
                 $ts = $this->influxService->getInfluxDataPoints($metas[0], $from, $until, $maxPoints);
                 $ts_set->addOneSeries($ts);
             }
-        } catch (Exception $ex) {
+        } catch (BackendException $ex) {
             $env->setError($ex->getMessage());
             return $this->json($env, 400);
         }
@@ -393,7 +394,7 @@ class TimeseriesController extends ApiController
             // query all
             $queryEngines = ["influx", "graphite"];
         } else {
-            if(!in_array($datasource, $this->dsToQuery)){
+            if(!in_array($datasource, array_keys($this->dsToQuery))){
                 throw new \InvalidArgumentException(
                     sprintf("unsupported datasource %s (supported: [%s])", $datasource, join(", ", array_keys($this->dsToQuery)))
                 );

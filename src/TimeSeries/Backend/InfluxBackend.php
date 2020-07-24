@@ -33,15 +33,16 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Service;
+namespace App\TimeSeries\Backend;
 
 
 use App\Entity\Ioda\MetadataEntity;
+use App\TimeSeries\Backend\BackendException;
 use App\TimeSeries\TimeSeries;
 use App\Utils\QueryTime;
 use DateTime;
 
-class InfluxService
+class InfluxBackend
 {
 
     /**
@@ -59,6 +60,8 @@ class InfluxService
             $template = "q=SELECT mean(\"uniq_src_ip\") FROM \"geo_country\" WHERE (\"telescope\" = 'ucsd-nt' AND \"country_code\" = '%s' AND \"filter\" = 'non-erratic' AND \"geo_db\" = 'netacuity') AND %s GROUP BY time(%ds) fill(null)";
         } else if($entityType == "region"){
             $template = "q=SELECT mean(\"uniq_src_ip\") FROM \"geo_region\" WHERE (\"telescope\" = 'ucsd-nt' AND \"country_code\" = '%s' AND \"filter\" = 'non-erratic' AND \"geo_db\" = 'netacuity') AND %s GROUP BY time(%ds) fill(null)";
+        } else if($entityType == "county"){
+            $template = "q=SELECT mean(\"uniq_src_ip\") FROM \"geo_county\" WHERE (\"telescope\" = 'ucsd-nt' AND \"country_code\" = '%s' AND \"filter\" = 'non-erratic' AND \"geo_db\" = 'netacuity') AND %s GROUP BY time(%ds) fill(null)";
         } else if($entityType == "asn"){
             $template = "q=SELECT mean(\"uniq_src_ip\")  FROM \"origin_asn\" WHERE (\"telescope\" = 'ucsd-nt' AND  \"filter\" = 'non-erratic' AND \"asn\" = '%s') AND %s GROUP BY time(%ds) fill(null)";
         } else {
@@ -73,12 +76,17 @@ class InfluxService
     }
 
     private function sendQuery($query): array {
+        $secret = getenv("INFLUXDB_SECRET");
+        if(!$secret){
+            throw new BackendException("Missing INFLUXDB_SECRET environment variable");
+        }
+
         // create curl resource
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, "https://explore.stardust.caida.org/api/datasources/proxy/1/query?db=stardust_ucsdnt&epoch=ms");
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
             'Content-Type: application/x-www-form-urlencoded',
-            'Authorization: Bearer eyJrIjoiMmdBN21ZQVdwY2Uzcko5bnZkS2libm40V3VoN0NBdUMiLCJuIjoiaW9kYS1hcGktdGVzdCIsImlkIjoxfQ=='
+            "Authorization: Bearer $secret"
         ));
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $query);
@@ -97,10 +105,10 @@ class InfluxService
 
     private function calculateStep($from, $until, $maxPoints){
         if($maxPoints == null){
-            return InfluxService::DEFAULT_STEP;
+            return InfluxBackend::DEFAULT_STEP;
         }
         $range = $until->getEpochTime() - $from->getEpochTime();
-        $step = InfluxService::DEFAULT_STEP;
+        $step = InfluxBackend::DEFAULT_STEP;
         foreach(TimeSeries::ALLOWED_STEPS as $tmp_step){
             $step = $tmp_step;
             if($range/$tmp_step <= $maxPoints){
@@ -116,13 +124,15 @@ class InfluxService
      */
     private function processResponseJson($responseJson): TimeSeries {
         if(
+            !in_array("results", array_keys($responseJson)) ||
             count($responseJson['results'])!=1 ||
             !array_key_exists("series", $responseJson['results'][0]) ||
             count($responseJson['results'][0]['series'])!=1
         ){
-            throw new \InvalidArgumentException(
-                sprintf("cannot find corresponding influx data entity")
-            );
+            $message = "InfluxDB backend failure";
+            $message .= in_array("message", array_keys($responseJson))?
+                sprintf(": %s",$responseJson["message"]): "" ;
+            throw new BackendException($message);
         }
         $data = $responseJson['results'][0]['series'][0];
 
