@@ -87,22 +87,6 @@ class TimeseriesController extends ApiController
         ];
     }
 
-    private function processTimestampStr(string $ts, string $name){
-        if($ts==null){
-            throw new \InvalidArgumentException(
-                "'$name' timestamp must be set"
-            );
-        }
-        if(!is_numeric($ts)){
-            // $ts is not a number, probably tring to use relative time like `-1d`
-            throw new \InvalidArgumentException(
-                "'$name' timestamp must be an unix-timestamp integer in seconds"
-            );
-        }
-
-        return new QueryTime($ts);
-    }
-
     private function validateUserInputs(QueryTime $from, QueryTime $until, ?string $datasource, $metas){
         if ($from->getEpochTime() > $until->getEpochTime()){
             throw new \InvalidArgumentException(
@@ -141,20 +125,20 @@ class TimeseriesController extends ApiController
                 ]
             ],
             // NOTE: "ucsd-nt" migrated to using influxdb
-            // "ucsd-nt" => [
-            //     "type" => "function",
-            //     "func" => "alias",
-            //     "args" => [
-            //         [
-            //             "type" => "path",
-            //             "path" => sprintf("darknet.ucsd-nt.non-erratic.%s.uniq_src_ip", $fqid)
-            //         ],
-            //         [
-            //             "type" => "constant",
-            //             "value" => "ucsd-nt"
-            //         ]
-            //     ]
-            // ],
+            "ucsd-nt" => [
+                "type" => "function",
+                "func" => "alias",
+                "args" => [
+                    [
+                        "type" => "path",
+                        "path" => sprintf("darknet.ucsd-nt.non-erratic.%s.uniq_src_ip", $fqid)
+                    ],
+                    [
+                        "type" => "constant",
+                        "value" => "ucsd-nt"
+                    ]
+                ]
+            ],
             "ping-slash24" => [
                 "type" => "function",
                 "func" => "alias",
@@ -334,10 +318,11 @@ class TimeseriesController extends ApiController
         $env = new Envelope('signals',
                             'query',
                             [
-                                new RequestParameter('from', RequestParameter::STRING, null, true),
-                                new RequestParameter('until', RequestParameter::STRING, null, true),
+                                new RequestParameter('from', RequestParameter::INTEGER, null, true),
+                                new RequestParameter('until', RequestParameter::INTEGER, null, true),
                                 new RequestParameter('datasource', RequestParameter::STRING, null, false),
                                 new RequestParameter('maxPoints', RequestParameter::INTEGER, null, false),
+                                new RequestParameter('noinflux', RequestParameter::BOOL, false, false),
                             ],
                             $request
         );
@@ -350,24 +335,23 @@ class TimeseriesController extends ApiController
         $until = $env->getParam('until');
         $datasource = $env->getParam('datasource');
         $maxPoints = $env->getParam('maxPoints');
+        $noinflux = $env->getParam('noinflux');
         $metas = $this->metadataService->lookup($entityType, $entityCode);
 
         try{
-            $from = $this->processTimestampStr($from, "from");
-            $until = $this->processTimestampStr($until, "until");
+            $from = floor($from/60)*60;
+            $from = new QueryTime($from);
+            $until = new QueryTime($until);
             $this->validateUserInputs($from, $until, $datasource, $metas);
         } catch (\InvalidArgumentException $ex) {
             $env->setError($ex->getMessage());
             return $this->json($env, 400);
         }
 
-        $from = new QueryTime($from);
-        $until = new QueryTime($until);
-
         $ts_set = new TimeSeriesSet();
         $ts_set->setMetadataEntity($metas[0]);
 
-        $queryEngines = $this->getQueryEngines($datasource);
+        $queryEngines = $this->getQueryEngines($datasource, $noinflux);
         try{
             if(in_array("graphite", $queryEngines)){
                 foreach($this->graphiteQuery($tsBackend, $expressionFactory, $from, $until, $metas[0], $datasource, $maxPoints) as $ts){
@@ -378,18 +362,21 @@ class TimeseriesController extends ApiController
                 $ts = $this->influxService->getInfluxDataPoints($metas[0], $from, $until, $maxPoints);
                 $ts_set->addOneSeries($ts);
             }
+            $this->dataSanityCheck($ts_set, $from, $until);
         } catch (BackendException $ex) {
             $env->setError($ex->getMessage());
             return $this->json($env, 400);
         }
 
-        $this->dataSanityCheck($ts_set);
         $env->setData($ts_set);
         return $this->json($env);
     }
 
-    private function getQueryEngines(?string $datasource){
+    private function getQueryEngines(?string $datasource, bool $noinflux){
         $queryEngines = [];
+        if($noinflux){
+            return ["graphite"];
+        }
         if($datasource == null) {
             // query all
             $queryEngines = ["influx", "graphite"];
@@ -419,19 +406,28 @@ class TimeseriesController extends ApiController
         return $tss;
     }
 
-    private function dataSanityCheck($tss){
+    private function dataSanityCheck($tss, $from, $until){
 
         foreach($tss->getSeries() as $datasource => $ts){
             $step = $ts->getStep();
             $values = $ts->getValues();
+            $from = $from->getEpochTime();
+            $until = $until->getEpochTime();
 
-            $from = $ts->getFrom()->getTimestamp();
-            $until = $ts->getUntil()->getTimestamp();
-            if(count($values)>0 && abs(($until-$from)/($step) - count($values))>1){
-                // note that for influx datapoints, it could be ($until-$from)/($step)+1
-                throw new \InvalidArgumentException(
-                    sprintf("wrong values count %d != (%d - %d) / %d", count($values), $until, $from, $step)
-                );
+            if(count($values)<=1){
+                // if we have zero or one data points, skip the checking
+                continue;
+            }
+
+            // take the ceiling of range/step as the expected data points.
+            // for example, if we see range/step = 1.01, that means we have the until filter to be over the last step
+            // range, meaning we will include that value in the results.
+            // otherwise we exclude the data from the `until` timestamp
+            $expect = ceil(($until-$from)/($step));
+            if($expect != count($values)){
+                 throw new BackendException(
+                     sprintf("wrong number of data points %f, expect %f", count($values), $expect)
+                 );
             }
         }
     }

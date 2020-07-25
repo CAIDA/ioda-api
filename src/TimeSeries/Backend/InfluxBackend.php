@@ -69,7 +69,7 @@ class InfluxBackend
         }
 
         // convert epoch time to nanoseconds
-        $timeQuery = sprintf("time >= %ds AND time <= %ds", $from->getEpochTime(), $until->getEpochTime());
+        $timeQuery = sprintf("time >= %ds AND time < %ds", $from->getEpochTime(), $until->getEpochTime());
 
         $query = sprintf($template, $entityCode, $timeQuery, $step);
         return $query;
@@ -138,25 +138,27 @@ class InfluxBackend
 
         $from = new DateTime();
         $until = new DateTime();
-        $from->setTimestamp($data['values'][0][0]/1000);
-        $until->setTimestamp(end($data['values'])[0]/1000);
         $step = 0;
         $prev_ts = 0;
 
         $values = [];
         foreach($data['values'] as $value_pair){
+            $cur_ts = $value_pair[0]/1000;  // influx returns timestamp in miliseconds
+            // save the actual datapoint value to array
+            $values[] = $value_pair[1];
+
             // use the first two iterations to calculate the step from the returned data
             if($step==0){
-                $cur_ts = $value_pair[0]/1000;  // influx returns timestamp in miliseconds
                 if($prev_ts==0){
                     $prev_ts = $cur_ts;
                 } else {
                     $step = $cur_ts - $prev_ts;
                 }
             }
-            // save the actual datapoint value to array
-            $values[] = $value_pair[1];
         }
+
+        $from->setTimestamp($data['values'][0][0]/1000);
+        $until->setTimestamp(end($data['values'])[0]/1000 + $step);
 
         // create new TimeSeries object accordingly
         $newSeries = new TimeSeries();
@@ -175,7 +177,7 @@ class InfluxBackend
         $step = $this->calculateStep($from, $until, $maxPoints);
         $query =  $this->buildInfluxQuery($entity->getType()->getType(), $entity->getCode(), $from, $until, $step);
         $res = $this->sendQuery($query);
-        $series = $this->processResponseJson($res);
+        $series = $this->processResponseJson($res, $until->getEpochTime());
         $series->setMetadataEntity($entity);
         return $series;
     }
