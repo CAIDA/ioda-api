@@ -35,6 +35,8 @@
 
 namespace App\Controller;
 
+use App\Entity\Ioda\DatasourceEntity;
+use App\Entity\Ioda\MetadataEntity;
 use App\Expression\ExpressionFactory;
 use App\Expression\ParsingException;
 use App\Expression\PathExpression;
@@ -107,7 +109,15 @@ class TimeseriesController extends ApiController
         }
     }
 
-    private function buildExpression($entity, $datasource){
+    /**
+     * Build one graphite expression based on given $datasource_id.
+     *
+     * @param MetadataEntity $entity
+     * @param DatasourceEntity $datasource_id
+     * @return array
+     */
+    private function buildGraphiteExpression(MetadataEntity $entity, DatasourceEntity $datasource): array {
+
         $fqid = $entity->getAttribute("fqid");
         $queryJsons = [
             "bgp" => [
@@ -170,17 +180,7 @@ class TimeseriesController extends ApiController
             ],
         ];
 
-        if(!$datasource){
-            return array_values($queryJsons);
-        } else {
-            if(!array_key_exists($datasource, $queryJsons)){
-                throw new \InvalidArgumentException(
-                    sprintf("Unknown datasource %s, must be one of [%s]", $datasource,join(", ",array_keys($queryJsons)))
-                );
-            } else {
-                return [$queryJsons[$datasource]];
-            }
-        }
+        return $queryJsons[$datasource->getDatasource()];
     }
 
     /**
