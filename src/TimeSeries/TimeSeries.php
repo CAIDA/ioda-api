@@ -37,27 +37,21 @@ namespace App\TimeSeries;
 
 
 use App\Entity\Ioda\MetadataEntity;
-use App\TimeSeries\Annotation\AbstractAnnotation;
 use App\TimeSeries\Backend\BackendException;
-use Symfony\Component\Serializer\Annotation\Groups;
+use DateTime;
 
 class TimeSeries
 {
+
     /**
-     * These are the "human-usable" steps that we will downsample to
+     * Default maximum points per time series.
      */
-    const ALLOWED_STEPS = [
-        60, 120, 300, 900, 1800, // minute-level [1, 2, 5, 15, 30]
-        3600, 7200, 21600, 43200,  //hour-level [1, 2, 6, 12]
-        86400, 172800, //day-level [1, 2]
-        604800, 1209600, 2419200, //week-level [1, 2, 4]
-        31536000, 63072000, 315360000, //year-level [1, 2, 10]
-    ];
+    CONST DEFAULT_MAX_POINTS = 4000;
 
     /**
      * Time of the first data point in this time series.
      *
-     * @var \DateTime
+     * @var DateTime
      * @Groups("public")
      */
     protected $from;
@@ -66,7 +60,7 @@ class TimeSeries
      * Time after the last data point in this time series.
      * I.e., last_data_point + step.
      *
-     * @var \DateTime
+     * @var DateTime
      * @Groups("public")
      */
     protected $until;
@@ -88,13 +82,6 @@ class TimeSeries
      * @Groups("public")
      */
     protected $nativeStep;
-
-    /**
-     * List of annotations for this time series
-     * @var AbstractAnnotation[]
-     * @Groups("public")
-     */
-    protected $annotations;
 
     /**
      * Array of time series data points. The first point is at $from, each point
@@ -141,9 +128,9 @@ class TimeSeries
     }
 
     /**
-     * @return \DateTime
+     * @return DateTime
      */
-    public function getFrom(): \DateTime
+    public function getFrom(): DateTime
     {
         return $this->from;
     }
@@ -157,9 +144,9 @@ class TimeSeries
     }
 
     /**
-     * @param \DateTime $from
+     * @param DateTime $from
      */
-    public function setFrom(\DateTime $from): void
+    public function setFrom(DateTime $from): void
     {
         $this->from = $from;
     }
@@ -170,15 +157,15 @@ class TimeSeries
     public function setFromEpoch(int $epoch): void
     {
         if (!$this->from) {
-            $this->from = new \DateTime();
+            $this->from = new DateTime();
         }
         $this->from->setTimestamp($epoch);
     }
 
     /**
-     * @return \DateTime
+     * @return DateTime
      */
-    public function getUntil(): \DateTime
+    public function getUntil(): DateTime
     {
         return $this->until;
     }
@@ -192,9 +179,9 @@ class TimeSeries
     }
 
     /**
-     * @param \DateTime $until
+     * @param DateTime $until
      */
-    public function setUntil(\DateTime $until): void
+    public function setUntil(DateTime $until): void
     {
         $this->until = $until;
     }
@@ -205,7 +192,7 @@ class TimeSeries
     public function setUntilEpoch(int $epoch): void
     {
         if (!$this->until) {
-            $this->until = new \DateTime();
+            $this->until = new DateTime();
         }
         $this->until->setTimestamp($epoch);
     }
@@ -279,133 +266,6 @@ class TimeSeries
     public function getNumPoints(): int
     {
         return count($this->values);
-    }
-
-    /**
-     * @return AbstractAnnotation[]
-     */
-    public function getAnnotations(): ?array
-    {
-        return $this->annotations;
-    }
-
-    /**
-     * @param AbstractAnnotation[] $annotations
-     */
-    public function setAnnotations(?array $annotations): void
-    {
-        $this->annotations = $annotations;
-    }
-
-    /* ======= DOWN-SAMPLING ======== */
-
-    /**
-     * Given a reduction ratio and step, find the best "allowed" down-sampled
-     * step
-     *
-     * @param float $ratio
-     * @param int $oldStep
-     * @return int
-     */
-    private function findDownSampleStep(float $ratio, int $oldStep): int
-    {
-        $interval = $this->getUntilEpoch() - $this->getFromEpoch();
-        $idealStep = $oldStep / $ratio;
-        // we know our ideal step, but find the largest allowed step that is
-        // smaller than the ideal step
-        $newStep = TimeSeries::ALLOWED_STEPS[0]; // 1 min is the lowest
-        $hit = false;
-        foreach (TimeSeries::ALLOWED_STEPS as $allowedStep) {
-            if ($hit == true) {
-                break;
-            }
-            if ($allowedStep < $interval) {
-                $newStep = $allowedStep;
-            }
-            if ($newStep >= $oldStep && $allowedStep >= $idealStep) {
-                $hit = true;
-            }
-        }
-        return $newStep;
-    }
-
-    /**
-     * Down-sample the current data points to the given step, using the given
-     * aggregation function
-     *
-     * @param int $newStep
-     * @param int $oldStep
-     * @param string $aggrFunc
-     * @return array
-     */
-    private function &_downSample(int $newStep, int $oldStep, string $aggrFunc): array
-    {
-        $newValues = [];
-        $sum = null;
-        $count = 0;
-        $activeCount = 0;
-        $thisTime = $this->getFrom()->getTimestamp(); // this is the time of the val at [0]
-        foreach ($this->values as $value) {
-            // TODO: simplify math to be a simple idx check... how?
-            // reached the end of the grid
-            if ((int)($thisTime / $newStep) * $newStep == $thisTime) {
-                $newValues[] = ($sum === null) ? null :
-                    (($aggrFunc == 'avg') ? $sum / $activeCount : $sum);
-                $sum = null;
-                $activeCount = 0;
-                $count = 0;
-            }
-            if ($value !== null) {
-                if ($sum === null) {
-                    $sum = $value;
-                    $activeCount = 1;
-                } else {
-                    $sum += $value;
-                    $activeCount++;
-                }
-            }
-            // prepare for the next value
-            $count++;
-            $thisTime += $oldStep;
-        }
-        // leftover values in final bin
-        if ($count > 0) {
-            $newValues[] = ($sum === null) ? null :
-                (($aggrFunc == 'avg') ? $sum / $activeCount : $sum);
-        }
-        return $newValues;
-    }
-
-    /**
-     * Down-samples the number of points in the series by approximately the
-     * ratio given, using the given aggregation function.
-     *
-     * @param float $ratio
-     * @param string $aggrFunc
-     */
-    public
-    function downSample($ratio, $aggrFunc = 'avg')
-    {
-        if ($ratio > 1) {
-            return;
-        }
-        $oldStep = $this->getStep();
-        // decomposed into functions to find bottleneck
-        $newStep = $this->findDownSampleStep($ratio, $oldStep);
-        // sanity check. the ideal step must be a multiple of the original
-        $reductionFactor = $newStep / $oldStep;
-        // if it turns out that the ideal step is not a multiple of the original,
-        // then just give up and don't downsample
-        if (floor($reductionFactor) != $reductionFactor) {
-            return;
-        }
-        $newValues = &$this->_downSample($newStep, $oldStep, $aggrFunc);
-        // do we need to adjust the start time to align with this step?
-        $shouldBeFrom = (floor($this->getFromEpoch() / $newStep) * $newStep);
-        $this->setUntilEpoch($shouldBeFrom + (count($newValues) * $newStep));
-        $this->setFromEpoch($shouldBeFrom);
-        $this->values = &$newValues;
-        $this->setStep($newStep);
     }
 
     /**
