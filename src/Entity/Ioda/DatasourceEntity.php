@@ -40,15 +40,23 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 class DatasourceEntity
 {
-
     /**
      * Constructor
+     * @param string $datasource
+     * @param string $name
+     * @param string $units
+     * @param array $steps
+     * @param string $backend
      */
-    public function __construct(string $datasource, string $name, string $units)
+    public function __construct(string $datasource, string $name, string $units, array $steps, string $backend)
     {
         $this->datasource = $datasource;
         $this->name = $name;
         $this->units = $units;
+
+        sort($steps);
+        $this->steps = $steps;
+        $this->backend = $backend;
     }
 
 
@@ -76,13 +84,22 @@ class DatasourceEntity
      */
     private $units;
 
+    /**
+     * @var array
+     */
+    private $steps;
+
+
+    /**
+     * @var string
+     */
+    private $backend;
 
     /////////////////////
     /////////////////////
     // GETTERS SETTERS //
     /////////////////////
     /////////////////////
-
 
     /**
      * @param string $datasource
@@ -138,4 +155,19 @@ class DatasourceEntity
         return $this;
     }
 
+    /**
+     * @return array
+     */
+    public function getSteps(): array
+    {
+        return $this->steps;
+    }
+
+    /**
+     * @return string
+     */
+    public function getBackend(): string
+    {
+        return $this->backend;
+    }
 }

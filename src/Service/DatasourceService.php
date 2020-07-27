@@ -40,17 +40,51 @@ use App\Entity\Ioda\DatasourceEntity;
 class DatasourceService
 {
 
+    const steps_1_minute = [
+                    60, 120, 300, 900, 1800, // minute-level [1, 2, 5, 15, 30]
+                    3600, 7200, 21600, 43200,  //hour-level [1, 2, 6, 12]
+                    86400, 172800, //day-level [1, 2]
+                    604800, 1209600, 2419200, //week-level [1, 2, 4]
+                    31536000, 63072000, 315360000, //year-level [1, 2, 10]
+                ];
+
+    const steps_5_minute = [
+        300, 900, 1800, // minute-level [1, 2, 5, 15, 30]
+        3600, 7200, 21600, 43200,  //hour-level [1, 2, 6, 12]
+        86400, 172800, //day-level [1, 2]
+        604800, 1209600, 2419200, //week-level [1, 2, 4]
+        31536000, 63072000, 315360000, //year-level [1, 2, 10]
+    ];
+
     public function __construct()
     {
         $this->DATASOURCES_ENTITIES = [
-            "ucsd-nt" => new DatasourceEntity("ucsd-nt", "UCSD Network Telescope", "Unique Source IPs"),
-            "bgp" => new DatasourceEntity("bgp", "BGP", "Visible /24s"),
-            "ping-slash24" => new DatasourceEntity("ping-slash24", "Active Probing", "Up /24s"),
+            "ucsd-nt" => new DatasourceEntity(
+                "ucsd-nt",
+                "UCSD Network Telescope",
+                "Unique Source IPs",
+                self::steps_1_minute,
+                "influx"
+            ),
+            "bgp" => new DatasourceEntity(
+                "bgp",
+                "BGP",
+                "Visible /24s",
+                self::steps_1_minute,
+                "graphite"
+            ),
+            "ping-slash24" => new DatasourceEntity(
+                "ping-slash24",
+                "Active Probing",
+                "Up /24s",
+                self::steps_1_minute,
+                "graphite"
+            ),
         ];
     }
 
     public function getAllDatasources(){
-        return $this->DATASOURCES_ENTITIES;
+        return array_values($this->DATASOURCES_ENTITIES);
     }
 
     public function getDatasource(String $name){
