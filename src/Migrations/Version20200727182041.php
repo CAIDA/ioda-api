@@ -45,8 +45,6 @@ final class Version20200727182041 extends AbstractMigration
         // this down() migration is auto-generated, please modify it to your needs
         $this->abortIf($this->connection->getDatabasePlatform()->getName() !== 'postgresql', 'Migration can only be executed safely on \'postgresql\'.');
 
-        $this->addSql('CREATE SCHEMA public');
-        $this->addSql('CREATE SCHEMA ioda_test_schema');
         $this->addSql('ALTER TABLE mddb_entity DROP CONSTRAINT FK_D1FDC522C54C8C93');
         $this->addSql('ALTER TABLE mddb_entity_attribute DROP CONSTRAINT FK_67C4D266DC9EE959');
         $this->addSql('ALTER TABLE mddb_entity_relationship DROP CONSTRAINT FK_93FEB9AB78CED90B');
