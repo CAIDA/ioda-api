@@ -339,7 +339,6 @@ class TimeseriesController extends ApiController
         $metas = $this->metadataService->lookup($entityType, $entityCode);
 
         try{
-            $from = floor($from/60)*60;
             $from = new QueryTime($from);
             $until = new QueryTime($until);
             $this->validateUserInputs($from, $until, $datasource, $metas);
@@ -355,14 +354,15 @@ class TimeseriesController extends ApiController
         try{
             if(in_array("graphite", $queryEngines)){
                 foreach($this->graphiteQuery($tsBackend, $expressionFactory, $from, $until, $metas[0], $datasource, $maxPoints) as $ts){
+                    $ts->sanityCheckValues();
                     $ts_set->addOneSeries($ts);
                 }
             }
             if(in_array("influx", $queryEngines)){
                 $ts = $this->influxService->getInfluxDataPoints($metas[0], $from, $until, $maxPoints);
+                $ts->sanityCheckValues();
                 $ts_set->addOneSeries($ts);
             }
-            $this->dataSanityCheck($ts_set, $from, $until);
         } catch (BackendException $ex) {
             $env->setError($ex->getMessage());
             return $this->json($env, 400);
@@ -404,31 +404,5 @@ class TimeseriesController extends ApiController
         $tss = $tsBackend->tsQuery($exps, $from, $until, $maxPoints);
 
         return $tss;
-    }
-
-    private function dataSanityCheck($tss, $from, $until){
-
-        foreach($tss->getSeries() as $datasource => $ts){
-            $step = $ts->getStep();
-            $values = $ts->getValues();
-            $from = $from->getEpochTime();
-            $until = $until->getEpochTime();
-
-            if(count($values)<=1){
-                // if we have zero or one data points, skip the checking
-                continue;
-            }
-
-            // take the ceiling of range/step as the expected data points.
-            // for example, if we see range/step = 1.01, that means we have the until filter to be over the last step
-            // range, meaning we will include that value in the results.
-            // otherwise we exclude the data from the `until` timestamp
-            $expect = ceil(($until-$from)/($step));
-            if($expect != count($values)){
-                 throw new BackendException(
-                     sprintf("wrong number of data points %f, expect %f", count($values), $expect)
-                 );
-            }
-        }
     }
 }

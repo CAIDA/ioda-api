@@ -103,6 +103,13 @@ class InfluxBackend
 
     const DEFAULT_STEP = 60;
 
+    /**
+     * Calculate step based on the value of `from` and `until`.
+     * @param $from
+     * @param $until
+     * @param $maxPoints
+     * @return int
+     */
     private function calculateStep($from, $until, $maxPoints){
         if($maxPoints == null){
             return InfluxBackend::DEFAULT_STEP;
@@ -115,8 +122,19 @@ class InfluxBackend
                 break;
             }
         }
-
         return $step;
+    }
+
+    /**
+     * Round up the `from` time based on the step.
+     *
+     * @param $from
+     * @param $step
+     */
+    private function roundUpFrom($from, $step){
+        $from_ts = $from->getEpochTime();
+        $from_ts = floor($from_ts / $step) * $step;
+        return new QueryTime($from_ts);
     }
 
     /**
@@ -171,10 +189,21 @@ class InfluxBackend
         return $newSeries;
     }
 
+    /**
+     * Influx service main entry point.
+     *
+     * @param MetadataEntity $entity
+     * @param QueryTime $from
+     * @param QueryTime $until
+     * @param int|null $maxPoints
+     * @return TimeSeries
+     * @throws \App\TimeSeries\Backend\BackendException
+     */
     public function getInfluxDataPoints(MetadataEntity $entity, QueryTime $from, QueryTime $until, ?int $maxPoints): TimeSeries
     {
         // build query
         $step = $this->calculateStep($from, $until, $maxPoints);
+        $from = $this->roundUpFrom($from, $step);
         $query =  $this->buildInfluxQuery($entity->getType()->getType(), $entity->getCode(), $from, $until, $step);
         $res = $this->sendQuery($query);
         $series = $this->processResponseJson($res, $until->getEpochTime());

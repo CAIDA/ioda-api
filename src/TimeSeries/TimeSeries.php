@@ -38,6 +38,7 @@ namespace App\TimeSeries;
 
 use App\Entity\Ioda\MetadataEntity;
 use App\TimeSeries\Annotation\AbstractAnnotation;
+use App\TimeSeries\Backend\BackendException;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 class TimeSeries
@@ -405,5 +406,34 @@ class TimeSeries
         $this->setFromEpoch($shouldBeFrom);
         $this->values = &$newValues;
         $this->setStep($newStep);
+    }
+
+    /**
+     * Sanity check timeseries values by comparing the number of value points set to the values against
+     * the expected number of points we should get calculated from the values of $from, $until, and $step.
+     *
+     * @throws BackendException
+     */
+    public function sanityCheckValues(){
+        $step = $this->getStep();
+        $values = $this->getValues();
+        $from = $this->getFrom()->getTimestamp();
+        $until = $this->getUntil()->getTimestamp();
+
+        if(count($this->getValues())<=1){
+            // if we have zero or one data points, skip the checking
+            return;
+        }
+
+        // take the ceiling of range/step as the expected data points.
+        // for example, if we see range/step = 1.01, that means we have the until filter to be over the last step
+        // range, meaning we will include that value in the results.
+        // otherwise we exclude the data from the `until` timestamp
+        $expect = ceil(($until-$from)/($step));
+        if($expect != count($values)){
+            throw new BackendException(
+                sprintf("wrong number of data points %f, expect %f", count($values), $expect)
+            );
+        }
     }
 }
