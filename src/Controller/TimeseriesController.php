@@ -306,14 +306,9 @@ class TimeseriesController extends ApiController
      * @return JsonResponse
      * @throws ParsingException
      * @var Request $request
-     * @var SerializerInterface $serializer
      */
     public function lookup(
-        ?string $entityType, ?string $entityCode,
-        Request $request,
-        SerializerInterface $serializer,
-        ExpressionFactory $expressionFactory,
-        GraphiteBackend $tsBackend)
+        ?string $entityType, ?string $entityCode, Request $request, ExpressionFactory $expressionFactory, GraphiteBackend $tsBackend)
     {
         $env = new Envelope('signals',
                             'query',
@@ -333,7 +328,7 @@ class TimeseriesController extends ApiController
         /* LOCAL PARAM PARSING */
         $from = $env->getParam('from');
         $until = $env->getParam('until');
-        $datasource = $env->getParam('datasource');
+        $datasource_str = $env->getParam('datasource');
         $maxPoints = $env->getParam('maxPoints');
         $noinflux = $env->getParam('noinflux');
         $metas = $this->metadataService->lookup($entityType, $entityCode);
@@ -341,25 +336,50 @@ class TimeseriesController extends ApiController
         try{
             $from = new QueryTime($from);
             $until = new QueryTime($until);
-            $this->validateUserInputs($from, $until, $datasource, $metas);
+            $this->validateUserInputs($from, $until, $datasource_str, $metas);
         } catch (\InvalidArgumentException $ex) {
             $env->setError($ex->getMessage());
             return $this->json($env, 400);
         }
 
+        // convert datasource id string to datasource objects array
+        $datasource_array = [];
+        if($datasource_str == null){
+            $datasource_array = $this->datasourceService->getAllDatasources();
+        } else {
+            $datasource_array[] = $this->datasourceService->getDatasource($datasource_str);
+        }
+
+        // prepare TimeSeriesSet object
         $ts_set = new TimeSeriesSet();
         $ts_set->setMetadataEntity($metas[0]);
 
-        $queryEngines = $this->getQueryEngines($datasource, $noinflux);
+        // execute queries based on the datasources' defined backends
         try{
-            if(in_array("graphite", $queryEngines)){
-                foreach($this->graphiteQuery($tsBackend, $expressionFactory, $from, $until, $metas[0], $datasource, $maxPoints) as $ts){
-                    $ts->sanityCheckValues();
-                    $ts_set->addOneSeries($ts);
+            $graphite_exps = [];
+            $tses = [];
+
+            foreach($datasource_array as $datasource){
+                $backend = $datasource->getBackend();
+                if($backend == "graphite"){
+                    $exp_json = $this->buildGraphiteExpression($metas[0], $datasource);
+                    $graphite_exps[] = $expressionFactory->createFromJson($exp_json);
+                } else if ($backend=="influx"){
+                    $tses[] = $this->influxService->getInfluxDataPoints($datasource, $metas[0], $from, $until, $maxPoints);
+                } else {
+                    throw new \InvalidArgumentException(
+                        sprintf("invalid datasource %s (must be one of the following [%s])", $datasource, join(", ", $this->datasourceService->getDatasourceNames()))
+                    );
                 }
             }
-            if(in_array("influx", $queryEngines)){
-                $ts = $this->influxService->getInfluxDataPoints($metas[0], $from, $until, $maxPoints);
+
+            // if we have some graphite queries generated, we call the actual query
+            if(count($graphite_exps)>0){
+                $tses = array_merge($tses, $tsBackend->tsQuery($graphite_exps, $from, $until, $maxPoints));
+            }
+
+            // sanity-check each TimeSeries object and add it to the TimeSeriesSet
+            foreach($tses as $ts){
                 $ts->sanityCheckValues();
                 $ts_set->addOneSeries($ts);
             }
@@ -370,39 +390,5 @@ class TimeseriesController extends ApiController
 
         $env->setData($ts_set);
         return $this->json($env);
-    }
-
-    private function getQueryEngines(?string $datasource, bool $noinflux){
-        $queryEngines = [];
-        if($noinflux){
-            return ["graphite"];
-        }
-        if($datasource == null) {
-            // query all
-            $queryEngines = ["influx", "graphite"];
-        } else {
-            if(!in_array($datasource, array_keys($this->dsToQuery))){
-                throw new \InvalidArgumentException(
-                    sprintf("unsupported datasource %s (supported: [%s])", $datasource, join(", ", array_keys($this->dsToQuery)))
-                );
-            }
-            $queryEngines[] = $this->dsToQuery[$datasource];
-        }
-        return $queryEngines;
-    }
-
-    private function graphiteQuery($tsBackend, $expressionFactory, $from, $until, $entity, $datasource, $maxPoints): array {
-
-        /* BUILD EXPRESSIONS BASED ON ENTITY TYPE AND CODE */
-        $jsons = $this->buildExpression($entity, $datasource);
-        $exps = [];
-        foreach($jsons as &$json){
-            $exps[] = $expressionFactory->createFromJson($json);
-        }
-
-        /* QUERY TIMESERIES GRAPHITE BACKEND */
-        $tss = $tsBackend->tsQuery($exps, $from, $until, $maxPoints);
-
-        return $tss;
     }
 }
