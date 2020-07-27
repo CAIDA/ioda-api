@@ -36,8 +36,8 @@
 namespace App\TimeSeries\Backend;
 
 
+use App\Entity\Ioda\DatasourceEntity;
 use App\Entity\Ioda\MetadataEntity;
-use App\TimeSeries\Backend\BackendException;
 use App\TimeSeries\TimeSeries;
 use App\Utils\QueryTime;
 use DateTime;
@@ -101,22 +101,29 @@ class InfluxBackend
         return json_decode($output, true);
     }
 
-    const DEFAULT_STEP = 60;
-
     /**
      * Calculate step based on the value of `from` and `until`.
-     * @param $from
-     * @param $until
-     * @param $maxPoints
+     * @param QueryTime $from
+     * @param QueryTime $until
+     * @param int $maxPoints
+     * @param DatasourceEntity $datasource
      * @return int
      */
-    private function calculateStep($from, $until, $maxPoints){
+    private function calculateStep(QueryTime $from, QueryTime $until, int $maxPoints, DatasourceEntity $datasource){
+
+        // getSteps() function returns all allowed steps for this data source, sorted by increasing order
+        $sorted_steps = $datasource->getSteps();
+        // get the minimum step defined by the datasource as the default (starting) step
+        $step = $sorted_steps[0];
+
+        // if no maxPoints specified, return the minimum step
         if($maxPoints == null){
-            return InfluxBackend::DEFAULT_STEP;
+            return $step;
         }
+
+        // find the smallest step that can get the number of data points below the specified $maxPoints
         $range = $until->getEpochTime() - $from->getEpochTime();
-        $step = InfluxBackend::DEFAULT_STEP;
-        foreach(TimeSeries::ALLOWED_STEPS as $tmp_step){
+        foreach($sorted_steps as $tmp_step){
             $step = $tmp_step;
             if($range/$tmp_step <= $maxPoints){
                 break;
@@ -127,9 +134,9 @@ class InfluxBackend
 
     /**
      * Round up the `from` time based on the step.
-     *
      * @param $from
      * @param $step
+     * @return QueryTime
      */
     private function roundUpFrom($from, $step){
         $from_ts = $from->getEpochTime();
@@ -141,6 +148,7 @@ class InfluxBackend
      * process JSON response get from influxdb instance
      */
     private function processResponseJson($responseJson): TimeSeries {
+        // sanity check json responses
         if(
             !in_array("results", array_keys($responseJson)) ||
             count($responseJson['results'])!=1 ||
@@ -160,6 +168,7 @@ class InfluxBackend
         $prev_ts = 0;
 
         $values = [];
+        // retrieve values and calculate steps
         foreach($data['values'] as $value_pair){
             $cur_ts = $value_pair[0]/1000;  // influx returns timestamp in miliseconds
             // save the actual datapoint value to array
@@ -192,6 +201,7 @@ class InfluxBackend
     /**
      * Influx service main entry point.
      *
+     * @param DatasourceEntity $datasource
      * @param MetadataEntity $entity
      * @param QueryTime $from
      * @param QueryTime $until
@@ -199,15 +209,27 @@ class InfluxBackend
      * @return TimeSeries
      * @throws \App\TimeSeries\Backend\BackendException
      */
-    public function getInfluxDataPoints(MetadataEntity $entity, QueryTime $from, QueryTime $until, ?int $maxPoints): TimeSeries
+    public function getInfluxDataPoints(DatasourceEntity $datasource, MetadataEntity $entity, QueryTime $from, QueryTime $until, ?int $maxPoints): TimeSeries
     {
-        // build query
-        $step = $this->calculateStep($from, $until, $maxPoints);
+        // assign default max points to avoid unnecessary expensive queries
+        if($maxPoints == null){
+            $maxPoints = TimeSeries::DEFAULT_MAX_POINTS;
+        }
+
+        // calculate query step
+        $step = $this->calculateStep($from, $until, $maxPoints, $datasource);
+        // round up $from based on the$ step
         $from = $this->roundUpFrom($from, $step);
+
+        // build the actual influx query
         $query =  $this->buildInfluxQuery($entity->getType()->getType(), $entity->getCode(), $from, $until, $step);
+
+        // send query and process response
         $res = $this->sendQuery($query);
-        $series = $this->processResponseJson($res, $until->getEpochTime());
+        $series = $this->processResponseJson($res);
+        // attach the metadata entity to the time series response
         $series->setMetadataEntity($entity);
+
         return $series;
     }
 }
