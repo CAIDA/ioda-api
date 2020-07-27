@@ -37,13 +37,9 @@ namespace App\TimeSeries\Backend;
 
 
 
-use App\Expression\ExpressionFactory;
-use App\Expression\PathExpression;
 use App\TimeSeries\Annotation\AnnotationFactory;
 use App\TimeSeries\TimeSeries;
 use App\Utils\QueryTime;
-use Swagger\Annotations\Path;
-use Symfony\Component\Security\Core\Security;
 
 class GraphiteBackend
 {
@@ -54,7 +50,6 @@ class GraphiteBackend
         86400 => 600, // cache last day for 10 min
     ];
     const DATA_CACHE_TIMEOUT_DEFAULT = 3600;
-    const MAX_POINTS_PER_SERIES = 4000;
 
     /**
      * Make a query to the graphite backend service.
@@ -109,10 +104,20 @@ class GraphiteBackend
         return $timeout;
     }
 
+    /**
+     * Entry function for GraphiteBackend: construct and send graphite queries and return array of TimeSeries
+     *
+     * @param array $expressions
+     * @param QueryTime $from
+     * @param QueryTime $until
+     * @param int|null $maxPoints
+     * @return array
+     * @throws BackendException
+     */
     public function tsQuery(array $expressions, QueryTime $from, QueryTime $until, ?int $maxPoints): array
     {
 
-        // calcuate timeout
+        // calculate cache timeout, used in graphite query
         $timeout = $this->calcTimeout($from, $until);
 
         // build query expressions
@@ -122,7 +127,7 @@ class GraphiteBackend
         }
 
         if($maxPoints == null){
-            $maxPoints = $this::MAX_POINTS_PER_SERIES;
+            $maxPoints = TimeSeries::DEFAULT_MAX_POINTS;
         }
 
         // send out acutal query
@@ -144,10 +149,6 @@ class GraphiteBackend
         }
         if (!is_array($jsonResult)) {
             throw new BackendException('Invalid response from TS backend');
-        }
-
-        if($maxPoints == null){
-            $maxPoints = $this::MAX_POINTS;
         }
 
         $ts_array = [];
