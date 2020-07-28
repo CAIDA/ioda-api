@@ -111,19 +111,18 @@ class InfluxBackend
      */
     private function calculateStep(QueryTime $from, QueryTime $until, int $maxPoints, DatasourceEntity $datasource){
 
-        // getSteps() function returns all allowed steps for this data source, sorted by increasing order
-        $sorted_steps = $datasource->getSteps();
-        // get the minimum step defined by the datasource as the default (starting) step
-        $step = $sorted_steps[0];
+        // get the native step of the datasource
+        $nativeStep = $datasource->getNativeStep();
 
-        // if no maxPoints specified, return the minimum step
+        // if no maxPoints specified, return the native step of the datasource
         if($maxPoints == null){
-            return $step;
+            return $nativeStep;
         }
 
         // find the smallest step that can get the number of data points below the specified $maxPoints
+        $step = $nativeStep;
         $range = $until->getEpochTime() - $from->getEpochTime();
-        foreach($sorted_steps as $tmp_step){
+        foreach($datasource->getDownsampleSteps() as $tmp_step){
             $step = $tmp_step;
             if($range/$tmp_step <= $maxPoints){
                 break;
@@ -146,8 +145,12 @@ class InfluxBackend
 
     /**
      * process JSON response get from influxdb instance
+     * @param array $responseJson
+     * @param DatasourceEntity $datasource
+     * @return TimeSeries
+     * @throws BackendException
      */
-    private function processResponseJson($responseJson): TimeSeries {
+    private function processResponseJson(array $responseJson, DatasourceEntity $datasource): TimeSeries {
         // sanity check json responses
         if(
             !in_array("results", array_keys($responseJson)) ||
@@ -193,7 +196,7 @@ class InfluxBackend
         $newSeries->setFrom($from);
         $newSeries->setUntil($until);
         $newSeries->setStep($step);
-        $newSeries->setNativeStep($step);
+        $newSeries->setNativeStep($datasource->getNativeStep());
         $newSeries->setValues($values);
         return $newSeries;
     }
@@ -207,7 +210,7 @@ class InfluxBackend
      * @param QueryTime $until
      * @param int|null $maxPoints
      * @return TimeSeries
-     * @throws \App\TimeSeries\Backend\BackendException
+     * @throws BackendException
      */
     public function getInfluxDataPoints(DatasourceEntity $datasource, MetadataEntity $entity, QueryTime $from, QueryTime $until, ?int $maxPoints): TimeSeries
     {
@@ -226,7 +229,7 @@ class InfluxBackend
 
         // send query and process response
         $res = $this->sendQuery($query);
-        $series = $this->processResponseJson($res);
+        $series = $this->processResponseJson($res, $datasource);
         // attach the metadata entity to the time series response
         $series->setMetadataEntity($entity);
 

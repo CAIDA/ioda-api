@@ -40,21 +40,10 @@ use App\Entity\Ioda\DatasourceEntity;
 class DatasourceService
 {
 
-    const steps_1_minute = [
-                    60, 120, 300, 900, 1800, // minute-level [1, 2, 5, 15, 30]
-                    3600, 7200, 21600, 43200,  //hour-level [1, 2, 6, 12]
-                    86400, 172800, //day-level [1, 2]
-                    604800, 1209600, 2419200, //week-level [1, 2, 4]
-                    31536000, 63072000, 315360000, //year-level [1, 2, 10]
-                ];
-
-    const steps_5_minute = [
-        300, 900, 1800, // minute-level [1, 2, 5, 15, 30]
-        3600, 7200, 21600, 43200,  //hour-level [1, 2, 6, 12]
-        86400, 172800, //day-level [1, 2]
-        604800, 1209600, 2419200, //week-level [1, 2, 4]
-        31536000, 63072000, 315360000, //year-level [1, 2, 10]
-    ];
+    /**
+     * @var DatasourceEntity[]
+     */
+    private $DATASOURCES_ENTITIES;
 
     public function __construct()
     {
@@ -63,21 +52,21 @@ class DatasourceService
                 "ucsd-nt",
                 "UCSD Network Telescope",
                 "Unique Source IPs",
-                self::steps_1_minute,
+                60,
                 "influx"
             ),
             "bgp" => new DatasourceEntity(
                 "bgp",
                 "BGP",
                 "Visible /24s",
-                self::steps_1_minute,
+                60,
                 "graphite"
             ),
             "ping-slash24" => new DatasourceEntity(
                 "ping-slash24",
                 "Active Probing",
                 "Up /24s",
-                self::steps_1_minute,
+                60,
                 "graphite"
             ),
         ];

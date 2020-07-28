@@ -40,23 +40,40 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 class DatasourceEntity
 {
+
+    /**
+     * All available down-sample steps an datasource can use.
+     */
+    const ALL_STEPS = [
+        60, 120, 300, 900, 1800, // minute-level [1, 2, 5, 15, 30]
+        3600, 7200, 21600, 43200,  //hour-level [1, 2, 6, 12]
+        86400, 172800, //day-level [1, 2]
+        604800, 1209600, 2419200, //week-level [1, 2, 4]
+        31536000, 63072000, 315360000, //year-level [1, 2, 10]
+    ];
+
+    /**
+     * Array of steps this datasource can down-sample to, including the native step.
+     * @var int[]
+     */
+    private $downsampleSteps;
+
     /**
      * Constructor
      * @param string $datasource
      * @param string $name
      * @param string $units
-     * @param array $steps
+     * @param int $nativeStep
      * @param string $backend
      */
-    public function __construct(string $datasource, string $name, string $units, array $steps, string $backend)
+    public function __construct(string $datasource, string $name, string $units, int $nativeStep, string $backend)
     {
         $this->datasource = $datasource;
         $this->name = $name;
         $this->units = $units;
-
-        sort($steps);
-        $this->steps = $steps;
         $this->backend = $backend;
+        $this->nativeStep = $nativeStep;
+        $this->downsampleSteps = array_filter($this::ALL_STEPS, function ($v){return $v >= $this->nativeStep;});
     }
 
 
@@ -85,9 +102,10 @@ class DatasourceEntity
     private $units;
 
     /**
-     * @var array
+     * Native step for this data source, in seconds.
+     * @var int
      */
-    private $steps;
+    private $nativeStep;
 
 
     /**
@@ -156,11 +174,15 @@ class DatasourceEntity
     }
 
     /**
-     * @return array
+     * @return int
      */
-    public function getSteps(): array
+    public function getNativeStep(): int
     {
-        return $this->steps;
+        return $this->nativeStep;
+    }
+
+    public function getDownsampleSteps(): array {
+        return $this->downsampleSteps;
     }
 
     /**
