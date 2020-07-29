@@ -33,43 +33,21 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\TimeSeries;
+namespace  App\TimeSeries\Backend\Graphite\Expression\Humanize\Provider;
 
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Serializer\Normalizer\ContextAwareNormalizerInterface;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 
-class TimeSeriesNormalizer implements ContextAwareNormalizerInterface
+abstract class AbstractHumanizeProvider
 {
-    private $router;
-    private $normalizer;
-
-    public function __construct(UrlGeneratorInterface $router, ObjectNormalizer $normalizer)
-    {
-        $this->router = $router;
-        $this->normalizer = $normalizer;
-    }
-
-    public function normalize($timeSeries, $format = null, array $context = [])
-    {
-        $data = [];
-        $entity = $this->normalizer->normalize($timeSeries->getMetadataEntity(), $format, $context);
-
-        $data["entityType"] = $entity["type"]["type"];
-        $data["entityCode"] = $entity["code"];
-        $data["datasource"] = $timeSeries->getDatasource();
-        $data["from"] = $timeSeries->getFrom()->getTimestamp();
-        $data["until"] = $timeSeries->getUntil()->getTimestamp();
-        $data["step"] = $timeSeries->getStep();
-        $data["nativeStep"] = $timeSeries->getNativeStep();
-        $data["values"] = $timeSeries->getValues();
-
-
-        return $data;
-    }
-
-    public function supportsNormalization($data, $format = null, array $context = [])
-    {
-        return $data instanceof TimeSeries;
-    }
+    /**
+     * Attempt to find a human-readable name for the given node (with the given
+     * FQID nodes)
+     *
+     * @param $fqid
+     * @param $nodes
+     * @param $finalNode
+     *
+     * @return string|null
+     */
+    public abstract function humanize(string $fqid, array &$nodes,
+                                      string $finalNode): ?string;
 }

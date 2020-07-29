@@ -33,34 +33,54 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\TimeSeries\Humanize\Provider;
+namespace App\TimeSeries\Backend\Graphite\Expression\Functions;
 
+use Swagger\Annotations as SWG;
+use Symfony\Component\Serializer\Annotation\Groups;
 
-class GeoHumanizeProvider extends AbstractHumanizeProvider
+class PrototypeTag
 {
-    public function humanize(string $fqid, array &$nodes,
-                             string $finalNode): ?string
+    /**
+     * @Groups({"public"})
+     * @SWG\Property(
+     *     type="string",
+     *     example="Transform"
+     * )
+     */
+    private $name;
+
+    /**
+     * @Groups({"public"})
+     * @SWG\Property(
+     *     type="string",
+     *     example="Time series transformation functions"
+     * )
+     */
+    private $description;
+
+    public function __construct($name, $description)
     {
-        // short-cut to avoid searching all nodes when there is no geo
-        if (strpos($fqid, "geo") === false) {
-            return null;
-        }
-        $ptr = GeoHumanizeProviderTable::getTable();
-        $inTree = false;
-        foreach ($nodes as $node) {
-            if (array_key_exists($node, $ptr)) {
-                $inTree = true;
-                $ptr = &$ptr[$node];
-            } else {
-                if ($inTree) {
-                    $ptr = null;
-                    break;
-                }
-            }
-        }
-        if ($inTree && $ptr && array_key_exists('__NAME', $ptr)) {
-            return $ptr['__NAME'];
-        }
-        return null;
+        $this->setName($name);
+        $this->setDescription($description);
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): void
+    {
+        $this->name = $name;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): void
+    {
+        $this->description = $description;
     }
 }

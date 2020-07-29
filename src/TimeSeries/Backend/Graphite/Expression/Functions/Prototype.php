@@ -33,22 +33,23 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Expression\Functions;
+namespace App\TimeSeries\Backend\Graphite\Expression\Functions;
 
+use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
 use Symfony\Component\Serializer\Annotation\Groups;
 
-class PrototypeParameter
+/**
+ * Class Prototype
+ * @package App\Expression\Functions
+ */
+class Prototype
 {
-    public static $TYPE_TIME_SERIES = 'timeSeries';
-    public static $TYPE_STRING = 'string';
-    public static $TYPE_NUMBER = 'number';
-
     /**
      * @Groups({"public"})
      * @SWG\Property(
      *     type="string",
-     *     example="Series"
+     *     example="sumSeries"
      * )
      */
     private $name;
@@ -57,7 +58,16 @@ class PrototypeParameter
      * @Groups({"public"})
      * @SWG\Property(
      *     type="string",
-     *     example="List of Series (at least 2)"
+     *     example="Sum Series"
+     * )
+     */
+    private $title;
+
+    /**
+     * @Groups({"public"})
+     * @SWG\Property(
+     *     type="string",
+     *     example="Adds metrics together and returns the sum at each datapoint."
      * )
      */
     private $description;
@@ -65,30 +75,29 @@ class PrototypeParameter
     /**
      * @Groups({"public"})
      * @SWG\Property(
-     *     type="string",
-     *     enum={"timeSeries", "string", "number"},
-     *     example="timeSeries"
+     *         type="array",
+     *         @SWG\Items(ref=@Model(type=PrototypeParameter::class, groups={"public"}))
      * )
      */
-    private $type;
+    private $parameters;
 
     /**
      * @Groups({"public"})
+     * @SWG\Property(
+     *         type="array",
+     *         @SWG\Items(type="string", example="transform")
+     *
+     * )
      */
-    private $mandatory;
+    private $tags;
 
-    /**
-     * @Groups({"public"})
-     */
-    private $multiple;
-
-    public function __construct($name, $description, $type, $mandatory, $multiple)
+    public function __construct($name, $title, $description)
     {
         $this->setName($name);
+        $this->setTitle($title);
         $this->setDescription($description);
-        $this->setType($type);
-        $this->setMandatory($mandatory);
-        $this->setMultiple($multiple);
+        $this->parameters = [];
+        $this->tags = [];
     }
 
     public function getName(): string
@@ -101,6 +110,16 @@ class PrototypeParameter
         $this->name = $name;
     }
 
+    public function getTitle(): string
+    {
+        return $this->title;
+    }
+
+    public function setTitle(string $title): void
+    {
+        $this->title = $title;
+    }
+
     public function getDescription(): string
     {
         return $this->description;
@@ -111,34 +130,37 @@ class PrototypeParameter
         $this->description = $description;
     }
 
-    public function getType(): string
+    /**
+     * @return PrototypeParameter[]
+     */
+    public function getParameters(): array
     {
-        return $this->type;
+        return $this->parameters;
     }
 
-    public function setType(string $type): void
+    /**
+     * @param PrototypeParameter[] $parameters
+     */
+    public function setParameters(array $parameters): void
     {
-        $this->type = $type;
+        $this->parameters = $parameters;
     }
 
-    public function isMandatory(): bool
+    /**
+     * @return PrototypeTag[]
+     */
+    public function getTags(): array
     {
-        return $this->mandatory;
+        return $this->tags;
     }
 
-    public function setMandatory(bool $mandatory): void
+    /**
+     * @param PrototypeTag[] $tags
+     */
+    public function setTags($tags): void
     {
-        $this->mandatory = $mandatory;
+        $this->tags = $tags;
     }
 
-    public function isMultiple(): bool
-    {
-        return $this->multiple;
-    }
-
-    public function setMultiple(bool $multiple): void
-    {
-        $this->multiple = $multiple;
-    }
 
 }

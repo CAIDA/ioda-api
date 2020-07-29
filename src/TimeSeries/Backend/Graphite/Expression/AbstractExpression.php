@@ -33,10 +33,11 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Expression;
+namespace App\TimeSeries\Backend\Graphite\Expression;
 
 
-use App\TimeSeries\Humanize\Humanizer;
+use App\TimeSeries\Backend\Graphite\Expression\Humanize\Humanizer;
+use InvalidArgumentException;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
@@ -169,10 +170,10 @@ abstract class AbstractExpression
      * Expression types that have child expression should use the provided
      * factory instance to instantiate appropriate sub-expressions.
      *
-     * @throws ParsingException|\InvalidArgumentException
      * @param ExpressionFactory $expFactory
      * @param array $json
      * @return AbstractExpression|null
+     *@throws ParsingException|InvalidArgumentException
      */
     abstract public static function createFromJson(ExpressionFactory $expFactory,
                                                    array $json): ?AbstractExpression;
@@ -184,10 +185,10 @@ abstract class AbstractExpression
      * Expression types that have child expression should use the provided
      * factory instance to instantiate appropriate sub-expressions.
      *
-     * @throws ParsingException|\InvalidArgumentException
      * @param ExpressionFactory $expFactory
      * @param string $expStr
      * @return AbstractExpression|null
+     *@throws ParsingException|InvalidArgumentException
      */
     abstract public static function createFromCanonical(ExpressionFactory $expFactory,
                                                         string $expStr): ?AbstractExpression;

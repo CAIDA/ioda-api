@@ -33,21 +33,32 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\TimeSeries\Humanize\Provider;
+namespace  App\TimeSeries\Backend\Graphite\Expression\Humanize\Provider;
 
-
-abstract class AbstractHumanizeProvider
+class InternetIdHumanizeProvider extends AbstractHumanizeProvider
 {
-    /**
-     * Attempt to find a human-readable name for the given node (with the given
-     * FQID nodes)
-     *
-     * @param $fqid
-     * @param $nodes
-     * @param $finalNode
-     *
-     * @return string|null
-     */
-    public abstract function humanize(string $fqid, array &$nodes,
-                                      string $finalNode): ?string;
+
+    public function humanize(string $fqid, array &$nodes,
+                             string $finalNode): ?string
+    {
+        // we require the node start with __
+        if (strncmp($finalNode, "__", 2) != 0) {
+            return null;
+        }
+        // check if this is an IP
+        if (substr($finalNode, 0, 5) == "__IP_") {
+            return str_replace('-', '.', substr($finalNode, 5));
+        }
+        // check if this is a prefix
+        if (substr($finalNode, 0, 6) != "__PFX_") {
+            return null;
+        }
+        $ip_len = explode('_', substr($finalNode, 6));
+        if (count($ip_len) == 2) {
+            return str_replace('-', '.', $ip_len[0]) . '/' . $ip_len[1];
+        }
+        // not an IP or a prefix
+        return null;
+    }
+
 }

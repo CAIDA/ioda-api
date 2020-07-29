@@ -33,15 +33,20 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\TimeSeries\Backend;
+namespace App\TimeSeries\Backend\Graphite;
 
 
 
-use App\TimeSeries\Annotation\AnnotationFactory;
+use App\Entity\Ioda\DatasourceEntity;
+use App\Entity\Ioda\MetadataEntity;
+use App\TimeSeries\Backend\AbstractBackend;
+use App\TimeSeries\Backend\BackendException;
+use App\TimeSeries\Backend\Graphite\Expression\ExpressionFactory;
 use App\TimeSeries\TimeSeries;
 use App\Utils\QueryTime;
+use DateTime;
 
-class GraphiteBackend
+class GraphiteBackend extends AbstractBackend
 {
     const GRAPHITE_URL = 'http://charthouse-render.int.limbo.caida.org';
     const QUERY_TIMEOUT = 120;
@@ -52,6 +57,15 @@ class GraphiteBackend
     const DATA_CACHE_TIMEOUT_DEFAULT = 3600;
 
     /**
+     * @var ExpressionFactory
+     */
+    private $expressionFactory;
+
+    public function __construct(ExpressionFactory $expressionFactory){
+        $this->expressionFactory = $expressionFactory;
+    }
+
+    /**
      * Make a query to the graphite backend service.
      *
      * @param string $path
@@ -59,9 +73,8 @@ class GraphiteBackend
      * @return string
      * @throws BackendException
      */
-    private function graphiteQuery(string $path, array $params): string
+    private function sendQuery(string $path, array $params): string
     {
-        // TODO: noCache
         $query = http_build_query($params);
         // hax to replace target[0]...target[1]... with []
         $query = preg_replace('/%5B[0-9]+%5D/simU', '%5B%5D', $query);
@@ -84,7 +97,7 @@ class GraphiteBackend
         return $result;
     }
 
-    private function calcTimeout($from, $until){
+    private function calcTimeout($until){
         // if until is a relative time, then we want a low cache timeout
         $now = time();
         $timeout = GraphiteBackend::DATA_CACHE_TIMEOUT_DEFAULT;
@@ -105,37 +118,32 @@ class GraphiteBackend
     }
 
     /**
-     * Entry function for GraphiteBackend: construct and send graphite queries and return array of TimeSeries
+     * Construct graphite query, send request, and return one TimeSeries object.
      *
-     * @param array $expressions
      * @param QueryTime $from
      * @param QueryTime $until
+     * @param $expressionJson
      * @param int|null $maxPoints
-     * @return array
-     * @throws BackendException
+     * @return TimeSeries
+     * @throws BackendException|Expression\ParsingException
      */
-    public function tsQuery(array $expressions, QueryTime $from, QueryTime $until, ?int $maxPoints): array
+    public function queryGraphite(QueryTime $from, QueryTime $until, $expressionJson, ?int $maxPoints): TimeSeries
     {
-
         // calculate cache timeout, used in graphite query
-        $timeout = $this->calcTimeout($from, $until);
+        $timeout = $this->calcTimeout($until);
 
-        // build query expressions
-        $graphiteExpressions = [];
-        foreach ($expressions as $exp) {
-            $graphiteExpressions[] = $exp->getCanonicalStr();
-        }
-
+        // build expressions from JSON
+        $exp = $this->expressionFactory->createFromJson($expressionJson) -> getCanonicalStr();
         if($maxPoints == null){
             $maxPoints = TimeSeries::DEFAULT_MAX_POINTS;
         }
 
         // send out acutal query
-        $result = $this->graphiteQuery(
+        $result = $this->sendQuery(
             '/render',
             [
                 'format' => 'json-internal',
-                'target' => $graphiteExpressions,
+                'target' => [$exp],
                 'from' => $from->getGraphiteTime(),
                 'until' => $until->getGraphiteTime(),
                 'cacheTimeout' => $timeout,
@@ -148,32 +156,33 @@ class GraphiteBackend
             throw new BackendException('Invalid JSON from TS backend: ' . json_last_error_msg());
         }
         if (!is_array($jsonResult)) {
-            throw new BackendException('Invalid response from TS backend');
-        }
+            throw new BackendException('Invalid response from TS backend'); }
 
-        $ts_array = [];
-        foreach ($jsonResult as &$element) {
-            // each element is a time-series data points
-
-            $from = new \DateTime();
-            $from->setTimestamp((int)$element['start']);
-            $until = new \DateTime();
-            $until->setTimestamp((int)$element['end']);
-
-            $newSeries = new TimeSeries();
-            $newSeries->setDatasource($element['name']);
-            $newSeries->setFrom($from);
-            $newSeries->setUntil($until);
-            $newSeries->setStep($element['step']);
-            $newSeries->setNativeStep(
-                array_key_exists('nativeStep', $element) ?
-                    $element['nativeStep'] : $element['step']
+        if(count($jsonResult)!=1){
+            throw new BackendException(
+                sprintf("wrong number of timeseries response from graphite %d, expect %d", count($jsonResult), 1)
             );
-            $newSeries->setValues($element['values']);
-
-            $ts_array[] = $newSeries;
         }
 
-        return $ts_array;
+        $res = $jsonResult[0];
+
+
+
+        $newSeries = new TimeSeries();
+        $from = new DateTime();
+        $from->setTimestamp((int)$res['start']);
+        $until = new DateTime();
+        $until->setTimestamp((int)$res['end']);
+        $newSeries->setDatasource($res['name']);
+        $newSeries->setFrom($from);
+        $newSeries->setUntil($until);
+        $newSeries->setStep($res['step']);
+        $newSeries->setNativeStep(
+            array_key_exists('nativeStep', $res) ?
+                $res['nativeStep'] : $res['step']
+        );
+        $newSeries->setValues($res['values']);
+
+        return $newSeries;
     }
 }

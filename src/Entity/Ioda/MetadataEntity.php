@@ -252,32 +252,6 @@ class MetadataEntity
         return $this->attributes->getValues();
     }
 
-    /**
-     * Add a new attribute to this entity.
-     * Cannot modify a previously added attribute.
-     *
-     * @param string $key
-     * @param string $value
-     *
-     * @return MetadataEntity
-     */
-    public function addAttribute($key, $value)
-    {
-        $this->initAttrs();
-        if (array_key_exists($key, $this->attrs)) {
-            throw new \RuntimeException("Key '$key' already exists");
-        }
-
-        $this->attrs[$key] = $value;
-        $attr = (new MetadataEntityAttribute())
-            ->setKey($key)
-            ->setValue($value)
-            ->setMetadata($this);
-        $this->attributes->add($attr);
-
-        return $this;
-    }
-
     private function initAttrs()
     {
         if (!isset($this->attrs)) {

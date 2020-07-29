@@ -33,48 +33,26 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\TimeSeries\Backend;
+namespace App\TimeSeries\Backend\Influx;
 
 
 use App\Entity\Ioda\DatasourceEntity;
 use App\Entity\Ioda\MetadataEntity;
+use App\TimeSeries\Backend\AbstractBackend;
+use App\TimeSeries\Backend\BackendException;
 use App\TimeSeries\TimeSeries;
 use App\Utils\QueryTime;
 use DateTime;
+use InvalidArgumentException;
 
-class InfluxBackend
+class InfluxBackend extends AbstractBackend
 {
 
     /**
-     * Build influx query string based on the entity type and code.
-     *
-     * @param string $entityType metadata entity type
-     * @param string $entityCode metadata entity code
-     * @param QueryTime $from
-     * @param QueryTime $until
-     * @return string influx query string
+     * @param $query
+     * @return array
+     * @throws BackendException
      */
-    private function buildInfluxQuery(string $entityType, string $entityCode, QueryTime $from, QueryTime $until, int $step): string {
-        // create query template
-        if($entityType == "country"){
-            $template = "q=SELECT mean(\"uniq_src_ip\") FROM \"geo_country\" WHERE (\"telescope\" = 'ucsd-nt' AND \"country_code\" = '%s' AND \"filter\" = 'non-erratic' AND \"geo_db\" = 'netacuity') AND %s GROUP BY time(%ds) fill(null)";
-        } else if($entityType == "region"){
-            $template = "q=SELECT mean(\"uniq_src_ip\") FROM \"geo_region\" WHERE (\"telescope\" = 'ucsd-nt' AND \"country_code\" = '%s' AND \"filter\" = 'non-erratic' AND \"geo_db\" = 'netacuity') AND %s GROUP BY time(%ds) fill(null)";
-        } else if($entityType == "county"){
-            $template = "q=SELECT mean(\"uniq_src_ip\") FROM \"geo_county\" WHERE (\"telescope\" = 'ucsd-nt' AND \"country_code\" = '%s' AND \"filter\" = 'non-erratic' AND \"geo_db\" = 'netacuity') AND %s GROUP BY time(%ds) fill(null)";
-        } else if($entityType == "asn"){
-            $template = "q=SELECT mean(\"uniq_src_ip\")  FROM \"origin_asn\" WHERE (\"telescope\" = 'ucsd-nt' AND  \"filter\" = 'non-erratic' AND \"asn\" = '%s') AND %s GROUP BY time(%ds) fill(null)";
-        } else {
-            throw new \InvalidArgumentException("Unsupported metadata entity type: $entityType");
-        }
-
-        // convert epoch time to nanoseconds
-        $timeQuery = sprintf("time >= %ds AND time < %ds", $from->getEpochTime(), $until->getEpochTime());
-
-        $query = sprintf($template, $entityCode, $timeQuery, $step);
-        return $query;
-    }
-
     private function sendQuery($query): array {
         $secret = getenv("INFLUXDB_SECRET");
         if(!$secret){
@@ -99,48 +77,6 @@ class InfluxBackend
         // close curl resource to free up system resources
         curl_close($ch);
         return json_decode($output, true);
-    }
-
-    /**
-     * Calculate step based on the value of `from` and `until`.
-     * @param QueryTime $from
-     * @param QueryTime $until
-     * @param int $maxPoints
-     * @param DatasourceEntity $datasource
-     * @return int
-     */
-    private function calculateStep(QueryTime $from, QueryTime $until, int $maxPoints, DatasourceEntity $datasource){
-
-        // get the native step of the datasource
-        $nativeStep = $datasource->getNativeStep();
-
-        // if no maxPoints specified, return the native step of the datasource
-        if($maxPoints == null){
-            return $nativeStep;
-        }
-
-        // find the smallest step that can get the number of data points below the specified $maxPoints
-        $step = $nativeStep;
-        $range = $until->getEpochTime() - $from->getEpochTime();
-        foreach($datasource->getDownsampleSteps() as $tmp_step){
-            $step = $tmp_step;
-            if($range/$tmp_step <= $maxPoints){
-                break;
-            }
-        }
-        return $step;
-    }
-
-    /**
-     * Round up the `from` time based on the step.
-     * @param $from
-     * @param $step
-     * @return QueryTime
-     */
-    private function roundUpFrom($from, $step){
-        $from_ts = $from->getEpochTime();
-        $from_ts = floor($from_ts / $step) * $step;
-        return new QueryTime($from_ts);
     }
 
     /**
@@ -192,7 +128,7 @@ class InfluxBackend
 
         // create new TimeSeries object accordingly
         $newSeries = new TimeSeries();
-        $newSeries->setDatasource('ucsd-nt');
+        $newSeries->setDatasource($datasource->getDatasource());
         $newSeries->setFrom($from);
         $newSeries->setUntil($until);
         $newSeries->setStep($step);
@@ -204,35 +140,15 @@ class InfluxBackend
     /**
      * Influx service main entry point.
      *
+     * @param $query
      * @param DatasourceEntity $datasource
-     * @param MetadataEntity $entity
-     * @param QueryTime $from
-     * @param QueryTime $until
-     * @param int|null $maxPoints
      * @return TimeSeries
      * @throws BackendException
      */
-    public function getInfluxDataPoints(DatasourceEntity $datasource, MetadataEntity $entity, QueryTime $from, QueryTime $until, ?int $maxPoints): TimeSeries
+    public function queryInflux($query, DatasourceEntity $datasource): TimeSeries
     {
-        // assign default max points to avoid unnecessary expensive queries
-        if($maxPoints == null){
-            $maxPoints = TimeSeries::DEFAULT_MAX_POINTS;
-        }
-
-        // calculate query step
-        $step = $this->calculateStep($from, $until, $maxPoints, $datasource);
-        // round up $from based on the$ step
-        $from = $this->roundUpFrom($from, $step);
-
-        // build the actual influx query
-        $query =  $this->buildInfluxQuery($entity->getType()->getType(), $entity->getCode(), $from, $until, $step);
-
         // send query and process response
         $res = $this->sendQuery($query);
-        $series = $this->processResponseJson($res, $datasource);
-        // attach the metadata entity to the time series response
-        $series->setMetadataEntity($entity);
-
-        return $series;
+        return $this->processResponseJson($res, $datasource);
     }
 }

@@ -33,10 +33,12 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Expression;
+namespace App\TimeSeries\Backend;
 
 
-class ParsingException extends \Exception
+use App\Entity\Ioda\DatasourceEntity;
+use App\Utils\QueryTime;
+
+abstract class AbstractBackend
 {
-
 }

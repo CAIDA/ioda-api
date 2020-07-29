@@ -33,10 +33,9 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Expression;
+namespace App\TimeSeries\Backend\Graphite\Expression;
 
-
-use App\TimeSeries\Humanize\Humanizer;
+use App\TimeSeries\Backend\Graphite\Expression\Humanize\Humanizer;
 use Swagger\Annotations as SWG;
 use Symfony\Component\Serializer\Annotation\Groups;
 

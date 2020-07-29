@@ -33,17 +33,16 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Expression;
+namespace App\TimeSeries\Backend\Graphite\Expression;
 
-
-use App\TimeSeries\Humanize\Humanizer;
+use App\TimeSeries\Backend\Graphite\Expression\Humanize\Humanizer;
 
 class ExpressionFactory
 {
     private $expressionClasses = [
-        ConstantExpression::TYPE => 'App\Expression\ConstantExpression',
-        FunctionExpression::TYPE => 'App\Expression\FunctionExpression',
-        PathExpression::TYPE => 'App\Expression\PathExpression',
+        ConstantExpression::TYPE => 'App\TimeSeries\Backend\Graphite\Expression\ConstantExpression',
+        FunctionExpression::TYPE => 'App\TimeSeries\Backend\Graphite\Expression\FunctionExpression',
+        PathExpression::TYPE => 'App\TimeSeries\Backend\Graphite\Expression\PathExpression',
     ];
 
     private $humanizer;

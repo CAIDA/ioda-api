@@ -33,7 +33,7 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\TimeSeries\Humanize\Provider;
+namespace  App\TimeSeries\Backend\Graphite\Expression\Humanize\Provider;
 
 
 class DirectHumanizeProvider extends AbstractHumanizeProvider

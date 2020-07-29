@@ -35,20 +35,15 @@
 
 namespace App\Controller;
 
-use App\Entity\Ioda\DatasourceEntity;
-use App\Entity\Ioda\MetadataEntity;
-use App\Expression\ExpressionFactory;
-use App\Expression\ParsingException;
-use App\Expression\PathExpression;
 use App\Service\MetadataEntitiesService;
 use App\Service\DatasourceService;
 use App\Response\Envelope;
 use App\Response\RequestParameter;
+use App\Service\SignalsService;
 use App\TimeSeries\Backend\BackendException;
-use App\TimeSeries\Backend\InfluxBackend;
-use App\TimeSeries\Backend\GraphiteBackend;
 use App\TimeSeries\TimeSeriesSet;
 use App\Utils\QueryTime;
+use InvalidArgumentException;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -61,7 +56,7 @@ use Symfony\Component\Serializer\SerializerInterface;
  * @package App\Controller\Timeseries
  * @Route("/signals", name="signals_")
  */
-class TimeseriesController extends ApiController
+class SignalsController extends ApiController
 {
 
     /**
@@ -69,118 +64,43 @@ class TimeseriesController extends ApiController
      */
     private $metadataService;
 
+    /**
+     * @var DatasourceService
+     */
     private $datasourceService;
 
-    private $influxService;
-
-    private $dsToQuery;
+    /**
+     * @var SignalsService
+     */
+    private $signalsService;
 
     public function __construct(MetadataEntitiesService $metadataEntitiesService,
                                 DatasourceService $datasourceService,
-                                InfluxBackend $influxService
+                                SignalsService $signalsService
     ){
         $this->metadataService = $metadataEntitiesService;
         $this->datasourceService = $datasourceService;
-        $this->influxService = $influxService;
-        $this->dsToQuery = [
-            "bgp" => "graphite",
-            "ping-slash24" => "graphite",
-            "ucsd-nt" => "influx",
-        ];
+        $this->signalsService = $signalsService;
     }
 
     private function validateUserInputs(QueryTime $from, QueryTime $until, ?string $datasource, $metas){
         if ($from->getEpochTime() > $until->getEpochTime()){
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 sprintf("from (%d) must be earlier than until (%d)", $from->getEpochTime(), $until->getEpochTime())
             );
         }
 
         if ($datasource && !$this->datasourceService->isValidDatasource($datasource)){
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 sprintf("invalid datasource %s (must be one of the following [%s])", $datasource, join(", ", $this->datasourceService->getDatasourceNames()))
             );
         }
 
         if(count($metas)!=1){
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 sprintf("cannot find corresponding metadata entity")
             );
         }
-    }
-
-    /**
-     * Build one graphite expression based on given $datasource_id.
-     *
-     * @param MetadataEntity $entity
-     * @param DatasourceEntity $datasource_id
-     * @return array
-     */
-    private function buildGraphiteExpression(MetadataEntity $entity, DatasourceEntity $datasource): array {
-
-        $fqid = $entity->getAttribute("fqid");
-        $queryJsons = [
-            "bgp" => [
-                "type" => "function",
-                "func" => "alias",
-                "args" => [
-                    [
-                        "type"=> "path",
-                        "path"=> sprintf("bgp.prefix-visibility.%s.v4.visibility_threshold.min_50%%_ff_peer_asns.visible_slash24_cnt",$fqid)
-                    ],
-                    [
-                        "type"=> "constant",
-                        "value"=> "bgp"
-                    ]
-                ]
-            ],
-            // NOTE: "ucsd-nt" migrated to using influxdb
-            "ucsd-nt" => [
-                "type" => "function",
-                "func" => "alias",
-                "args" => [
-                    [
-                        "type" => "path",
-                        "path" => sprintf("darknet.ucsd-nt.non-erratic.%s.uniq_src_ip", $fqid)
-                    ],
-                    [
-                        "type" => "constant",
-                        "value" => "ucsd-nt"
-                    ]
-                ]
-            ],
-            "ping-slash24" => [
-                "type" => "function",
-                "func" => "alias",
-                "args" => [
-                    [
-                        "type" => "function",
-                        "func" => "sumSeries",
-                        "args" => [
-                            [
-                                "type" => "function",
-                                "func" => "keepLastValue",
-                                "args" => [
-                                    [
-                                        "type" => "path",
-                                        "path" => "active.ping-slash24.geo.netacuity.NA.KN.probers.team-1.caida-sdsc.*.up_slash24_cnt"
-                                    ], [
-                                        "type" => "constant",
-                                        "value" => 1
-                                    ]
-                                ]
-                            ]
-                        ]
-                    ],
-                    [
-                        "type" => "constant",
-                        "value" => "ping-slash24"
-                    ]
-                ]
-            ],
-        ];
-
-        return $queryJsons[$datasource->getDatasource()];
     }
 
     /**
@@ -301,14 +221,10 @@ class TimeseriesController extends ApiController
      *
      * @param string|null $entityType
      * @param string|null $entityCode
-     * @param ExpressionFactory $expressionFactory
-     * @param GraphiteBackend $tsBackend
      * @return JsonResponse
-     * @throws ParsingException
      * @var Request $request
      */
-    public function lookup(
-        ?string $entityType, ?string $entityCode, Request $request, ExpressionFactory $expressionFactory, GraphiteBackend $tsBackend)
+    public function lookup(?string $entityType, ?string $entityCode, Request $request)
     {
         $env = new Envelope('signals',
                             'query',
@@ -330,14 +246,14 @@ class TimeseriesController extends ApiController
         $until = $env->getParam('until');
         $datasource_str = $env->getParam('datasource');
         $maxPoints = $env->getParam('maxPoints');
-        $noinflux = $env->getParam('noinflux');
         $metas = $this->metadataService->lookup($entityType, $entityCode);
 
         try{
             $from = new QueryTime($from);
             $until = new QueryTime($until);
             $this->validateUserInputs($from, $until, $datasource_str, $metas);
-        } catch (\InvalidArgumentException $ex) {
+            $entity = $metas[0];
+        } catch (InvalidArgumentException $ex) {
             $env->setError($ex->getMessage());
             return $this->json($env, 400);
         }
@@ -352,34 +268,12 @@ class TimeseriesController extends ApiController
 
         // prepare TimeSeriesSet object
         $ts_set = new TimeSeriesSet();
-        $ts_set->setMetadataEntity($metas[0]);
+        $ts_set->setMetadataEntity($entity);
 
         // execute queries based on the datasources' defined backends
         try{
-            $graphite_exps = [];
-            $tses = [];
-
             foreach($datasource_array as $datasource){
-                $backend = $datasource->getBackend();
-                if($backend == "graphite"){
-                    $exp_json = $this->buildGraphiteExpression($metas[0], $datasource);
-                    $graphite_exps[] = $expressionFactory->createFromJson($exp_json);
-                } else if ($backend=="influx"){
-                    $tses[] = $this->influxService->getInfluxDataPoints($datasource, $metas[0], $from, $until, $maxPoints);
-                } else {
-                    throw new \InvalidArgumentException(
-                        sprintf("invalid datasource %s (must be one of the following [%s])", $datasource, join(", ", $this->datasourceService->getDatasourceNames()))
-                    );
-                }
-            }
-
-            // if we have some graphite queries generated, we call the actual query
-            if(count($graphite_exps)>0){
-                $tses = array_merge($tses, $tsBackend->tsQuery($graphite_exps, $from, $until, $maxPoints));
-            }
-
-            // sanity-check each TimeSeries object and add it to the TimeSeriesSet
-            foreach($tses as $ts){
+                $ts = $this->signalsService->queryForTimeSeries($from, $until, $entity, $datasource, $maxPoints);
                 $ts->sanityCheckValues();
                 $ts_set->addOneSeries($ts);
             }

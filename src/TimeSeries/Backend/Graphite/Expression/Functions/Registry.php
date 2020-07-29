@@ -33,7 +33,7 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Expression\Functions;
+namespace App\TimeSeries\Backend\Graphite\Expression\Functions;
 
 
 use Nelmio\ApiDocBundle\Annotation\Model;
@@ -43,7 +43,7 @@ use Symfony\Component\Yaml\Parser as YamlParser;
 
 class Registry
 {
-    private static $YAML_REGISTRY_FILE = __DIR__.'/registry.yaml';
+    private static $YAML_REGISTRY_FILE = __DIR__ . '/registry.yaml';
 
     /**
      * @SWG\Property(

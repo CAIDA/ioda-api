@@ -33,15 +33,14 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\TimeSeries\Humanize;
+namespace  App\TimeSeries\Backend\Graphite\Expression\Humanize;
 
-
-use App\Expression\PathExpression;
-use App\TimeSeries\Humanize\Provider\AbstractHumanizeProvider;
-use App\TimeSeries\Humanize\Provider\DefaultHumanizeProvider;
-use App\TimeSeries\Humanize\Provider\DirectHumanizeProvider;
-use App\TimeSeries\Humanize\Provider\GeoHumanizeProvider;
-use App\TimeSeries\Humanize\Provider\InternetIdHumanizeProvider;
+use App\TimeSeries\Backend\Graphite\Expression\PathExpression;
+use App\TimeSeries\Backend\Graphite\Expression\Humanize\Provider\AbstractHumanizeProvider;
+use App\TimeSeries\Backend\Graphite\Expression\Humanize\Provider\DefaultHumanizeProvider;
+use App\TimeSeries\Backend\Graphite\Expression\Humanize\Provider\DirectHumanizeProvider;
+use App\TimeSeries\Backend\Graphite\Expression\Humanize\Provider\GeoHumanizeProvider;
+use App\TimeSeries\Backend\Graphite\Expression\Humanize\Provider\InternetIdHumanizeProvider;
 
 class Humanizer
 {
