@@ -77,11 +77,10 @@ class InfluxBackend
     /**
      * process JSON response get from influxdb instance
      * @param array $responseJson
-     * @param DatasourceEntity $datasource
      * @return TimeSeries
      * @throws BackendException
      */
-    private function processResponseJson(array $responseJson, DatasourceEntity $datasource): TimeSeries {
+    private function processResponseJson(array $responseJson): TimeSeries {
         // sanity check json responses
         if(
             !in_array("results", array_keys($responseJson)) ||
@@ -123,11 +122,9 @@ class InfluxBackend
 
         // create new TimeSeries object accordingly
         $newSeries = new TimeSeries();
-        $newSeries->setDatasource($datasource->getDatasource());
         $newSeries->setFrom($from);
         $newSeries->setUntil($until);
         $newSeries->setStep($step);
-        $newSeries->setNativeStep($datasource->getNativeStep());
         $newSeries->setValues($values);
         return $newSeries;
     }
@@ -136,14 +133,13 @@ class InfluxBackend
      * Influx service main entry point.
      *
      * @param $query
-     * @param DatasourceEntity $datasource
      * @return TimeSeries
      * @throws BackendException
      */
-    public function queryInflux($query, DatasourceEntity $datasource): TimeSeries
+    public function queryInflux($query): TimeSeries
     {
         // send query and process response
         $res = $this->sendQuery($query);
-        return $this->processResponseJson($res, $datasource);
+        return $this->processResponseJson($res);
     }
 }

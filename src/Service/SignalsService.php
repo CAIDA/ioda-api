@@ -200,7 +200,8 @@ class SignalsService
             $step = $this->calculateStep($from, $until, $maxPoints, $datasource);
             $from = $this->roundDownFromTs($from, $step);
             $influx_query = $this->buildInfluxQuery($datasource, $entity, $from, $until, $step);
-            $ts = $this->influxBackend->queryInflux($influx_query, $datasource);
+            $ts = $this->influxBackend->queryInflux($influx_query);
+            $ts->setNativeStep($datasource->getNativeStep());
         } else {
             throw new BackendException(
                 sprintf("invalid datasource %s", $datasource)
