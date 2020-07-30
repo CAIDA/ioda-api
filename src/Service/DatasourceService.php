@@ -59,14 +59,14 @@ class DatasourceService
                 "bgp",
                 "BGP",
                 "Visible /24s",
-                60,
+                300,
                 "graphite"
             ),
             "ping-slash24" => new DatasourceEntity(
                 "ping-slash24",
                 "Active Probing",
                 "Up /24s",
-                60,
+                600,
                 "graphite"
             ),
         ];
