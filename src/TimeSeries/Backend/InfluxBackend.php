@@ -36,7 +36,6 @@
 namespace App\TimeSeries\Backend;
 
 
-use App\Entity\Ioda\DatasourceEntity;
 use App\TimeSeries\TimeSeries;
 use DateTime;
 
@@ -45,18 +44,24 @@ class InfluxBackend
 
     /**
      * @param $query
+     * @param $db_name influx db name
      * @return array
      * @throws BackendException
      */
-    private function sendQuery($query): array {
+    private function sendQuery(string $query, string $db_name): array {
+        // retrive environment variables for inlfuxdb connection
         $secret = getenv("INFLUXDB_SECRET");
+        $influx_uri = getenv("INFLUXDB_API");
         if(!$secret){
             throw new BackendException("Missing INFLUXDB_SECRET environment variable");
+        }
+        if(!$influx_uri){
+            throw new BackendException("Missing INFLUXDB_API environment variable");
         }
 
         // create curl resource
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "https://explore.stardust.caida.org/api/datasources/proxy/1/query?db=stardust_ucsdnt&epoch=ms");
+        curl_setopt($ch, CURLOPT_URL, "$influx_uri/query?db=$db_name&epoch=ms");
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
             'Content-Type: application/x-www-form-urlencoded',
             "Authorization: Bearer $secret"
@@ -132,14 +137,15 @@ class InfluxBackend
     /**
      * Influx service main entry point.
      *
-     * @param $query
+     * @param string $query
+     * @param string $db_name
      * @return TimeSeries
      * @throws BackendException
      */
-    public function queryInflux($query): TimeSeries
+    public function queryInflux(string $query, string $db_name): TimeSeries
     {
         // send query and process response
-        $res = $this->sendQuery($query);
+        $res = $this->sendQuery($query, $db_name);
         return $this->processResponseJson($res);
     }
 }

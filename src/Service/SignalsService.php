@@ -178,6 +178,21 @@ class SignalsService
         }
     }
 
+    /**
+     * @param $datasource_id
+     * @return string
+     * @throws BackendException
+     */
+    private function getInfluxDbName($datasource_id){
+        $DBMAP = [
+            "ucsd-nt" => "stardust_ucsdnt"
+        ];
+        if(!array_key_exists($datasource_id, $DBMAP)){
+            throw new BackendException("Datasource $datasource_id doesn't not have corresponding InfluxDB database");
+        }
+        return $DBMAP[$datasource_id];
+    }
+
 
     /**
      * @param QueryTime $from
@@ -200,7 +215,7 @@ class SignalsService
             $step = $this->calculateStep($from, $until, $maxPoints, $datasource);
             $from = $this->roundDownFromTs($from, $step);
             $influx_query = $this->buildInfluxQuery($datasource, $entity, $from, $until, $step);
-            $ts = $this->influxBackend->queryInflux($influx_query);
+            $ts = $this->influxBackend->queryInflux($influx_query, $this->getInfluxDbName($datasource->getDatasource()));
             $ts->setNativeStep($datasource->getNativeStep());
         } else {
             throw new BackendException(
