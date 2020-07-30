@@ -37,15 +37,12 @@ namespace App\TimeSeries\Backend\Influx;
 
 
 use App\Entity\Ioda\DatasourceEntity;
-use App\Entity\Ioda\MetadataEntity;
 use App\TimeSeries\Backend\AbstractBackend;
 use App\TimeSeries\Backend\BackendException;
 use App\TimeSeries\TimeSeries;
-use App\Utils\QueryTime;
 use DateTime;
-use InvalidArgumentException;
 
-class InfluxBackend extends AbstractBackend
+class InfluxBackend
 {
 
     /**

@@ -46,7 +46,7 @@ use App\TimeSeries\TimeSeries;
 use App\Utils\QueryTime;
 use DateTime;
 
-class GraphiteBackend extends AbstractBackend
+class GraphiteBackend
 {
     const GRAPHITE_URL = 'http://charthouse-render.int.limbo.caida.org';
     const QUERY_TIMEOUT = 120;
