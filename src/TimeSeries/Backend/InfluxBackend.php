@@ -33,12 +33,10 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\TimeSeries\Backend\Influx;
+namespace App\TimeSeries\Backend;
 
 
 use App\Entity\Ioda\DatasourceEntity;
-use App\TimeSeries\Backend\AbstractBackend;
-use App\TimeSeries\Backend\BackendException;
 use App\TimeSeries\TimeSeries;
 use DateTime;
 

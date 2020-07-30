@@ -33,15 +33,10 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\TimeSeries\Backend\Graphite;
+namespace App\TimeSeries\Backend;
 
 
 
-use App\Entity\Ioda\DatasourceEntity;
-use App\Entity\Ioda\MetadataEntity;
-use App\TimeSeries\Backend\AbstractBackend;
-use App\TimeSeries\Backend\BackendException;
-use App\TimeSeries\Backend\Graphite\Expression\ExpressionFactory;
 use App\TimeSeries\TimeSeries;
 use App\Utils\QueryTime;
 use DateTime;
@@ -55,15 +50,6 @@ class GraphiteBackend
         86400 => 600, // cache last day for 10 min
     ];
     const DATA_CACHE_TIMEOUT_DEFAULT = 3600;
-
-    /**
-     * @var ExpressionFactory
-     */
-    private $expressionFactory;
-
-    public function __construct(ExpressionFactory $expressionFactory){
-        $this->expressionFactory = $expressionFactory;
-    }
 
     /**
      * Make a query to the graphite backend service.
@@ -122,18 +108,16 @@ class GraphiteBackend
      *
      * @param QueryTime $from
      * @param QueryTime $until
-     * @param $expressionJson
+     * @param $expression
      * @param int|null $maxPoints
      * @return TimeSeries
-     * @throws BackendException|Expression\ParsingException
+     * @throws BackendException
      */
-    public function queryGraphite(QueryTime $from, QueryTime $until, $expressionJson, ?int $maxPoints): TimeSeries
+    public function queryGraphite(QueryTime $from, QueryTime $until, $expression, ?int $maxPoints): TimeSeries
     {
         // calculate cache timeout, used in graphite query
         $timeout = $this->calcTimeout($until);
 
-        // build expressions from JSON
-        $exp = $this->expressionFactory->createFromJson($expressionJson) -> getCanonicalStr();
         if($maxPoints == null){
             $maxPoints = TimeSeries::DEFAULT_MAX_POINTS;
         }
@@ -143,7 +127,7 @@ class GraphiteBackend
             '/render',
             [
                 'format' => 'json-internal',
-                'target' => [$exp],
+                'target' => [$expression],
                 'from' => $from->getGraphiteTime(),
                 'until' => $until->getGraphiteTime(),
                 'cacheTimeout' => $timeout,

@@ -37,8 +37,8 @@ namespace App\Service;
 use App\Entity\Ioda\DatasourceEntity;
 use App\Entity\Ioda\MetadataEntity;
 use App\TimeSeries\Backend\BackendException;
-use App\TimeSeries\Backend\Graphite\GraphiteBackend;
-use App\TimeSeries\Backend\Influx\InfluxBackend;
+use App\TimeSeries\Backend\GraphiteBackend;
+use App\TimeSeries\Backend\InfluxBackend;
 use App\TimeSeries\TimeSeries;
 use App\Utils\QueryTime;
 
