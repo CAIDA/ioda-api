@@ -101,12 +101,12 @@ class SignalsService
     }
 
     /**
-     * Round up the `from` time based on the step.
+     * Round down the `from` time based on the step.
      * @param $from
      * @param $step
      * @return QueryTime
      */
-    private function roundUpFrom($from, $step){
+    private function roundDownFromTs($from, $step){
         $from_ts = $from->getEpochTime();
         $from_ts = floor($from_ts / $step) * $step;
         return new QueryTime($from_ts);
@@ -248,9 +248,9 @@ class SignalsService
             $exp_json = $this->buildGraphiteExpression($entity, $datasource);
             $ts = $this->graphiteBackend->queryGraphite($from, $until, $exp_json, $maxPoints);
         } else if ($backend=="influx"){
-            // calculate step and round up starting time
+            // calculate step and round down starting time
             $step = $this->calculateStep($from, $until, $maxPoints, $datasource);
-            $from = $this->roundUpFrom($from, $step);
+            $from = $this->roundDownFromTs($from, $step);
             $influx_query = $this->buildInfluxQuery($datasource, $entity, $from, $until, $step);
             $ts = $this->influxBackend->queryInflux($influx_query, $datasource);
         } else {
