@@ -206,22 +206,26 @@ class SignalsService
                                       QueryTime $from, QueryTime $until, int $step): string {
         $entityType = $entity->getType()->getType();
         $entityCode = $entity->getCode();
+
         if($datasourceEntity->getDatasource() == "ucsd-nt"){
-            // create query template
-            if($entityType == "country"){
-                $template = "q=SELECT mean(\"uniq_src_ip\") FROM \"geo_country\" WHERE (\"telescope\" = 'ucsd-nt' AND \"country_code\" = '%s' AND \"filter\" = 'non-erratic' AND \"geo_db\" = 'netacuity') AND %s GROUP BY time(%ds) fill(null)";
-            } else if($entityType == "region"){
-                $template = "q=SELECT mean(\"uniq_src_ip\") FROM \"geo_region\" WHERE (\"telescope\" = 'ucsd-nt' AND \"country_code\" = '%s' AND \"filter\" = 'non-erratic' AND \"geo_db\" = 'netacuity') AND %s GROUP BY time(%ds) fill(null)";
-            } else if($entityType == "county"){
-                $template = "q=SELECT mean(\"uniq_src_ip\") FROM \"geo_county\" WHERE (\"telescope\" = 'ucsd-nt' AND \"country_code\" = '%s' AND \"filter\" = 'non-erratic' AND \"geo_db\" = 'netacuity') AND %s GROUP BY time(%ds) fill(null)";
-            } else if($entityType == "asn"){
-                $template = "q=SELECT mean(\"uniq_src_ip\")  FROM \"origin_asn\" WHERE (\"telescope\" = 'ucsd-nt' AND  \"filter\" = 'non-erratic' AND \"asn\" = '%s') AND %s GROUP BY time(%ds) fill(null)";
-            } else {
-                throw new BackendException("Unsupported metadata entity type: $entityType");
-            }
-            // convert epoch time to nanoseconds
+            $MEASUREMENT = [
+                "country" => "geo_country",
+                "region" => "geo_region",
+                "county" => "geo_county",
+                "asn" => "origin_asn",
+            ];
+            $WHERE = [
+                "country" => "\"country_code\" = '%s' AND \"geo_db\" = 'netacuity'",
+                "region"  => "\"region_code\" = '%s' AND \"geo_db\" = 'netacuity'",
+                "county"  => "\"county_code\" = '%s' AND \"geo_db\" = 'netacuity'",
+                "asn" => "\"asn\" = '%s'",
+            ];
+
+            $measurement = $MEASUREMENT[$entityType];
+            $where = sprintf($WHERE[$entityType], $entityCode);
             $timeQuery = sprintf("time >= %ds AND time < %ds", $from->getEpochTime(), $until->getEpochTime());
-            return sprintf($template, $entityCode, $timeQuery, $step);
+            $step = sprintf("%ds",$step);
+            return "q=SELECT mean(\"uniq_src_ip\") FROM \"$measurement\" WHERE (\"telescope\" = 'ucsd-nt' AND \"filter\" = 'non-erratic' AND $where) AND $timeQuery GROUP BY time($step) fill(null)";
         } else {
             throw new BackendException(
                 sprintf("Datasource %s doesn't not currently support InfluxDB backend",
