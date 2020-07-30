@@ -157,7 +157,6 @@ class GraphiteBackend
         $from->setTimestamp((int)$res['start']);
         $until = new DateTime();
         $until->setTimestamp((int)$res['end']);
-        $newSeries->setDatasource($res['name']);
         $newSeries->setFrom($from);
         $newSeries->setUntil($until);
         $newSeries->setStep($res['step']);

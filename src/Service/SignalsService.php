@@ -207,6 +207,7 @@ class SignalsService
             );
         }
         $ts->setMetadataEntity($entity);
+        $ts->setDatasource($datasource->getDatasource());
         return $ts;
     }
 }
