@@ -121,74 +121,18 @@ class SignalsService
     /**
      * Build graphite expression JSON object based on given $datasource.
      *
-     * @param MetadataEntity $entity
-     * @param DatasourceEntity $datasource
-     * @return array
+     * @param string $fqid
+     * @param string $datasource_id
+     * @return string
      */
-    private function buildGraphiteExpression(MetadataEntity $entity, DatasourceEntity $datasource): array {
-        $fqid = $entity->getAttribute("fqid");
+    private function buildGraphiteExpression(string $fqid, string $datasource_id): string {
         $queryJsons = [
-            "bgp" => [
-                "type" => "function",
-                "func" => "alias",
-                "args" => [
-                    [
-                        "type"=> "path",
-                        "path"=> sprintf("bgp.prefix-visibility.%s.v4.visibility_threshold.min_50%%_ff_peer_asns.visible_slash24_cnt",$fqid)
-                    ],
-                    [
-                        "type"=> "constant",
-                        "value"=> "bgp"
-                    ]
-                ]
-            ],
-            // NOTE: "ucsd-nt" migrated to using influxdb
-            "ucsd-nt" => [
-                "type" => "function",
-                "func" => "alias",
-                "args" => [
-                    [
-                        "type" => "path",
-                        "path" => sprintf("darknet.ucsd-nt.non-erratic.%s.uniq_src_ip", $fqid)
-                    ],
-                    [
-                        "type" => "constant",
-                        "value" => "ucsd-nt"
-                    ]
-                ]
-            ],
-            "ping-slash24" => [
-                "type" => "function",
-                "func" => "alias",
-                "args" => [
-                    [
-                        "type" => "function",
-                        "func" => "sumSeries",
-                        "args" => [
-                            [
-                                "type" => "function",
-                                "func" => "keepLastValue",
-                                "args" => [
-                                    [
-                                        "type" => "path",
-                                        "path" => "active.ping-slash24.geo.netacuity.NA.KN.probers.team-1.caida-sdsc.*.up_slash24_cnt"
-                                    ], [
-                                        "type" => "constant",
-                                        "value" => 1
-                                    ]
-                                ]
-                            ]
-                        ]
-                    ],
-                    [
-                        "type" => "constant",
-                        "value" => "ping-slash24"
-                    ]
-                ]
-            ],
+            "bgp" => "alias(bgp.prefix-visibility.$fqid.v4.visibility_threshold.min_50%_ff_peer_asns.visible_slash24_cnt,\"bgp\")",
+            "ucsd-nt" => "alias(darknet.ucsd-nt.non-erratic.$fqid.uniq_src_ip,\"ucsd-nt\")",
+            "ping-slash24" => "alias(sumSeries(keepLastValue(active.ping-slash24.$fqid.probers.team-1.caida-sdsc.*.up_slash24_cnt,1)),\"ping-slash24\")",
         ];
 
-        return $queryJsons[$datasource->getDatasource()];
+        return $queryJsons[$datasource_id];
     }
 
     /**
@@ -249,7 +193,7 @@ class SignalsService
         $backend = $datasource->getBackend();
 
         if($backend == "graphite"){
-            $exp_json = $this->buildGraphiteExpression($entity, $datasource);
+            $exp_json = $this->buildGraphiteExpression($entity->getAttribute("fqid"), $datasource->getDatasource());
             $ts = $this->graphiteBackend->queryGraphite($from, $until, $exp_json, $maxPoints);
         } else if ($backend=="influx"){
             // calculate step and round down starting time
