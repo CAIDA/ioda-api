@@ -40,9 +40,6 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 class QueryTime
 {
-    // TODO: actually parse the relative times if/when we need them in
-    // TODO: charthouse. for now it is sufficient to pass them along to graphite
-
     /**
      * @var bool
      * @Groups({"public"})
@@ -157,4 +154,10 @@ class QueryTime
     {
         return $this->relative ? $this->relativeTime : $this->absoluteTime->getTimestamp();
     }
+
+    public function getInfluxTime(): string
+    {
+        return $this->relative ? $this->relativeTime : $this->absoluteTime->getTimestamp();
+    }
+
 }

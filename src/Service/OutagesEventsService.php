@@ -36,12 +36,9 @@
 namespace App\Service;
 
 
-use App\Entity\Outages\OutagesAlert;
 use App\Entity\Outages\OutagesEvent;
 use App\Entity\Outages\OutagesSummary;
-use App\Service\MetadataEntitiesService;
 use App\Repository\OutagesAlertsRepository;
-use CAIDA\Charthouse\WatchtowerBundle\Entity\WatchtowerAlert;
 
 class OutagesEventsService
 {

@@ -35,17 +35,15 @@
 
 namespace App\Controller;
 
-use App\Expression\ExpressionFactory;
-use App\Expression\ParsingException;
-use App\Expression\PathExpression;
 use App\Service\MetadataEntitiesService;
 use App\Service\DatasourceService;
 use App\Response\Envelope;
 use App\Response\RequestParameter;
+use App\Service\SignalsService;
 use App\TimeSeries\Backend\BackendException;
-use App\TimeSeries\Backend\GraphiteBackend;
-use App\TimeSeries\Humanize\Humanizer;
+use App\TimeSeries\TimeSeriesSet;
 use App\Utils\QueryTime;
+use InvalidArgumentException;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -58,7 +56,7 @@ use Symfony\Component\Serializer\SerializerInterface;
  * @package App\Controller\Timeseries
  * @Route("/signals", name="signals_")
  */
-class TimeseriesController extends ApiController
+class SignalsController extends ApiController
 {
 
     /**
@@ -66,120 +64,42 @@ class TimeseriesController extends ApiController
      */
     private $metadataService;
 
+    /**
+     * @var DatasourceService
+     */
     private $datasourceService;
 
-    public function __construct(MetadataEntitiesService $metadataEntitiesService, DatasourceService $datasourceService){
+    /**
+     * @var SignalsService
+     */
+    private $signalsService;
+
+    public function __construct(MetadataEntitiesService $metadataEntitiesService,
+                                DatasourceService $datasourceService,
+                                SignalsService $signalsService
+    ){
         $this->metadataService = $metadataEntitiesService;
         $this->datasourceService = $datasourceService;
+        $this->signalsService = $signalsService;
     }
 
-    private function sanitizeInputs(&$from, &$until, $datasource, $metas){
-        if(!isset($from)){
-            throw new \InvalidArgumentException(
-                "'from' timestamp must be set"
-            );
-        }
-
-        if(!isset($until)){
-            throw new \InvalidArgumentException(
-                "'until' timestamp must be set"
-            );
-        }
-
-        $from = new QueryTime($from);
-        $until = new QueryTime($until);
-
+    private function validateUserInputs(QueryTime $from, QueryTime $until, ?string $datasource, $metas){
         if ($from->getEpochTime() > $until->getEpochTime()){
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 sprintf("from (%d) must be earlier than until (%d)", $from->getEpochTime(), $until->getEpochTime())
             );
         }
 
         if ($datasource && !$this->datasourceService->isValidDatasource($datasource)){
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 sprintf("invalid datasource %s (must be one of the following [%s])", $datasource, join(", ", $this->datasourceService->getDatasourceNames()))
             );
         }
 
         if(count($metas)!=1){
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 sprintf("cannot find corresponding metadata entity")
             );
-        }
-    }
-
-    private function buildExpression($entity, $datasource){
-        $fqid = $entity->getAttribute("fqid");
-        $queryJsons = [
-            "bgp" => [
-                "type" => "function",
-                "func" => "alias",
-                "args" => [
-                    [
-                        "type"=> "path",
-                        "path"=> sprintf("bgp.prefix-visibility.%s.v4.visibility_threshold.min_50%%_ff_peer_asns.visible_slash24_cnt",$fqid)
-                    ],
-                    [
-                        "type"=> "constant",
-                        "value"=> "bgp"
-                    ]
-                ]
-            ],
-            "ucsd-nt" => [
-                "type" => "function",
-                "func" => "alias",
-                "args" => [
-                    [
-                        "type" => "path",
-                        "path" => sprintf("darknet.ucsd-nt.non-erratic.%s.uniq_src_ip", $fqid)
-                    ],
-                    [
-                        "type" => "constant",
-                        "value" => "ucsd-nt"
-                    ]
-                ]
-            ],
-            "ping-slash24" => [
-                "type" => "function",
-                "func" => "alias",
-                "args" => [
-                    [
-                        "type" => "function",
-                        "func" => "sumSeries",
-                        "args" => [
-                            [
-                                "type" => "function",
-                                "func" => "keepLastValue",
-                                "args" => [
-                                    [
-                                        "type" => "path",
-                                        "path" => "active.ping-slash24.geo.netacuity.NA.KN.probers.team-1.caida-sdsc.*.up_slash24_cnt"
-                                    ], [
-                                        "type" => "constant",
-                                        "value" => 1
-                                    ]
-                                ]
-                            ]
-                        ]
-                    ],
-                    [
-                        "type" => "constant",
-                        "value" => "ping-slash24"
-                    ]
-                ]
-            ],
-        ];
-
-        if(!$datasource){
-            return array_values($queryJsons);
-        } else {
-            if(!array_key_exists($datasource, $queryJsons)){
-                throw new \InvalidArgumentException(
-                    sprintf("Unknown datasource %s, must be one of [%s]", $datasource,join(", ",array_keys($queryJsons)))
-                );
-            } else {
-                return [$queryJsons[$datasource]];
-            }
         }
     }
 
@@ -208,14 +128,14 @@ class TimeseriesController extends ApiController
      * @SWG\Parameter(
      *     name="from",
      *     in="query",
-     *     type="string",
+     *     type="integer",
      *     description="Unix timestamp from when the alerts should begin after",
      *     required=true
      * )
      * @SWG\Parameter(
      *     name="until",
      *     in="query",
-     *     type="string",
+     *     type="integer",
      *     description="Unix timestamp until when the alerts should end before",
      *     required=true
      * )
@@ -225,6 +145,14 @@ class TimeseriesController extends ApiController
      *     type="string",
      *     description="Filter signals by datasource",
      *     enum={"bgp", "ucsd-nt", "ping-slash24"},
+     *     required=false,
+     *     default=null
+     * )
+     * @SWG\Parameter(
+     *     name="maxPoints",
+     *     in="query",
+     *     type="integer",
+     *     description="Maximum number of points per time-series",
      *     required=false,
      *     default=null
      * )
@@ -291,27 +219,21 @@ class TimeseriesController extends ApiController
      *     )
      * )
      *
-     * @var string $entityType
-     * @var string $entityCode
-     * @var Request $request
-     * @var SerializerInterface $serializer
-     * @var MetadataEntitiesService
+     * @param string|null $entityType
+     * @param string|null $entityCode
      * @return JsonResponse
+     * @var Request $request
      */
-    public function lookup(
-        ?string $entityType, ?string $entityCode,
-        Request $request,
-        SerializerInterface $serializer,
-        ExpressionFactory $expressionFactory,
-        GraphiteBackend $tsBackend)
+    public function lookup(?string $entityType, ?string $entityCode, Request $request)
     {
         $env = new Envelope('signals',
                             'query',
                             [
-                                new RequestParameter('from', RequestParameter::STRING, null, true),
-                                new RequestParameter('until', RequestParameter::STRING, null, true),
+                                new RequestParameter('from', RequestParameter::INTEGER, null, true),
+                                new RequestParameter('until', RequestParameter::INTEGER, null, true),
                                 new RequestParameter('datasource', RequestParameter::STRING, null, false),
                                 new RequestParameter('maxPoints', RequestParameter::INTEGER, null, false),
+                                new RequestParameter('noinflux', RequestParameter::BOOL, false, false),
                             ],
                             $request
         );
@@ -322,63 +244,45 @@ class TimeseriesController extends ApiController
         /* LOCAL PARAM PARSING */
         $from = $env->getParam('from');
         $until = $env->getParam('until');
-        $datasource = $env->getParam('datasource');
+        $datasource_str = $env->getParam('datasource');
         $maxPoints = $env->getParam('maxPoints');
         $metas = $this->metadataService->lookup($entityType, $entityCode);
 
         try{
-            $this->sanitizeInputs($from, $until, $datasource, $metas);
-        } catch (\InvalidArgumentException $ex) {
+            $from = new QueryTime($from);
+            $until = new QueryTime($until);
+            $this->validateUserInputs($from, $until, $datasource_str, $metas);
+            $entity = $metas[0];
+        } catch (InvalidArgumentException $ex) {
             $env->setError($ex->getMessage());
             return $this->json($env, 400);
         }
 
-
-        /* BUILD EXPRESSIONS BASED ON ENTITY TYPE AND CODE */
-        $jsons = $this->buildExpression($metas[0], $datasource);
-        $exps = [];
-        foreach($jsons as &$json){
-            $exps[] = $expressionFactory->createFromJson($json);
+        // convert datasource id string to datasource objects array
+        $datasource_array = [];
+        if($datasource_str == null){
+            $datasource_array = $this->datasourceService->getAllDatasources();
+        } else {
+            $datasource_array[] = $this->datasourceService->getDatasource($datasource_str);
         }
 
-        /* QUERY TIMESERIES GRAPHITE BACKEND */
-        try {
-            $tss = $tsBackend->tsQuery(
-                $exps,
-                $from,
-                $until,
-                'avg',   // aggrFunc
-                false,  // annotate
-                true,   // adaptiveDownsampling
-                false   // checkPathWhitelist
-            );
+        // prepare TimeSeriesSet object
+        $ts_set = new TimeSeriesSet();
+        $ts_set->setMetadataEntity($entity);
+
+        // execute queries based on the datasources' defined backends
+        try{
+            foreach($datasource_array as $datasource){
+                $ts = $this->signalsService->queryForTimeSeries($from, $until, $entity, $datasource, $maxPoints);
+                $ts->sanityCheckValues();
+                $ts_set->addOneSeries($ts);
+            }
         } catch (BackendException $ex) {
             $env->setError($ex->getMessage());
-            // TODO: check HTTP error codes used
-            //
             return $this->json($env, 400);
         }
 
-        // TODO: sanity check timeseries data points
-        $this->dataSanityCheck($tss);
-        $tss->setMetadataEntity($metas[0]);
-        $env->setData($tss);
-        // $env->setData(array_values($tss->getSeries()));
+        $env->setData($ts_set);
         return $this->json($env);
-    }
-
-    private function dataSanityCheck($tss){
-        foreach($tss->getSeries() as $datasource => $ts){
-            $step = $ts->getStep();
-            $values = $ts->getValues();
-
-            $from = $ts->getFrom()->getTimestamp();
-            $until = $ts->getUntil()->getTimestamp();
-            if(count($values)>0 && ($until-$from)/($step) != count($values)){
-                throw new \InvalidArgumentException(
-                    sprintf("wrong values count %d != (%d - %d) / %d", count($values), $until, $from, $step)
-                );
-            }
-        }
     }
 }

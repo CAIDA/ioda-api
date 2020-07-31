@@ -101,7 +101,7 @@ class DatasourcesController extends ApiController
 
         // $datasource is null, return all datasources
         if(!isset($datasource)){
-            $env->setData(array_values($datasourceService->getAllDatasources()));
+            $env->setData($datasourceService->getAllDatasources());
             return $this->json($env);
         }
 

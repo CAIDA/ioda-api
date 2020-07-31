@@ -36,7 +36,9 @@
 namespace App\TimeSeries\Backend;
 
 
-class BackendException extends \Exception
+use Exception;
+
+class BackendException extends Exception
 {
 
 }

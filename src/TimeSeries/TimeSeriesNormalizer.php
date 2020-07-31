@@ -35,8 +35,6 @@
 
 namespace App\TimeSeries;
 
-use App\TimeSeries\TimeSeriesSet;
-use App\TimeSeries\TimeSeriesNormalizer;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\ContextAwareNormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;

@@ -43,14 +43,20 @@ class DatasourceEntity
 
     /**
      * Constructor
+     * @param string $datasource
+     * @param string $name
+     * @param string $units
+     * @param int $nativeStep
+     * @param string $backend
      */
-    public function __construct(string $datasource, string $name, string $units)
+    public function __construct(string $datasource, string $name, string $units, int $nativeStep, string $backend)
     {
         $this->datasource = $datasource;
         $this->name = $name;
         $this->units = $units;
+        $this->backend = $backend;
+        $this->nativeStep = $nativeStep;
     }
-
 
     //////////////////////////
     //////////////////////////
@@ -76,13 +82,23 @@ class DatasourceEntity
      */
     private $units;
 
+    /**
+     * Native step for this data source, in seconds.
+     * @var int
+     */
+    private $nativeStep;
+
+
+    /**
+     * @var string
+     */
+    private $backend;
 
     /////////////////////
     /////////////////////
     // GETTERS SETTERS //
     /////////////////////
     /////////////////////
-
 
     /**
      * @param string $datasource
@@ -138,4 +154,19 @@ class DatasourceEntity
         return $this;
     }
 
+    /**
+     * @return int
+     */
+    public function getNativeStep(): int
+    {
+        return $this->nativeStep;
+    }
+
+    /**
+     * @return string
+     */
+    public function getBackend(): string
+    {
+        return $this->backend;
+    }
 }

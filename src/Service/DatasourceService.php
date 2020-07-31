@@ -40,17 +40,40 @@ use App\Entity\Ioda\DatasourceEntity;
 class DatasourceService
 {
 
+    /**
+     * @var DatasourceEntity[]
+     */
+    private $DATASOURCES_ENTITIES;
+
     public function __construct()
     {
         $this->DATASOURCES_ENTITIES = [
-            "ucsd-nt" => new DatasourceEntity("ucsd-nt", "UCSD Network Telescope", "Unique Source IPs"),
-            "bgp" => new DatasourceEntity("bgp", "BGP", "Visible /24s"),
-            "ping-slash24" => new DatasourceEntity("ping-slash24", "Active Probing", "Up /24s"),
+            "ucsd-nt" => new DatasourceEntity(
+                "ucsd-nt",
+                "UCSD Network Telescope",
+                "Unique Source IPs",
+                60,
+                "influx"
+            ),
+            "bgp" => new DatasourceEntity(
+                "bgp",
+                "BGP",
+                "Visible /24s",
+                300,
+                "graphite"
+            ),
+            "ping-slash24" => new DatasourceEntity(
+                "ping-slash24",
+                "Active Probing",
+                "Up /24s",
+                600,
+                "graphite"
+            ),
         ];
     }
 
     public function getAllDatasources(){
-        return $this->DATASOURCES_ENTITIES;
+        return array_values($this->DATASOURCES_ENTITIES);
     }
 
     public function getDatasource(String $name){

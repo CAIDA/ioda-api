@@ -37,7 +37,6 @@ namespace App\TimeSeries;
 
 
 use App\Entity\Ioda\MetadataEntity;
-use App\Expression\AbstractExpression;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 class TimeSeriesSet
@@ -50,21 +49,14 @@ class TimeSeriesSet
     protected $series;
 
     /**
-     * @var TimeSeriesSummary
-     * @Groups("public")
-     */
-    protected $summary;
-
-    /**
      * @var MetadataEntity
      * @Groups("public")
      */
-    protected $matadataEntity;
+    protected $metadataEntity;
 
     public function __construct()
     {
         $this->series = [];
-        $this->summary = new TimeSeriesSummary();
     }
 
     /**
@@ -100,38 +92,11 @@ class TimeSeriesSet
     }
 
     /**
-     * @return TimeSeriesSummary
-     */
-    public function getSummary(): TimeSeriesSummary
-    {
-        return $this->summary;
-    }
-
-    /**
-     * @param TimeSeriesSummary $summary
-     */
-    public function setSummary(TimeSeriesSummary $summary): void
-    {
-        $this->summary = $summary;
-    }
-
-    /**
      * @param TimeSeries $series
      */
     public function addOneSeries(TimeSeries $series): void
     {
-        $this->series[$series->getExpression()->getCanonicalStr()] = $series;
-    }
-
-    /**
-     * Gets a series based on its expression
-     *
-     * @param AbstractExpression $expression
-     * @return TimeSeries
-     */
-    public function getSeriesByExpression(AbstractExpression $expression): TimeSeries
-    {
-        return $this->series[$expression->getCanonicalStr()];
+        $this->series[$series->getDatasource()] = $series;
     }
 
     /**
