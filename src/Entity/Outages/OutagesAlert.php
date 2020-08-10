@@ -181,60 +181,6 @@ class OutagesAlert
     /**
      * @return string
      */
-    public function getExpression(): string
-    {
-        return $this->expression;
-    }
-
-    /**
-     * @param string $expression
-     * @return OutagesAlert
-     */
-    public function setExpression(string $expression): OutagesAlert
-    {
-        $this->expression = $expression;
-        return $this;
-    }
-
-    /**
-     * @return string
-     */
-    public function getQueryExpression(): string
-    {
-        return $this->queryExpression;
-    }
-
-    /**
-     * @param string $queryExpression
-     * @return OutagesAlert
-     */
-    public function setQueryExpression(string $queryExpression): OutagesAlert
-    {
-        $this->queryExpression = $queryExpression;
-        return $this;
-    }
-
-    /**
-     * @return string
-     */
-    public function getHistoryQueryExpression(): string
-    {
-        return $this->historyQueryExpression;
-    }
-
-    /**
-     * @param string $historyQueryExpression
-     * @return OutagesAlert
-     */
-    public function setHistoryQueryExpression(string $historyQueryExpression): OutagesAlert
-    {
-        $this->historyQueryExpression = $historyQueryExpression;
-        return $this;
-    }
-
-    /**
-     * @return string
-     */
     public function getCondition(): ?string
     {
         return $this->condition;
@@ -409,27 +355,6 @@ class OutagesAlert
      * @var string
      */
     private $method;
-
-    /**
-     * @ORM\Column(type="string")
-     * @Groups({"public"})
-     * @var string
-     */
-    private $expression;
-
-    /**
-     * @ORM\Column(type="string")
-     * @Groups({"public"})
-     * @var string
-     */
-    private $queryExpression;
-
-    /**
-     * @ORM\Column(type="string")
-     * @Groups({"public"})
-     * @var string
-     */
-    private $historyQueryExpression;
 
     /**
      * @ORM\Column(type="string")
