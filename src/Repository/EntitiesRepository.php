@@ -75,6 +75,61 @@ class EntitiesRepository extends ServiceEntityRepository
      */
     public function findMetadata($type=null, $code=null, $name=null, $limit=null, $wildcard=false)
     {
+        $em = $this->getEntityManager();
+        $rsm = new ResultSetMappingBuilder($em, ResultSetMappingBuilder::COLUMN_RENAMING_INCREMENT);
+        $rsm->addRootEntityFromClassMetadata('App\Entity\Ioda\MetadataEntity', 'm');
+
+        $parameters = array_filter(
+            [
+                (!empty($type) ? 'LOWER(mt.type) = LOWER(:type)' : null),
+                (!empty($code) ? 'LOWER(m.code) ILIKE :wcode' : null),
+                (!empty($name) ? 'LOWER(m.name) ILIKE :wname' : null),
+            ]
+        );
+
+        $sql = 'SELECT ' . $rsm->generateSelectClause() . '
+            FROM
+                mddb_entity m
+                INNER JOIN mddb_entity_type mt ON m.type_id = mt.id'
+            . (!empty($parameters) ? ' WHERE ' . implode(' AND ', $parameters) : '')
+            . (!empty($name) ? ' ORDER BY 
+            CASE
+            WHEN LOWER(m.code) = LOWER(:name) THEN 1
+            WHEN LOWER(m.name) = LOWER(:name) THEN 2
+            WHEN mt.type ILIKE :country  THEN 3
+            WHEN mt.type ILIKE :region  THEN 4
+            END ASC, m.name
+            ': '' )
+            . (($limit) ? ' LIMIT ' . $limit: '');
+
+        $q = $em->createNativeQuery($sql, $rsm)
+            ->setParameters([
+                'type' => $type,
+                'wcode' => (!empty($wildcard) ? '%'.$code.'%' : $code),
+                'wname' => (!empty($wildcard) ? '%'.$name.'%' : $name),
+                'name' => $name,
+                'country' => 'country',
+                'region' => 'region',
+            ]);
+
+        $res = $q->getResult();
+
+        // force results to never look up related entities
+        // this effectively disables the getRelationships method
+        /** @var $prop \ReflectionProperty */
+        $prop = $this->getClassMetadata()->reflFields["relationships"];
+        foreach ($res as &$entity) {
+            $prop->getValue($entity)->setInitialized(true);
+        }
+
+        return $res;
+    }
+
+    /**
+     * Return a sets of entities
+     */
+    public function findMetadataBackup($type=null, $code=null, $name=null, $limit=null, $wildcard=false)
+    {
         $qb = $this->createQueryBuilder('m')
             ->innerJoin('m.type', 't');
 
@@ -96,6 +151,12 @@ class EntitiesRepository extends ServiceEntityRepository
         if ($limit) {
             $qb->setMaxResults($limit);
         }
+
+        if (!$code && $name){
+            $qb->addOrderBy('m.code', 'ASC');
+            // $qb->orderBy('m.code = :name, m.name')->setParameter('name', $name);
+        }
+        echo $qb->getQuery()->getSQL();
 
         $res = $qb->getQuery()->getResult();
 
