@@ -126,52 +126,6 @@ class EntitiesRepository extends ServiceEntityRepository
     }
 
     /**
-     * Return a sets of entities
-     */
-    public function findMetadataBackup($type=null, $code=null, $name=null, $limit=null, $wildcard=false)
-    {
-        $qb = $this->createQueryBuilder('m')
-            ->innerJoin('m.type', 't');
-
-        if (!empty($type)) {
-            $qb->andWhere('t.type = :type')->setParameter('type', $type);
-        }
-        if (!empty($code)) {
-            if ($wildcard) {
-                $code = '%'.$code.'%';
-            }
-            $qb->andWhere('LOWER(m.code) LIKE LOWER(:code)')->setParameter('code', $code);
-        }
-        if (!empty($name)) {
-            if ($wildcard) {
-                $name = '%'.$name.'%';
-            }
-            $qb->andWhere('LOWER(m.name) LIKE LOWER(:name)')->setParameter('name', $name);
-        }
-        if ($limit) {
-            $qb->setMaxResults($limit);
-        }
-
-        if (!$code && $name){
-            $qb->addOrderBy('m.code', 'ASC');
-            // $qb->orderBy('m.code = :name, m.name')->setParameter('name', $name);
-        }
-        echo $qb->getQuery()->getSQL();
-
-        $res = $qb->getQuery()->getResult();
-
-        // force results to never look up related entities
-        // this effectively disables the getRelationships method
-        /** @var $prop \ReflectionProperty */
-        $prop = $this->getClassMetadata()->reflFields["relationships"];
-        foreach ($res as &$entity) {
-            $prop->getValue($entity)->setInitialized(true);
-        }
-
-        return $res;
-    }
-
-    /**
      * Return all relationships between two sets of entities along with the entities that have the relationships
      */
     public function findRelationships($type=null, $code=null, $relatedType=null, $relatedCode=null, $limit=null)
