@@ -75,29 +75,44 @@ class EntitiesRepository extends ServiceEntityRepository
      */
     public function findMetadata($type=null, $code=null, $name=null, $limit=null, $wildcard=false)
     {
-        $qb = $this->createQueryBuilder('m')
-            ->innerJoin('m.type', 't');
+        $em = $this->getEntityManager();
+        $rsm = new ResultSetMappingBuilder($em, ResultSetMappingBuilder::COLUMN_RENAMING_INCREMENT);
+        $rsm->addRootEntityFromClassMetadata('App\Entity\Ioda\MetadataEntity', 'm');
 
-        if (!empty($type)) {
-            $qb->andWhere('t.type = :type')->setParameter('type', $type);
-        }
-        if (!empty($code)) {
-            if ($wildcard) {
-                $code = '%'.$code.'%';
-            }
-            $qb->andWhere('LOWER(m.code) LIKE LOWER(:code)')->setParameter('code', $code);
-        }
-        if (!empty($name)) {
-            if ($wildcard) {
-                $name = '%'.$name.'%';
-            }
-            $qb->andWhere('LOWER(m.name) LIKE LOWER(:name)')->setParameter('name', $name);
-        }
-        if ($limit) {
-            $qb->setMaxResults($limit);
-        }
+        $parameters = array_filter(
+            [
+                (!empty($type) ? 'LOWER(mt.type) = LOWER(:type)' : null),
+                (!empty($code) ? 'LOWER(m.code) ILIKE :wcode' : null),
+                (!empty($name) ? 'LOWER(m.name) ILIKE :wname' : null),
+            ]
+        );
 
-        $res = $qb->getQuery()->getResult();
+        $sql = 'SELECT ' . $rsm->generateSelectClause() . '
+            FROM
+                mddb_entity m
+                INNER JOIN mddb_entity_type mt ON m.type_id = mt.id'
+            . (!empty($parameters) ? ' WHERE ' . implode(' AND ', $parameters) : '')
+            . (!empty($name) ? ' ORDER BY 
+            CASE
+            WHEN LOWER(m.code) = LOWER(:name) THEN 1
+            WHEN LOWER(m.name) = LOWER(:name) THEN 2
+            WHEN mt.type ILIKE :country  THEN 3
+            WHEN mt.type ILIKE :region  THEN 4
+            END ASC, m.name
+            ': '' )
+            . (($limit) ? ' LIMIT ' . $limit: '');
+
+        $q = $em->createNativeQuery($sql, $rsm)
+            ->setParameters([
+                'type' => $type,
+                'wcode' => (!empty($wildcard) ? '%'.$code.'%' : $code),
+                'wname' => (!empty($wildcard) ? '%'.$name.'%' : $name),
+                'name' => $name,
+                'country' => 'country',
+                'region' => 'region',
+            ]);
+
+        $res = $q->getResult();
 
         // force results to never look up related entities
         // this effectively disables the getRelationships method
