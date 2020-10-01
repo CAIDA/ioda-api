@@ -70,11 +70,11 @@ class EntitiesRepository extends ServiceEntityRepository
         $parameters = array_filter(
             [
                 'm.code != :unknown',
-                (!empty($type) ? 'mt.type = :type' : null),
-                (!empty($code) ? 'm.code = :code' : null),
+                (!empty($type) ? 'mt.type ILIKE :type' : null),
+                (!empty($code) ? 'm.code ILIKE :code' : null),
                 (!empty($name) ? 'm.name ILIKE :name' : null),
-                (!empty($relatedType) ? 'omt.type = :relatedType' : null),
-                (!empty($relatedCode) ? 'om.code = :relatedCode' : null),
+                (!empty($relatedType) ? 'omt.type ILIKE :relatedType' : null),
+                (!empty($relatedCode) ? 'om.code ILIKE :relatedCode' : null),
             ]
         );
 
