@@ -246,7 +246,7 @@ class SignalsController extends ApiController
         $until = $env->getParam('until');
         $datasource_str = $env->getParam('datasource');
         $maxPoints = $env->getParam('maxPoints');
-        $metas = $this->metadataService->lookup($entityType, $entityCode);
+        $metas = $this->metadataService->search($entityType, $entityCode);
 
         try{
             $from = new QueryTime($from);
