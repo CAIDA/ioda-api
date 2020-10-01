@@ -50,30 +50,18 @@ class EntitiesRepository extends ServiceEntityRepository
     }
 
     /**
-     * Return name of a unique entity
-     */
-    public function findName($type, $code)
-    {
-        $qb = $this->createQueryBuilder('m')
-            ->innerJoin('m.type', 't')
-            ->setMaxResults(1);
-
-        $qb->andWhere('t.type = :type')->setParameter('type', $type);
-        $qb->andWhere('m.code = :code')->setParameter('code', $code);
-
-        $q = $qb->getQuery();
-
-        $q->useResultCache(true, self::METADATA_DATA_CACHE_TIMEOUT, 'metadata.entity.name');
-
-        $entities = $q->getResult();
-        return empty($entities) ? null : $entities[0];
-        // return empty($entities) ? null : $entities[0]->getName();
-    }
-
-    /**
      * Return a sets of entities
+     * @param null $type
+     * @param null $code
+     * @param null $name
+     * @param null $relatedType
+     * @param null $relatedCode
+     * @param null $limit
+     * @param bool $wildcard
+     * @return int|mixed|string
      */
-    public function findMetadata($type=null, $code=null, $name=null, $limit=null, $wildcard=false)
+    public function findMetadata($type=null, $code=null, $name=null, $limit=null, $wildcard=false,
+                                 $relatedType=null, $relatedCode=null)
     {
         $em = $this->getEntityManager();
         $rsm = new ResultSetMappingBuilder($em, ResultSetMappingBuilder::COLUMN_RENAMING_INCREMENT);
@@ -81,16 +69,26 @@ class EntitiesRepository extends ServiceEntityRepository
 
         $parameters = array_filter(
             [
-                (!empty($type) ? 'LOWER(mt.type) = LOWER(:type)' : null),
-                (!empty($code) ? 'LOWER(m.code) ILIKE :wcode' : null),
-                (!empty($name) ? 'LOWER(m.name) ILIKE :wname' : null),
+                'm.code != :unknown',
+                (!empty($type) ? 'mt.type = :type' : null),
+                (!empty($code) ? 'm.code = :code' : null),
+                (!empty($name) ? 'm.name ILIKE :name' : null),
+                (!empty($relatedType) ? 'omt.type = :relatedType' : null),
+                (!empty($relatedCode) ? 'om.code = :relatedCode' : null),
             ]
         );
 
-        $sql = 'SELECT ' . $rsm->generateSelectClause() . '
+        $sql =
+            'WITH entities AS ('
+            .
+            'SELECT ' . $rsm->generateSelectClause() . '
             FROM
                 mddb_entity m
-                INNER JOIN mddb_entity_type mt ON m.type_id = mt.id'
+                INNER JOIN mddb_entity_type mt ON m.type_id = mt.id
+                INNER JOIN mddb_entity_relationship r ON m.id = r.from_id
+                INNER JOIN mddb_entity om ON om.id = r.to_id
+                INNER JOIN mddb_entity_type omt ON om.type_id = omt.id
+                '
             . (!empty($parameters) ? ' WHERE ' . implode(' AND ', $parameters) : '')
             . (!empty($name) ? ' ORDER BY 
             CASE
@@ -100,16 +98,21 @@ class EntitiesRepository extends ServiceEntityRepository
             WHEN mt.type ILIKE :region  THEN 4
             END ASC, m.name
             ': '' )
+            . ')
+            SELECT * from entities
+            '
             . (($limit) ? ' LIMIT ' . $limit: '');
 
         $q = $em->createNativeQuery($sql, $rsm)
             ->setParameters([
+                'unknown' => '??',
                 'type' => $type,
-                'wcode' => (!empty($wildcard) ? '%'.$code.'%' : $code),
-                'wname' => (!empty($wildcard) ? '%'.$name.'%' : $name),
-                'name' => $name,
+                'code' => $code,
+                'name' => (!empty($wildcard) ? '%'.$name.'%' : $name),
                 'country' => 'country',
                 'region' => 'region',
+                'relatedType' => $relatedType,
+                'relatedCode' => $relatedCode,
             ]);
 
         $res = $q->getResult();
@@ -120,56 +123,6 @@ class EntitiesRepository extends ServiceEntityRepository
         $prop = $this->getClassMetadata()->reflFields["relationships"];
         foreach ($res as &$entity) {
             $prop->getValue($entity)->setInitialized(true);
-        }
-
-        return $res;
-    }
-
-    /**
-     * Return all relationships between two sets of entities along with the entities that have the relationships
-     */
-    public function findRelationships($type=null, $code=null, $relatedType=null, $relatedCode=null, $limit=null)
-    {
-        $em = $this->getEntityManager();
-
-        $rsm = new ResultSetMappingBuilder($em, ResultSetMappingBuilder::COLUMN_RENAMING_INCREMENT);
-        $rsm->addRootEntityFromClassMetadata('App\Entity\Ioda\MetadataEntity', 'm');
-        $rsm->addJoinedEntityFromClassMetadata('App\Entity\Ioda\MetadataEntity', 'om', 'm', 'relationships');
-
-        $parameters = array_filter(
-            [
-                (!empty($relatedType) ? 'mt.type = :relatedType' : null),
-                (!empty($relatedCode) ? 'm.code = :relatedCode' : null),
-                (!empty($type) ? 'omt.type = :type' : null),
-                (!empty($code) ? 'om.code = :code' : null),
-            ]
-        );
-        $sql = 'SELECT ' . $rsm->generateSelectClause() . '
-            FROM
-                mddb_entity m
-                INNER JOIN mddb_entity_type mt ON m.type_id = mt.id
-                INNER JOIN mddb_entity_relationship r ON m.id = r.from_id
-                INNER JOIN mddb_entity om ON om.id = r.to_id
-                INNER JOIN mddb_entity_type omt ON om.type_id = omt.id'
-            . (!empty($parameters) ? ' WHERE ' . implode(' AND ', $parameters) : '')
-            . (($limit) ? ' LIMIT ' . $limit: '');
-
-        $q = $em->createNativeQuery($sql, $rsm)
-            ->setParameters([
-                'type' => $type,
-                'code' => $code,
-                'relatedType' => $relatedType,
-                'relatedCode' => $relatedCode,
-            ]);
-
-        $res = $q->getResult();
-
-        // force related entities to never resolve *their* relations
-        /** @var $prop \ReflectionProperty */
-        $prop = $this->getClassMetadata()->reflFields["relationships"];
-        foreach ($res as &$o) {
-            foreach ($o->getRelationships() as &$om)
-                $prop->getValue($om)->setInitialized(true);
         }
 
         return $res;

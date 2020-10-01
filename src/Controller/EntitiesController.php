@@ -149,14 +149,23 @@ class EntitiesController extends ApiController
         $search = $env->getParam('search');
         $relatedTo = $env->getParam('relatedTo');
         $limit = $env->getParam('limit');
+        /*
         if($search){
             $entity = $service->search($entityType, null, $search, $limit, true);
             $env->setData($entity);
             return $this->json($env);
         }
-
+        */
         try {
+            if(!empty($entityCode) && (!empty($search)||!empty($relatedTo))){
+                // both entity type and code are provided, there is no search available
+                throw new \InvalidArgumentException(
+                    "entity type and code provided, no search or relatedTo can be used"
+                );
+            }
+
             if ($relatedTo) {
+                // sanity-checking related field
                 $relatedTo = explode('/', $relatedTo);
                 if (count($relatedTo) > 2) {
                     throw new \InvalidArgumentException(
@@ -169,12 +178,13 @@ class EntitiesController extends ApiController
             } else {
                 $relatedTo = [null, null];
             }
+
         } catch (\InvalidArgumentException $ex) {
             $env->setError($ex->getMessage());
             return $this->json($env, 400);
         }
-
-        $entity = $service->lookup($entityType, $entityCode, $relatedTo[0], $relatedTo[1], $limit);
+        $entity = $service->search($entityType, $entityCode, $search, $limit, true, $relatedTo[0], $relatedTo[1]);
+        // $entity = $service->lookup($entityType, $entityCode, $relatedTo[0], $relatedTo[1], $limit);
         $env->setData($entity);
         return $this->json($env);
     }
