@@ -72,7 +72,7 @@ class EntitiesRepository extends ServiceEntityRepository
                 'm.code != :unknown',
                 (!empty($type) ? 'mt.type ILIKE :type' : null),
                 (!empty($code) ? 'm.code ILIKE :code' : null),
-                (!empty($name) ? 'm.name ILIKE :name' : null),
+                (!empty($name) ? 'm.name ILIKE :wildcard_name' : null),
                 (!empty($relatedType) ? 'omt.type ILIKE :relatedType' : null),
                 (!empty($relatedCode) ? 'om.code ILIKE :relatedCode' : null),
             ]
@@ -85,9 +85,6 @@ class EntitiesRepository extends ServiceEntityRepository
             FROM
                 mddb_entity m
                 INNER JOIN mddb_entity_type mt ON m.type_id = mt.id
-                INNER JOIN mddb_entity_relationship r ON m.id = r.from_id
-                INNER JOIN mddb_entity om ON om.id = r.to_id
-                INNER JOIN mddb_entity_type omt ON om.type_id = omt.id
                 '
             . (!empty($parameters) ? ' WHERE ' . implode(' AND ', $parameters) : '')
             . (!empty($name) ? ' ORDER BY 
@@ -108,7 +105,8 @@ class EntitiesRepository extends ServiceEntityRepository
                 'unknown' => '??',
                 'type' => $type,
                 'code' => $code,
-                'name' => (!empty($wildcard) ? '%'.$name.'%' : $name),
+                'name' => $name,
+                'wildcard_name' => (!empty($wildcard) ? '%'.$name.'%' : $name),
                 'country' => 'country',
                 'region' => 'region',
                 'relatedType' => $relatedType,
