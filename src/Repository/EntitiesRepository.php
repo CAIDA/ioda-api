@@ -85,6 +85,9 @@ class EntitiesRepository extends ServiceEntityRepository
             FROM
                 mddb_entity m
                 INNER JOIN mddb_entity_type mt ON m.type_id = mt.id
+                INNER JOIN mddb_entity_relationship r ON m.id = r.from_id
+                INNER JOIN mddb_entity om ON om.id = r.to_id
+                INNER JOIN mddb_entity_type omt ON om.type_id = omt.id
                 '
             . (!empty($parameters) ? ' WHERE ' . implode(' AND ', $parameters) : '')
             . (!empty($name) ? ' ORDER BY 
