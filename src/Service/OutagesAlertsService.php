@@ -127,7 +127,7 @@ class OutagesAlertsService
             // TODO: eventually, find a way to let doctrine to the work.
             $type = $alert->getMetaType();
             $code = $alert->getMetaCode();
-            $metas = $this->metadataService->lookup($type, $code);
+            $metas = $this->metadataService->search($type, $code);
             if(count($metas)==0){
                 continue;
             }
