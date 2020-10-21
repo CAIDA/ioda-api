@@ -79,16 +79,16 @@ class EntitiesRepository extends ServiceEntityRepository
         );
 
         $sql =
-            'WITH entities AS ('
-            .
             'SELECT ' . $rsm->generateSelectClause() . '
             FROM
                 mddb_entity m
                 INNER JOIN mddb_entity_type mt ON m.type_id = mt.id
+                '
+            .(!empty($relatedType)? '
                 INNER JOIN mddb_entity_relationship r ON m.id = r.from_id
                 INNER JOIN mddb_entity om ON om.id = r.to_id
                 INNER JOIN mddb_entity_type omt ON om.type_id = omt.id
-                '
+                ': '')
             . (!empty($parameters) ? ' WHERE ' . implode(' AND ', $parameters) : '')
             . (!empty($name) ? ' ORDER BY 
             CASE
@@ -98,10 +98,8 @@ class EntitiesRepository extends ServiceEntityRepository
             WHEN mt.type ILIKE :region  THEN 4
             END ASC, m.name
             ': '' )
-            . ')
-            SELECT * from entities
-            '
             . (($limit) ? ' LIMIT ' . $limit: '');
+        ;
 
         $q = $em->createNativeQuery($sql, $rsm)
             ->setParameters([
