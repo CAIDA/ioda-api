@@ -210,6 +210,12 @@ class OutagesEventsService
             $scores = $this->computeScores($eventmap);
             $res[] = new OutagesSummary($scores, $alerts[0]->getEntity());
         }
+
+        usort($res,
+            function ($a, $b) {
+                return ($a->getScores()["overall"] < $b->getScores()["overall"] );
+            }
+        );
         if ($limit) {
             $res = array_slice($res, $limit*$page, $limit);
         }
