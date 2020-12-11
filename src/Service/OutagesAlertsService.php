@@ -36,6 +36,8 @@
 namespace App\Service;
 
 
+use App\Entity\Ioda\MetadataEntity;
+use App\Entity\Ioda\MetadataEntityType;
 use App\Entity\Outages\OutagesAlert;
 use App\Repository\OutagesAlertsRepository;
 
@@ -110,11 +112,12 @@ class OutagesAlertsService
      * @param $entityType
      * @param $entityCode
      * @param $datasource
-     * @param $limit
-     * @param $page
+     * @param null $limit
+     * @param int $page
+     * @param bool $lookup_entity
      * @return OutagesAlert[]
      */
-    public function findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit=null, $page=0)
+    public function findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit=null, $page=0, $lookup_entity=true)
     {
         // find alerts, already sorted by time
         $alerts = $this->repo->findAlerts($from, $until, $entityType, $entityCode, $datasource);
@@ -122,22 +125,33 @@ class OutagesAlertsService
         // squash alerts
         $alerts = $this->squashAlerts($alerts);
 
+        if ($limit) {
+            // paginate
+            $alerts = array_slice($alerts, $limit*$page, $limit);
+        }
+
         $res = [];
         foreach($alerts as &$alert){
             // TODO: eventually, find a way to let doctrine to the work.
             $type = $alert->getMetaType();
             $code = $alert->getMetaCode();
-            $metas = $this->metadataService->search($type, $code);
-            if(count($metas)==0){
-                continue;
+            if($lookup_entity){
+                $metas = $this->metadataService->search($type, $code);
+                if(count($metas)!=1){
+                    continue;
+                }
+                $alert->setEntity($metas[0]);
+            } else {
+                $entity = new MetadataEntity();
+                $entity_type = new MetadataEntityType();
+                $entity_type->setType($type);
+                $entity->setType($entity_type);
+                $entity->setCode($code);
+                // $entity->setName("unknown");
+                $alert->setEntity($entity);
             }
-            $alert->setEntity($metas[0]);
             $alert->setDatasource($this->datasourceService->fqidToDatasourceName($alert->getFqid()));
             $res[] = $alert;
-        }
-
-        if ($limit) {
-            $res = array_slice($res, $limit*$page, $limit);
         }
 
         return $res;

@@ -67,10 +67,25 @@ class OutagesController extends ApiController
     }
 
     private $datasourceService;
+    private $metadataEntitiesService;
 
-    public function __construct(DatasourceService $datasourceService){
+    public function __construct(DatasourceService $datasourceService,
+    MetadataEntitiesService $metadataEntitiesService
+    ){
         $this->datasourceService = $datasourceService;
+        $this->metadataEntitiesService = $metadataEntitiesService;
     }
+
+    private function refillEntity($object){
+        $entity = $object->getEntity();
+        if($entity->getName()==null){
+            $metas = $this->metadataEntitiesService->search($entity->getType()->getType(), $entity->getCode());
+            if(count($metas)==1){
+                $object->setEntity($metas[0]);
+            }
+        }
+    }
+
 
     private function sanitizeInputs($from, $until, $datasource, $format, $limit, $page){
         if(!isset($from)){
@@ -174,6 +189,14 @@ class OutagesController extends ApiController
      *     description="Page number of the alerts",
      *     required=false
      * )
+     * @SWG\Parameter(
+     *     name="includeMetadata",
+     *     in="query",
+     *     type="boolean",
+     *     description="Whether to include metadata. Including metadata could affect lookup performance and is not recommended if expecting more than 100 returned results",
+     *     default=false,
+     *     required=false
+     * )
      * @SWG\Response(
      *     response=200,
      *     description="Return an array of all data sources used by IODA",
@@ -251,6 +274,7 @@ class OutagesController extends ApiController
                 new RequestParameter('datasource', RequestParameter::STRING, null, false),
                 new RequestParameter('limit', RequestParameter::INTEGER, null, false),
                 new RequestParameter('page', RequestParameter::INTEGER, null, false),
+                new RequestParameter('includeMetadata', RequestParameter::BOOL, false, false),
             ],
             $request
         );
@@ -261,6 +285,7 @@ class OutagesController extends ApiController
         $datasource = $env->getParam('datasource');
         $limit = $env->getParam('limit');
         $page = $env->getParam('page');
+        $includeMetadata = $env->getParam('includeMetadata');
 
         /* SANTIY CHECKS */
         try {
@@ -270,7 +295,14 @@ class OutagesController extends ApiController
             return $this->json($env, 400);
         }
 
-        $alerts = $alertService->findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit, $page);
+        $alerts = $alertService->findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit, $page, false);
+
+        if($includeMetadata){
+            foreach($alerts as $alert){
+                $this->refillEntity($alert);
+            }
+        }
+
         $env->setData($alerts);
         return $this->json($env);
     }
@@ -340,6 +372,14 @@ class OutagesController extends ApiController
      *     in="query",
      *     type="integer",
      *     description="Page number of the events",
+     *     required=false
+     * )
+     * @SWG\Parameter(
+     *     name="includeMetadata",
+     *     in="query",
+     *     type="boolean",
+     *     description="Whether to include metadata. Including metadata could affect lookup performance and is not recommended if expecting more than 100 returned results",
+     *     default=false,
      *     required=false
      * )
      * @SWG\Response(
@@ -428,6 +468,7 @@ class OutagesController extends ApiController
                 new RequestParameter('until', RequestParameter::STRING, null, true),
                 new RequestParameter('datasource', RequestParameter::STRING, null, false),
                 new RequestParameter('includeAlerts', RequestParameter::BOOL, false, false),
+                new RequestParameter('includeMetadata', RequestParameter::BOOL, false, false),
                 new RequestParameter('format', RequestParameter::STRING, "codf", false),
                 new RequestParameter('limit', RequestParameter::INTEGER, null, false),
                 new RequestParameter('page', RequestParameter::INTEGER, null, false),
@@ -440,6 +481,7 @@ class OutagesController extends ApiController
         $until = $this->parseTimestampParameter($env->getParam('until'));
         $datasource = $env->getParam('datasource');
         $includeAlerts = $env->getParam('includeAlerts');
+        $includeMetadata = $env->getParam('includeMetadata');
         $format = $env->getParam('format');
         $limit = $env->getParam('limit');
         $page = $env->getParam('page');
@@ -453,8 +495,15 @@ class OutagesController extends ApiController
         }
 
         // build events
-        $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, $datasource);
+        $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, $datasource, false, null, false);
         $events = $eventsService->buildEventsSimple($alerts, $includeAlerts, $format, $from, $until, $limit, $page);
+
+        // if($includeMetadata){
+        //     foreach($events as $event){
+        //         $this->refillEntity($event);
+        //     }
+        // }
+
 
         $env->setData($events);
         return $this->json($env);
@@ -508,6 +557,14 @@ class OutagesController extends ApiController
      *     in="query",
      *     type="integer",
      *     description="Page number of the summaries",
+     *     required=false
+     * )
+     * @SWG\Parameter(
+     *     name="includeMetadata",
+     *     in="query",
+     *     type="boolean",
+     *     description="Whether to include metadata. Including metadata could affect lookup performance and is not recommended if expecting more than 100 returned results",
+     *     default=false,
      *     required=false
      * )
      * @SWG\Response(
@@ -583,6 +640,7 @@ class OutagesController extends ApiController
                 new RequestParameter('until', RequestParameter::STRING, null, true),
                 new RequestParameter('limit', RequestParameter::INTEGER, null, false),
                 new RequestParameter('page', RequestParameter::INTEGER, null, false),
+                new RequestParameter('includeMetadata', RequestParameter::BOOL, false, false),
             ],
             $request
         );
@@ -592,6 +650,7 @@ class OutagesController extends ApiController
         $until = $this->parseTimestampParameter($env->getParam('until'));
         $limit = $env->getParam('limit');
         $page = $env->getParam('page');
+        $includeMetadata = $env->getParam('includeMetadata');
 
         try {
             $this->sanitizeInputs($from, $until, null, null, $limit, $page);
@@ -600,8 +659,14 @@ class OutagesController extends ApiController
             return $this->json($env, 400);
         }
 
-        $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, null);
+        $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, null, null, null, false);
         $events = $eventsService->buildEventsSummary($alerts, $from, $until, $limit, $page);
+
+        if($includeMetadata){
+            foreach($events as $event){
+                $this->refillEntity($event);
+            }
+        }
 
         $env->setData($events);
         return $this->json($env);
