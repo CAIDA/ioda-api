@@ -99,6 +99,16 @@ class OutagesEvent
     }
 
     /**
+     * @param MetadataEntity $entity
+     * @return OutagesEvent
+     */
+    public function setEntity(MetadataEntity $entity): OutagesEvent
+    {
+        $this->entity = $entity;
+        return $this;
+    }
+
+    /**
      * @return int
      */
     public function getFrom(): int
