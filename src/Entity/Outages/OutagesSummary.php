@@ -77,7 +77,7 @@ class OutagesSummary
     /**
      * @return MetadataEntity
      */
-    public function getEntity(): MetadataEntity
+    public function getEntity(): ?MetadataEntity
     {
         return $this->entity;
     }
