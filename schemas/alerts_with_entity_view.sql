@@ -61,8 +61,10 @@ FROM (((((watchtower_alert a
     JOIN mddb_entity_type mt ON ((m.type_id = mt.id)))
     JOIN mddb_entity_relationship r ON ((m.id = r.from_id)))
     JOIN mddb_entity om ON ((om.id = r.to_id)))
-         JOIN mddb_entity_type omt ON ((om.type_id = omt.id)));
+         JOIN mddb_entity_type omt ON ((om.type_id = omt.id)))
+WHERE ((mt.type)::text = (a.meta_type)::text);
 
 ALTER TABLE public.alerts_with_entity_view
     OWNER TO charthouse;
+
 
