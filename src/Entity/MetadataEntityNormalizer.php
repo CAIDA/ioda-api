@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * This software is Copyright (c) 2013 The Regents of the University of
  * California. All Rights Reserved. Permission to copy, modify, and distribute this
  * software and its documentation for academic research and education purposes,
@@ -33,35 +33,38 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Service;
+namespace App\Entity;
 
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Serializer\Normalizer\ContextAwareNormalizerInterface;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 
-use App\Entity\MetadataEntity;
-use App\Repository\EntitiesRepository;
-
-class MetadataEntitiesService
+class MetadataEntityNormalizer implements ContextAwareNormalizerInterface
 {
-    /**
-     * @var EntitiesRepository
-     */
-    private $repo;
+    private $router;
+    private $normalizer;
 
-    public function __construct(EntitiesRepository $entitiesRepo)
+    public function __construct(UrlGeneratorInterface $router, ObjectNormalizer $normalizer)
     {
-        $this->repo = $entitiesRepo;
+        $this->router = $router;
+        $this->normalizer = $normalizer;
     }
 
-   /**
-     * TODO: deprecate this function, and merge with `lookup`
-     * @param $type
-     * @param null $code
-     * @param null $name
-     * @param integer $limit
-     * @param bool $wildcard
-     * @return MetadataEntity[]
-     */
-    public function search($type, $code = null, $name = null, $limit=null, $wildcard=false, $relatedType=null, $relatedCode=null)
+    public function normalize($entity, $format = null, array $context = [])
     {
-        return $this->repo->findMetadata($type, $code, $name, $limit, $wildcard, $relatedType, $relatedCode);
+        $data = $this->normalizer->normalize($entity, $format, $context);
+        $data["type"] = $data["type"]["type"];
+        $data["attrs"] = new \ArrayObject();
+        foreach($data["attributes"] as $d){
+            $data["attrs"][$d["key"]] = $d["value"];
+        }
+        unset($data["attributes"]);
+
+        return $data;
+    }
+
+    public function supportsNormalization($data, $format = null, array $context = [])
+    {
+        return $data instanceof MetadataEntity;
     }
 }

@@ -1,5 +1,4 @@
-<?php
-/**
+/*
  * This software is Copyright (c) 2013 The Regents of the University of
  * California. All Rights Reserved. Permission to copy, modify, and distribute this
  * software and its documentation for academic research and education purposes,
@@ -33,40 +32,39 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Entity\Outages;
+-- View: public.alerts_with_entity_view
 
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Serializer\Normalizer\ContextAwareNormalizerInterface;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+-- DROP VIEW public.alerts_with_entity_view;
 
-class OutagesAlertNormalizer implements ContextAwareNormalizerInterface
-{
-    private $router;
-    private $normalizer;
+CREATE OR REPLACE VIEW public.alerts_with_entity_view
+AS
+SELECT a.id,
+       a.fqid,
+       a.name,
+       a.query_time,
+       a.level,
+       a.method,
+       a.query_expression,
+       a.history_query_expression,
+       a."time",
+       a.expression,
+       a.condition,
+       a.value,
+       a.history_value,
+       a.meta_type,
+       a.meta_code,
+       m.id AS meta_id,
+       omt.type AS related_type,
+       om.code AS related_code
+FROM (((((watchtower_alert a
+    JOIN mddb_entity m ON (((a.meta_code)::text = (m.code)::text)))
+    JOIN mddb_entity_type mt ON ((m.type_id = mt.id)))
+    JOIN mddb_entity_relationship r ON ((m.id = r.from_id)))
+    JOIN mddb_entity om ON ((om.id = r.to_id)))
+         JOIN mddb_entity_type omt ON ((om.type_id = omt.id)))
+WHERE ((mt.type)::text = (a.meta_type)::text);
 
-    public function __construct(UrlGeneratorInterface $router, ObjectNormalizer $normalizer)
-    {
-        $this->router = $router;
-        $this->normalizer = $normalizer;
-    }
+ALTER TABLE public.alerts_with_entity_view
+    OWNER TO charthouse;
 
-    public function normalize($alert, $format = null, array $context = [])
-    {
-        $data = $this->normalizer->normalize($alert, $format, $context);
-        $res = array();
-        $res["datasource"]=$data["datasource"];
-        $res["entity"] = $data["entity"];
-        $res["time"] = $data["time"];
-        $res["level"] = $data["level"];
-        $res["condition"] = $data["condition"];
-        $res["value"] = $data["value"];
-        $res["historyValue"] = $data["historyValue"];
 
-        return $res;
-    }
-
-    public function supportsNormalization($data, $format = null, array $context = [])
-    {
-        return $data instanceof OutagesAlert;
-    }
-}

@@ -36,8 +36,8 @@
 namespace App\Service;
 
 
-use App\Entity\Outages\OutagesEvent;
-use App\Entity\Outages\OutagesSummary;
+use App\Entity\OutagesEvent;
+use App\Entity\OutagesSummary;
 use App\Repository\OutagesAlertsRepository;
 
 class OutagesEventsService

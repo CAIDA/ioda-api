@@ -35,7 +35,7 @@
 
 namespace App\Repository;
 
-use App\Entity\Ioda\MetadataEntity;
+use App\Entity\MetadataEntity;
 use Doctrine\ORM\Query\ResultSetMappingBuilder;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
@@ -65,7 +65,7 @@ class EntitiesRepository extends ServiceEntityRepository
     {
         $em = $this->getEntityManager();
         $rsm = new ResultSetMappingBuilder($em, ResultSetMappingBuilder::COLUMN_RENAMING_INCREMENT);
-        $rsm->addRootEntityFromClassMetadata('App\Entity\Ioda\MetadataEntity', 'm');
+        $rsm->addRootEntityFromClassMetadata('App\Entity\MetadataEntity', 'm');
 
         $parameters = array_filter(
             [

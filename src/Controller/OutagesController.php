@@ -36,7 +36,6 @@
 namespace App\Controller;
 
 use Swagger\Annotations as SWG;
-use App\Service\MetadataEntitiesService;
 use App\Service\OutagesAlertsService;
 use App\Service\DatasourceService;
 use App\Service\OutagesEventsService;
@@ -69,21 +68,8 @@ class OutagesController extends ApiController
     private $datasourceService;
     private $metadataEntitiesService;
 
-    public function __construct(DatasourceService $datasourceService,
-    MetadataEntitiesService $metadataEntitiesService
-    ){
+    public function __construct(DatasourceService $datasourceService){
         $this->datasourceService = $datasourceService;
-        $this->metadataEntitiesService = $metadataEntitiesService;
-    }
-
-    private function refillEntity($object){
-        $entity = $object->getEntity();
-        if($entity->getName()==null){
-            $metas = $this->metadataEntitiesService->search($entity->getType()->getType(), $entity->getCode());
-            if(count($metas)==1){
-                $object->setEntity($metas[0]);
-            }
-        }
     }
 
     private function parseRelatedTo(?string $relatedTo){
@@ -209,14 +195,6 @@ class OutagesController extends ApiController
      *     required=false
      * )
      * @SWG\Parameter(
-     *     name="includeMetadata",
-     *     in="query",
-     *     type="boolean",
-     *     description="Whether to include metadata. Including metadata could affect lookup performance and is not recommended if expecting more than 100 returned results",
-     *     default=false,
-     *     required=false
-     * )
-     * @SWG\Parameter(
      *     name="relatedTo",
      *     in="query",
      *     type="string",
@@ -250,7 +228,7 @@ class OutagesController extends ApiController
      *                          ),
      *                          @SWG\Property(
      *                              property="entity",
-     *                              ref=@Model(type=\App\Entity\Ioda\MetadataEntity::class, groups={"public"})
+     *                              ref=@Model(type=\App\Entity\MetadataEntity::class, groups={"public"})
      *                          ),
      *                          @SWG\Property(
      *                              property="time",
@@ -283,7 +261,6 @@ class OutagesController extends ApiController
      * @var string|null $entityCode
      * @var Request $request
      * @var SerializerInterface $serializer
-     * @var MetadataEntitiesService
      * @return JsonResponse
      */
     public function alerts(
@@ -300,7 +277,6 @@ class OutagesController extends ApiController
                 new RequestParameter('datasource', RequestParameter::STRING, null, false),
                 new RequestParameter('limit', RequestParameter::INTEGER, null, false),
                 new RequestParameter('page', RequestParameter::INTEGER, null, false),
-                new RequestParameter('includeMetadata', RequestParameter::BOOL, false, false),
                 new RequestParameter('relatedTo', RequestParameter::STRING, null, false),
             ],
             $request
@@ -312,7 +288,6 @@ class OutagesController extends ApiController
         $datasource = $env->getParam('datasource');
         $limit = $env->getParam('limit');
         $page = $env->getParam('page');
-        $includeMetadata = $env->getParam('includeMetadata');
         $relatedTo = $this->parseRelatedTo($env->getParam('relatedTo'));
 
         /* SANTIY CHECKS */
@@ -323,13 +298,7 @@ class OutagesController extends ApiController
             return $this->json($env, 400);
         }
 
-        $alerts = $alertService->findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit, $page, false, $relatedTo[0], $relatedTo[1]);
-
-        if($includeMetadata){
-            foreach($alerts as $alert){
-                $this->refillEntity($alert);
-            }
-        }
+        $alerts = $alertService->findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit, $page, $relatedTo[0], $relatedTo[1]);
 
         $env->setData($alerts);
         return $this->json($env);
@@ -400,14 +369,6 @@ class OutagesController extends ApiController
      *     in="query",
      *     type="integer",
      *     description="Page number of the events",
-     *     required=false
-     * )
-     * @SWG\Parameter(
-     *     name="includeMetadata",
-     *     in="query",
-     *     type="boolean",
-     *     description="Whether to include metadata. Including metadata could affect lookup performance and is not recommended if expecting more than 100 returned results",
-     *     default=false,
      *     required=false
      * )
      * @SWG\Parameter(
@@ -503,7 +464,6 @@ class OutagesController extends ApiController
                 new RequestParameter('until', RequestParameter::STRING, null, true),
                 new RequestParameter('datasource', RequestParameter::STRING, null, false),
                 new RequestParameter('includeAlerts', RequestParameter::BOOL, false, false),
-                new RequestParameter('includeMetadata', RequestParameter::BOOL, false, false),
                 new RequestParameter('format', RequestParameter::STRING, "codf", false),
                 new RequestParameter('limit', RequestParameter::INTEGER, null, false),
                 new RequestParameter('page', RequestParameter::INTEGER, null, false),
@@ -517,7 +477,6 @@ class OutagesController extends ApiController
         $until = $this->parseTimestampParameter($env->getParam('until'));
         $datasource = $env->getParam('datasource');
         $includeAlerts = $env->getParam('includeAlerts');
-        $includeMetadata = $env->getParam('includeMetadata');
         $format = $env->getParam('format');
         $limit = $env->getParam('limit');
         $page = $env->getParam('page');
@@ -532,15 +491,8 @@ class OutagesController extends ApiController
         }
 
         // build events
-        $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, $datasource, false, null, false, $relatedTo[0], $relatedTo[1]);
+        $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, $datasource, false, null, $relatedTo[0], $relatedTo[1]);
         $events = $eventsService->buildEventsSimple($alerts, $includeAlerts, $format, $from, $until, $limit, $page);
-
-        // if($includeMetadata){
-        //     foreach($events as $event){
-        //         $this->refillEntity($event);
-        //     }
-        // }
-
 
         $env->setData($events);
         return $this->json($env);
@@ -597,14 +549,6 @@ class OutagesController extends ApiController
      *     required=false
      * )
      * @SWG\Parameter(
-     *     name="includeMetadata",
-     *     in="query",
-     *     type="boolean",
-     *     description="Whether to include metadata. Including metadata could affect lookup performance and is not recommended if expecting more than 100 returned results",
-     *     default=false,
-     *     required=false
-     * )
-     * @SWG\Parameter(
      *     name="relatedTo",
      *     in="query",
      *     type="string",
@@ -654,7 +598,7 @@ class OutagesController extends ApiController
      *                          ),
      *                          @SWG\Property(
      *                              property="entity",
-     *                              ref=@Model(type=\App\Entity\Ioda\MetadataEntity::class, groups={"public"})
+     *                              ref=@Model(type=\App\Entity\MetadataEntity::class, groups={"public"})
      *                          )
      *                     )
      *                 )
@@ -684,7 +628,6 @@ class OutagesController extends ApiController
                 new RequestParameter('until', RequestParameter::STRING, null, true),
                 new RequestParameter('limit', RequestParameter::INTEGER, null, false),
                 new RequestParameter('page', RequestParameter::INTEGER, null, false),
-                new RequestParameter('includeMetadata', RequestParameter::BOOL, false, false),
                 new RequestParameter('relatedTo', RequestParameter::STRING, null, false),
             ],
             $request
@@ -695,7 +638,6 @@ class OutagesController extends ApiController
         $until = $this->parseTimestampParameter($env->getParam('until'));
         $limit = $env->getParam('limit');
         $page = $env->getParam('page');
-        $includeMetadata = $env->getParam('includeMetadata');
         $relatedTo = $this->parseRelatedTo($env->getParam('relatedTo'));
 
         try {
@@ -705,14 +647,8 @@ class OutagesController extends ApiController
             return $this->json($env, 400);
         }
 
-        $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, null, null, null, false, $relatedTo[0], $relatedTo[1]);
+        $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, null, null, null, $relatedTo[0], $relatedTo[1]);
         $events = $eventsService->buildEventsSummary($alerts, $from, $until, $limit, $page);
-
-        if($includeMetadata){
-            foreach($events as $event){
-                $this->refillEntity($event);
-            }
-        }
 
         $env->setData($events);
         return $this->json($env);

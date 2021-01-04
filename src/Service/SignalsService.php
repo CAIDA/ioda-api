@@ -34,8 +34,8 @@
  */
 
 namespace App\Service;
-use App\Entity\Ioda\DatasourceEntity;
-use App\Entity\Ioda\MetadataEntity;
+use App\Entity\DatasourceEntity;
+use App\Entity\MetadataEntity;
 use App\TimeSeries\Backend\BackendException;
 use App\TimeSeries\Backend\GraphiteBackend;
 use App\TimeSeries\Backend\InfluxBackend;

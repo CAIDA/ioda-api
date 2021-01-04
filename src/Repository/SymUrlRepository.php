@@ -35,7 +35,7 @@
 
 namespace App\Repository;
 
-use App\Entity\Ioda\SymUrl;
+use App\Entity\SymUrl;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 

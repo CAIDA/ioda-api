@@ -111,7 +111,7 @@ class EntitiesController extends ApiController
      *                     property="data",
      *                     type="array",
      *                     @SWG\Items(
-     *                          ref=@Model(type=\App\Entity\Ioda\MetadataEntity::class, groups={"public"})
+     *                          ref=@Model(type=\App\Entity\MetadataEntity::class, groups={"public"})
      *                     )
      *                 )
      *             )

@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * This software is Copyright (c) 2013 The Regents of the University of
  * California. All Rights Reserved. Permission to copy, modify, and distribute this
  * software and its documentation for academic research and education purposes,
@@ -33,60 +33,82 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Entity\Outages;
+namespace App\Entity;
 
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Serializer\Normalizer\ContextAwareNormalizerInterface;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
+use App\Entity\MetadataEntity;
 
-class OutagesEventNormalizer implements ContextAwareNormalizerInterface
+class OutagesSummary
 {
-    private $router;
-    private $normalizer;
-
-    public function __construct(UrlGeneratorInterface $router, ObjectNormalizer $normalizer)
+    /**
+     * Constructor
+     */
+    public function __construct($scores, $entity)
     {
-        $this->router = $router;
-        $this->normalizer = $normalizer;
+        $this->scores = $scores;
+        $this->entity = $entity;
     }
 
-    public function normalize($event, $format = null, array $context = [])
+    /////////////////////
+    /////////////////////
+    // GETTERS SETTERS //
+    /////////////////////
+    /////////////////////
+
+    /**
+     * @return array
+     */
+    public function getScores(): array
     {
-
-        $data = $this->normalizer->normalize($event, $format, $context);
-        $res = [];
-        if($event->getFormat()=="codf"){
-
-            $res["location"] = sprintf("%s/%s", $data["entity"]["type"], $data["entity"]["code"]);
-            $res["start"] = $event->getFrom();
-            $res["duration"] = $event->getUntil() - $event->getFrom();
-            $res["uncertainty"] = null;
-            $res["status"] = 0;
-            $res["fraction"] = null;
-            $res["score"] = $event->getScore();
-            $res["location_name"] = $data["entity"]['name'];
-            $res["overlaps_window"] = $event->isOverlap();
-
-        } elseif ($event->getFormat()=="ioda"){
-            if(!$event->isIncludeAlerts()){
-                unset($data['alerts']);
-            }
-            if($data['from']==0){
-                unset($data['from']);
-            }
-            if($data['until']==0){
-                unset($data['until']);
-            }
-            $res = $data;
-        } else {
-
-        }
-
-        return $res;
+        return $this->scores;
     }
 
-    public function supportsNormalization($data, $format = null, array $context = [])
+    /**
+     * @param array $scores
+     * @return OutagesSummary
+     */
+    public function setScores(array $scores): OutagesSummary
     {
-        return $data instanceof OutagesEvent;
+        $this->scores = $scores;
+        return $this;
     }
+
+    /**
+     * @return MetadataEntity
+     */
+    public function getEntity(): ?MetadataEntity
+    {
+        return $this->entity;
+    }
+
+    /**
+     * @param MetadataEntity $entity
+     * @return OutagesSummary
+     */
+    public function setEntity(MetadataEntity $entity): OutagesSummary
+    {
+        $this->entity = $entity;
+        return $this;
+    }
+
+
+
+    //////////////////////////
+    //////////////////////////
+    // VARIABLE DEFINITIONS //
+    //////////////////////////
+    //////////////////////////
+
+    /**
+     * @Groups({"public"})
+     * @var array
+     */
+    private $scores;
+
+    /**
+     * @Groups({"public"})
+     * @var MetadataEntity
+     */
+    private $entity;
 }

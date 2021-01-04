@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * This software is Copyright (c) 2013 The Regents of the University of
  * California. All Rights Reserved. Permission to copy, modify, and distribute this
  * software and its documentation for academic research and education purposes,
@@ -33,66 +33,30 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Entity\Outages;
+namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
-use App\Entity\Ioda\MetadataEntity;
 
-class OutagesSummary
+class DatasourceEntity
 {
+
     /**
      * Constructor
+     * @param string $datasource
+     * @param string $name
+     * @param string $units
+     * @param int $nativeStep
+     * @param string $backend
      */
-    public function __construct($scores, $entity)
+    public function __construct(string $datasource, string $name, string $units, int $nativeStep, string $backend)
     {
-        $this->scores = $scores;
-        $this->entity = $entity;
+        $this->datasource = $datasource;
+        $this->name = $name;
+        $this->units = $units;
+        $this->backend = $backend;
+        $this->nativeStep = $nativeStep;
     }
-
-    /////////////////////
-    /////////////////////
-    // GETTERS SETTERS //
-    /////////////////////
-    /////////////////////
-
-    /**
-     * @return array
-     */
-    public function getScores(): array
-    {
-        return $this->scores;
-    }
-
-    /**
-     * @param array $scores
-     * @return OutagesSummary
-     */
-    public function setScores(array $scores): OutagesSummary
-    {
-        $this->scores = $scores;
-        return $this;
-    }
-
-    /**
-     * @return MetadataEntity
-     */
-    public function getEntity(): ?MetadataEntity
-    {
-        return $this->entity;
-    }
-
-    /**
-     * @param MetadataEntity $entity
-     * @return OutagesSummary
-     */
-    public function setEntity(MetadataEntity $entity): OutagesSummary
-    {
-        $this->entity = $entity;
-        return $this;
-    }
-
-
 
     //////////////////////////
     //////////////////////////
@@ -102,13 +66,107 @@ class OutagesSummary
 
     /**
      * @Groups({"public"})
-     * @var array
+     * @var string
      */
-    private $scores;
+    private $datasource;
 
     /**
      * @Groups({"public"})
-     * @var MetadataEntity
+     * @var string
      */
-    private $entity;
+    private $name;
+
+    /**
+     * @Groups({"public"})
+     * @var string
+     */
+    private $units;
+
+    /**
+     * Native step for this data source, in seconds.
+     * @var int
+     */
+    private $nativeStep;
+
+
+    /**
+     * @var string
+     */
+    private $backend;
+
+    /////////////////////
+    /////////////////////
+    // GETTERS SETTERS //
+    /////////////////////
+    /////////////////////
+
+    /**
+     * @param string $datasource
+     * @return DatasourceEntity
+     */
+    public function setDatasource(string $datasource): DatasourceEntity
+    {
+        $this->datasource = $datasource;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDatasource(): string
+    {
+        return $this->datasource;
+    }
+
+    /**
+     * @return string
+     */
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    /**
+     * @param string $name
+     * @return DatasourceEntity
+     */
+    public function setName(string $name): DatasourceEntity
+    {
+        $this->name = $name;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getUnits(): string
+    {
+        return $this->units;
+    }
+
+    /**
+     * @param string $units
+     * @return DatasourceEntity
+     */
+    public function setUnits(string $units): DatasourceEntity
+    {
+        $this->units = $units;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getNativeStep(): int
+    {
+        return $this->nativeStep;
+    }
+
+    /**
+     * @return string
+     */
+    public function getBackend(): string
+    {
+        return $this->backend;
+    }
 }

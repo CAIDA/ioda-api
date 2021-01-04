@@ -34,7 +34,7 @@
  */
 
 namespace App\Service;
-use App\Entity\Ioda\DatasourceEntity;
+use App\Entity\DatasourceEntity;
 
 
 class DatasourceService
