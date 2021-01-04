@@ -128,6 +128,10 @@ class OutagesAlertsService
             $alerts = array_slice($alerts, $limit*$page, $limit);
         }
 
+        foreach($alerts as $alert){
+            $alert->setDatasource($this->datasourceService->fqidToDatasourceName($alert->getFqid()));
+        }
+
         return $alerts;
     }
 }

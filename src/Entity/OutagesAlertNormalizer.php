@@ -44,20 +44,18 @@ class OutagesAlertNormalizer implements ContextAwareNormalizerInterface
 {
     private $router;
     private $normalizer;
-    private $datasourceService;
 
-    public function __construct(UrlGeneratorInterface $router, ObjectNormalizer $normalizer, DatasourceService $datasourceService)
+    public function __construct(UrlGeneratorInterface $router, ObjectNormalizer $normalizer)
     {
         $this->router = $router;
         $this->normalizer = $normalizer;
-        $this->datasourceService = $datasourceService;
     }
 
     public function normalize($alert, $format = null, array $context = [])
     {
         $data = $this->normalizer->normalize($alert, $format, $context);
         $res = array();
-        $res["datasource"]=$this->datasourceService->fqidToDatasourceName($data["fqid"]);
+        $res["datasource"]=$data["datasource"];
         $res["entity"] = $data["entity"];
         $res["time"] = $data["time"];
         $res["level"] = $data["level"];
