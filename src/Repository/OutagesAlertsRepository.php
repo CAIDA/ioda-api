@@ -35,7 +35,6 @@
 
 namespace App\Repository;
 
-use Doctrine\ORM\Query\ResultSetMappingBuilder;
 use App\Entity\OutagesAlert;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
@@ -54,13 +53,18 @@ class OutagesAlertsRepository extends ServiceEntityRepository
      * @param string|null $entityType
      * @param string|null $entityCode
      * @param string|null $datasource
+     * @param string|null $relatedType
+     * @param string|null $relatedCode
      * @return mixed
      */
-    public function findAlerts($from, $until,
-                               ?string $entityType, ?string $entityCode, ?string $datasource)
+    public function findAlerts(
+        $from, $until,
+        ?string $entityType, ?string $entityCode, ?string $datasource=null,
+        ?string $relatedType=null, ?string $relatedCode=null)
     {
-        $qb = $this->createQueryBuilder('a')
-            ->orderBy('a.time', 'ASC');
+        $qb = $this->createQueryBuilder('a');
+        $qb->orderBy('a.time', 'ASC');
+
 
         if ($from) {
             $qb->andWhere('a.time > :from')->setParameter('from', $from);
@@ -79,71 +83,15 @@ class OutagesAlertsRepository extends ServiceEntityRepository
             $qb->andWhere('a.metaCode = :metaCode')
                 ->setParameter('metaCode', $entityCode);
         }
+        if (isset($relatedType)) {
+            $qb->andWhere('a.relatedType = :relatedType')
+                ->setParameter('relatedType', $relatedType);
+        }
+        if (isset($relatedCode)) {
+            $qb->andWhere('a.relatedCode = :relatedCode')
+                ->setParameter('relatedCode', $relatedCode);
+        }
 
         return $qb->getQuery()->getResult();
-    }
-
-    /**
-     * Return alerts, sorted by time
-     * @param integer $from
-     * @param integer $until
-     * @param string|null $entityType
-     * @param string|null $entityCode
-     * @param string|null $datasource
-     * @param string|null $relatedType
-     * @param string|null $relatedCode
-     * @return mixed
-     */
-    public function findAlertsNativeSql($from, $until,
-                                        ?string $entityType, ?string $entityCode, ?string $datasource=null,
-                                        ?string $relatedType=null, ?string $relatedCode=null)
-    {
-        // Use raw sql to ensure the alerts' entities exist in mddb tables
-        $em = $this->getEntityManager();
-        $rsm = new ResultSetMappingBuilder($em, ResultSetMappingBuilder::COLUMN_RENAMING_INCREMENT);
-        $rsm->addRootEntityFromClassMetadata('App\Entity\Outages\OutagesAlert', 'a');
-
-        $parameters = array_filter(
-            [
-                (!empty($entityType) ? 'a.meta_type = :type' : null),
-                (!empty($entityCode) ? 'a.meta_code = :code' : null),
-                (!empty($datasource) ? 'a.fqid LIKE :datasource' : null),
-                (!empty($relatedCode) ? 'om.code ILIKE :relatedCode' : null),
-                (!empty($relatedType) ? 'omt.type ILIKE :relatedType' : null),
-            ]
-        );
-        $sql = 'SELECT ' . $rsm->generateSelectClause() . '
-                FROM
-                watchtower_alert a'
-            .(!empty($relatedType)? '
-                INNER JOIN mddb_entity m ON a.meta_code = m.code
-                INNER JOIN mddb_entity_type mt ON m.type_id = mt.id
-                INNER JOIN mddb_entity_relationship r ON m.id = r.from_id
-                INNER JOIN mddb_entity om ON om.id = r.to_id
-                INNER JOIN mddb_entity_type omt ON om.type_id = omt.id
-                ': '')
-              . '
-               WHERE
-                   a.time > :from 
-               AND a.time < :until 
-               '
-            . (!empty($parameters) ? ' AND ' . implode(' AND ', $parameters) : '')
-            . " ORDER BY a.time ASC "
-        ;
-
-        $q = $em->createNativeQuery($sql, $rsm)
-            ->setParameters([
-                'from' => $from,
-                'until' => $until,
-                'type' => $entityType,
-                'code' => $entityCode,
-                'datasource' => $datasource,
-                'relatedType' => $relatedType,
-                'relatedCode' => $relatedCode,
-            ]);
-
-        $res = $q->getResult();
-
-        return $res;
     }
 }

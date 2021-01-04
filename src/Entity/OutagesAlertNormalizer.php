@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * This software is Copyright (c) 2013 The Regents of the University of
  * California. All Rights Reserved. Permission to copy, modify, and distribute this
  * software and its documentation for academic research and education purposes,
@@ -35,6 +35,7 @@
 
 namespace App\Entity;
 
+use App\Service\DatasourceService;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\ContextAwareNormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
@@ -43,18 +44,20 @@ class OutagesAlertNormalizer implements ContextAwareNormalizerInterface
 {
     private $router;
     private $normalizer;
+    private $datasourceService;
 
-    public function __construct(UrlGeneratorInterface $router, ObjectNormalizer $normalizer)
+    public function __construct(UrlGeneratorInterface $router, ObjectNormalizer $normalizer, DatasourceService $datasourceService)
     {
         $this->router = $router;
         $this->normalizer = $normalizer;
+        $this->datasourceService = $datasourceService;
     }
 
     public function normalize($alert, $format = null, array $context = [])
     {
         $data = $this->normalizer->normalize($alert, $format, $context);
         $res = array();
-        $res["datasource"]=$data["datasource"];
+        $res["datasource"]=$this->datasourceService->fqidToDatasourceName($data["fqid"]);
         $res["entity"] = $data["entity"];
         $res["time"] = $data["time"];
         $res["level"] = $data["level"];

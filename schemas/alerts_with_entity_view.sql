@@ -1,4 +1,3 @@
-<?php
 /*
  * This software is Copyright (c) 2013 The Regents of the University of
  * California. All Rights Reserved. Permission to copy, modify, and distribute this
@@ -33,82 +32,37 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Entity;
+-- View: public.alerts_with_entity_view
 
-use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups;
-use App\Entity\MetadataEntity;
+-- DROP VIEW public.alerts_with_entity_view;
 
-class OutagesSummary
-{
-    /**
-     * Constructor
-     */
-    public function __construct($scores, $entity)
-    {
-        $this->scores = $scores;
-        $this->entity = $entity;
-    }
+CREATE OR REPLACE VIEW public.alerts_with_entity_view
+AS
+SELECT a.id,
+       a.fqid,
+       a.name,
+       a.query_time,
+       a.level,
+       a.method,
+       a.query_expression,
+       a.history_query_expression,
+       a."time",
+       a.expression,
+       a.condition,
+       a.value,
+       a.history_value,
+       a.meta_type,
+       a.meta_code,
+       m.id AS meta_id,
+       omt.type AS related_type,
+       om.code AS related_code
+FROM (((((watchtower_alert a
+    JOIN mddb_entity m ON (((a.meta_code)::text = (m.code)::text)))
+    JOIN mddb_entity_type mt ON ((m.type_id = mt.id)))
+    JOIN mddb_entity_relationship r ON ((m.id = r.from_id)))
+    JOIN mddb_entity om ON ((om.id = r.to_id)))
+         JOIN mddb_entity_type omt ON ((om.type_id = omt.id)));
 
-    /////////////////////
-    /////////////////////
-    // GETTERS SETTERS //
-    /////////////////////
-    /////////////////////
+ALTER TABLE public.alerts_with_entity_view
+    OWNER TO charthouse;
 
-    /**
-     * @return array
-     */
-    public function getScores(): array
-    {
-        return $this->scores;
-    }
-
-    /**
-     * @param array $scores
-     * @return OutagesSummary
-     */
-    public function setScores(array $scores): OutagesSummary
-    {
-        $this->scores = $scores;
-        return $this;
-    }
-
-    /**
-     * @return MetadataEntity
-     */
-    public function getEntity(): ?MetadataEntity
-    {
-        return $this->entity;
-    }
-
-    /**
-     * @param MetadataEntity $entity
-     * @return OutagesSummary
-     */
-    public function setEntity(MetadataEntity $entity): OutagesSummary
-    {
-        $this->entity = $entity;
-        return $this;
-    }
-
-
-
-    //////////////////////////
-    //////////////////////////
-    // VARIABLE DEFINITIONS //
-    //////////////////////////
-    //////////////////////////
-
-    /**
-     * @Groups({"public"})
-     * @var array
-     */
-    private $scores;
-
-    /**
-     * @Groups({"public"})
-     * @var MetadataEntity
-     */
-    private $entity;
-}
