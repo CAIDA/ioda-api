@@ -90,10 +90,13 @@ class OutagesAlertsRepository extends ServiceEntityRepository
      * @param string|null $entityType
      * @param string|null $entityCode
      * @param string|null $datasource
+     * @param string|null $relatedType
+     * @param string|null $relatedCode
      * @return mixed
      */
     public function findAlertsNativeSql($from, $until,
-                               ?string $entityType, ?string $entityCode, ?string $datasource)
+                                        ?string $entityType, ?string $entityCode, ?string $datasource=null,
+                                        ?string $relatedType=null, ?string $relatedCode=null)
     {
         // Use raw sql to ensure the alerts' entities exist in mddb tables
         $em = $this->getEntityManager();
@@ -104,18 +107,27 @@ class OutagesAlertsRepository extends ServiceEntityRepository
             [
                 (!empty($entityType) ? 'a.meta_type = :type' : null),
                 (!empty($entityCode) ? 'a.meta_code = :code' : null),
+                (!empty($datasource) ? 'a.fqid LIKE :datasource' : null),
+                (!empty($relatedCode) ? 'om.code ILIKE :relatedCode' : null),
+                (!empty($relatedType) ? 'omt.type ILIKE :relatedType' : null),
             ]
         );
         $sql = 'SELECT ' . $rsm->generateSelectClause() . '
-            FROM
-                watchtower_alert a
+                FROM
+                watchtower_alert a'
+            .(!empty($relatedType)? '
+                INNER JOIN mddb_entity m ON a.meta_code = m.code
+                INNER JOIN mddb_entity_type mt ON m.type_id = mt.id
+                INNER JOIN mddb_entity_relationship r ON m.id = r.from_id
+                INNER JOIN mddb_entity om ON om.id = r.to_id
+                INNER JOIN mddb_entity_type omt ON om.type_id = omt.id
+                ': '')
+              . '
                WHERE
                    a.time > :from 
                AND a.time < :until 
                '
-            . (!empty($parameters) ?
-                ' AND ' . implode(' AND ', $parameters) : '')
-            . ' AND EXISTS (SELECT FROM mddb_entity mm WHERE mm.code = a.meta_code) '
+            . (!empty($parameters) ? ' AND ' . implode(' AND ', $parameters) : '')
             . " ORDER BY a.time ASC "
         ;
 
@@ -125,8 +137,13 @@ class OutagesAlertsRepository extends ServiceEntityRepository
                 'until' => $until,
                 'type' => $entityType,
                 'code' => $entityCode,
+                'datasource' => $datasource,
+                'relatedType' => $relatedType,
+                'relatedCode' => $relatedCode,
             ]);
 
-        return $q->getResult();
+        $res = $q->getResult();
+
+        return $res;
     }
 }

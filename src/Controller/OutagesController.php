@@ -86,6 +86,25 @@ class OutagesController extends ApiController
         }
     }
 
+    private function parseRelatedTo(?string $relatedTo){
+        // parse relatedTo parameter to entity type and code
+        if ($relatedTo) {
+            // sanity-checking related field
+            $relatedTo = explode('/', $relatedTo);
+            if (count($relatedTo) > 2) {
+                throw new \InvalidArgumentException(
+                    "relatedTo parameter must be in the form 'type[/code]'"
+                );
+            }
+            if (count($relatedTo) == 1) {
+                $relatedTo[] = null;
+            }
+        } else {
+            $relatedTo = [null, null];
+        }
+
+        return $relatedTo;
+    }
 
     private function sanitizeInputs($from, $until, $datasource, $format, $limit, $page){
         if(!isset($from)){
@@ -197,6 +216,13 @@ class OutagesController extends ApiController
      *     default=false,
      *     required=false
      * )
+     * @SWG\Parameter(
+     *     name="relatedTo",
+     *     in="query",
+     *     type="string",
+     *     description="Find data related to another entity. Format: entityType[/entityCode]",
+     *     required=false,
+     * )
      * @SWG\Response(
      *     response=200,
      *     description="Return an array of all data sources used by IODA",
@@ -275,6 +301,7 @@ class OutagesController extends ApiController
                 new RequestParameter('limit', RequestParameter::INTEGER, null, false),
                 new RequestParameter('page', RequestParameter::INTEGER, null, false),
                 new RequestParameter('includeMetadata', RequestParameter::BOOL, false, false),
+                new RequestParameter('relatedTo', RequestParameter::STRING, null, false),
             ],
             $request
         );
@@ -286,6 +313,7 @@ class OutagesController extends ApiController
         $limit = $env->getParam('limit');
         $page = $env->getParam('page');
         $includeMetadata = $env->getParam('includeMetadata');
+        $relatedTo = $this->parseRelatedTo($env->getParam('relatedTo'));
 
         /* SANTIY CHECKS */
         try {
@@ -295,7 +323,7 @@ class OutagesController extends ApiController
             return $this->json($env, 400);
         }
 
-        $alerts = $alertService->findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit, $page, false);
+        $alerts = $alertService->findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit, $page, false, $relatedTo[0], $relatedTo[1]);
 
         if($includeMetadata){
             foreach($alerts as $alert){
@@ -381,6 +409,13 @@ class OutagesController extends ApiController
      *     description="Whether to include metadata. Including metadata could affect lookup performance and is not recommended if expecting more than 100 returned results",
      *     default=false,
      *     required=false
+     * )
+     * @SWG\Parameter(
+     *     name="relatedTo",
+     *     in="query",
+     *     type="string",
+     *     description="Find data related to another entity. Format: entityType[/entityCode]",
+     *     required=false,
      * )
      * @SWG\Response(
      *     response=200,
@@ -472,6 +507,7 @@ class OutagesController extends ApiController
                 new RequestParameter('format', RequestParameter::STRING, "codf", false),
                 new RequestParameter('limit', RequestParameter::INTEGER, null, false),
                 new RequestParameter('page', RequestParameter::INTEGER, null, false),
+                new RequestParameter('relatedTo', RequestParameter::STRING, null, false),
             ],
             $request
         );
@@ -485,6 +521,7 @@ class OutagesController extends ApiController
         $format = $env->getParam('format');
         $limit = $env->getParam('limit');
         $page = $env->getParam('page');
+        $relatedTo = $this->parseRelatedTo($env->getParam('relatedTo'));
 
         // sanitize user inputs
         try {
@@ -495,7 +532,7 @@ class OutagesController extends ApiController
         }
 
         // build events
-        $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, $datasource, false, null, false);
+        $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, $datasource, false, null, false, $relatedTo[0], $relatedTo[1]);
         $events = $eventsService->buildEventsSimple($alerts, $includeAlerts, $format, $from, $until, $limit, $page);
 
         // if($includeMetadata){
@@ -566,6 +603,13 @@ class OutagesController extends ApiController
      *     description="Whether to include metadata. Including metadata could affect lookup performance and is not recommended if expecting more than 100 returned results",
      *     default=false,
      *     required=false
+     * )
+     * @SWG\Parameter(
+     *     name="relatedTo",
+     *     in="query",
+     *     type="string",
+     *     description="Find data related to another entity. Format: entityType[/entityCode]",
+     *     required=false,
      * )
      * @SWG\Response(
      *     response=200,
@@ -641,6 +685,7 @@ class OutagesController extends ApiController
                 new RequestParameter('limit', RequestParameter::INTEGER, null, false),
                 new RequestParameter('page', RequestParameter::INTEGER, null, false),
                 new RequestParameter('includeMetadata', RequestParameter::BOOL, false, false),
+                new RequestParameter('relatedTo', RequestParameter::STRING, null, false),
             ],
             $request
         );
@@ -651,6 +696,7 @@ class OutagesController extends ApiController
         $limit = $env->getParam('limit');
         $page = $env->getParam('page');
         $includeMetadata = $env->getParam('includeMetadata');
+        $relatedTo = $this->parseRelatedTo($env->getParam('relatedTo'));
 
         try {
             $this->sanitizeInputs($from, $until, null, null, $limit, $page);
@@ -659,7 +705,7 @@ class OutagesController extends ApiController
             return $this->json($env, 400);
         }
 
-        $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, null, null, null, false);
+        $alerts = $alertsService->findAlerts($from, $until, $entityType, $entityCode, null, null, null, false, $relatedTo[0], $relatedTo[1]);
         $events = $eventsService->buildEventsSummary($alerts, $from, $until, $limit, $page);
 
         if($includeMetadata){

@@ -80,7 +80,7 @@ class EntitiesController extends ApiController
      *     name="relatedTo",
      *     in="query",
      *     type="string",
-     *     description="Find entities related to another entity. Format: 'entityType[/entityCode]",
+     *     description="Find entities related to another entity. Format: entityType[/entityCode]",
      *     required=false,
      * )
      * @SWG\Parameter(
