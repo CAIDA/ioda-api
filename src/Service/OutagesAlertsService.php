@@ -114,13 +114,16 @@ class OutagesAlertsService
      * @param $datasource
      * @param null $limit
      * @param int $page
-     * @param bool $lookup_entity
+     * @param bool $lookupEntity
      * @return OutagesAlert[]
      */
-    public function findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit=null, $page=0, $lookup_entity=true)
+    public function findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit=null, $page=0,
+                               $lookupEntity=true, $relatedType=null, $relatedCode=null)
     {
         // find alerts, already sorted by time
-        $alerts = $this->repo->findAlerts($from, $until, $entityType, $entityCode, $datasource);
+        // $alerts = $this->repo->findAlerts($from, $until, $entityType, $entityCode, $datasource);
+        $alerts = $this->repo->findAlertsNativeSql($from, $until, $entityType, $entityCode, $datasource,
+            $relatedType, $relatedCode);
 
         // squash alerts
         $alerts = $this->squashAlerts($alerts);
@@ -131,11 +134,12 @@ class OutagesAlertsService
         }
 
         $res = [];
+        // look up for metadata
         foreach($alerts as &$alert){
             // TODO: eventually, find a way to let doctrine to the work.
             $type = $alert->getMetaType();
             $code = $alert->getMetaCode();
-            if($lookup_entity){
+            if($lookupEntity){
                 $metas = $this->metadataService->search($type, $code);
                 if(count($metas)!=1){
                     continue;
