@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * This software is Copyright (c) 2013 The Regents of the University of
  * California. All Rights Reserved. Permission to copy, modify, and distribute this
  * software and its documentation for academic research and education purposes,
@@ -33,30 +33,17 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Entity\Ioda;
+namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
-class DatasourceEntity
+/**
+ * @ORM\Entity
+ * @ORM\Table(name="mddb_entity_attribute")
+ */
+class MetadataEntityAttribute
 {
-
-    /**
-     * Constructor
-     * @param string $datasource
-     * @param string $name
-     * @param string $units
-     * @param int $nativeStep
-     * @param string $backend
-     */
-    public function __construct(string $datasource, string $name, string $units, int $nativeStep, string $backend)
-    {
-        $this->datasource = $datasource;
-        $this->name = $name;
-        $this->units = $units;
-        $this->backend = $backend;
-        $this->nativeStep = $nativeStep;
-    }
 
     //////////////////////////
     //////////////////////////
@@ -65,34 +52,32 @@ class DatasourceEntity
     //////////////////////////
 
     /**
-     * @Groups({"public"})
-     * @var string
+     * @ORM\Id()
+     * @ORM\Column(type="integer")
+     * @var integer
      */
-    private $datasource;
+    private $id;
 
     /**
      * @Groups({"public"})
+     * @ORM\Column(type="string")
      * @var string
      */
-    private $name;
+    private $key;
 
     /**
      * @Groups({"public"})
+     * @ORM\Column(type="string")
      * @var string
      */
-    private $units;
+    private $value;
 
     /**
-     * Native step for this data source, in seconds.
-     * @var int
+     * @ORM\ManyToOne(targetEntity="MetadataEntity")
+     * @ORM\JoinColumn(name="metadata_id", referencedColumnName="id")
+     * @var MetadataEntity
      */
-    private $nativeStep;
-
-
-    /**
-     * @var string
-     */
-    private $backend;
+    private $entity;
 
     /////////////////////
     /////////////////////
@@ -101,72 +86,75 @@ class DatasourceEntity
     /////////////////////
 
     /**
-     * @param string $datasource
-     * @return DatasourceEntity
-     */
-    public function setDatasource(string $datasource): DatasourceEntity
-    {
-        $this->datasource = $datasource;
-        return $this;
-    }
-
-    /**
-     * @return string
-     */
-    public function getDatasource(): string
-    {
-        return $this->datasource;
-    }
-
-    /**
-     * @return string
-     */
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
-    /**
-     * @param string $name
-     * @return DatasourceEntity
-     */
-    public function setName(string $name): DatasourceEntity
-    {
-        $this->name = $name;
-        return $this;
-    }
-
-    /**
-     * @return string
-     */
-    public function getUnits(): string
-    {
-        return $this->units;
-    }
-
-    /**
-     * @param string $units
-     * @return DatasourceEntity
-     */
-    public function setUnits(string $units): DatasourceEntity
-    {
-        $this->units = $units;
-        return $this;
-    }
-
-    /**
      * @return int
      */
-    public function getNativeStep(): int
+    public function getId(): int
     {
-        return $this->nativeStep;
+        return $this->id;
+    }
+
+    /**
+     * @param int $id
+     * @return MetadataEntityAttribute
+     */
+    public function setId(int $id): MetadataEntityAttribute
+    {
+        $this->id = $id;
+        return $this;
     }
 
     /**
      * @return string
      */
-    public function getBackend(): string
+    public function getKey(): string
     {
-        return $this->backend;
+        return $this->key;
     }
+
+    /**
+     * @param string $key
+     * @return MetadataEntityAttribute
+     */
+    public function setKey(string $key): MetadataEntityAttribute
+    {
+        $this->key = $key;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getValue(): string
+    {
+        return $this->value;
+    }
+
+    /**
+     * @param string $value
+     * @return MetadataEntityAttribute
+     */
+    public function setValue(string $value): MetadataEntityAttribute
+    {
+        $this->value = $value;
+        return $this;
+    }
+
+    /**
+     * @return MetadataEntity
+     */
+    public function getEntity(): MetadataEntity
+    {
+        return $this->entity;
+    }
+
+    /**
+     * @param MetadataEntity $entity
+     * @return MetadataEntityAttribute
+     */
+    public function setEntity(MetadataEntity $entity): MetadataEntityAttribute
+    {
+        $this->entity = $entity;
+        return $this;
+    }
+
 }

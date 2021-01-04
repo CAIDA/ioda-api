@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * This software is Copyright (c) 2013 The Regents of the University of
  * California. All Rights Reserved. Permission to copy, modify, and distribute this
  * software and its documentation for academic research and education purposes,
@@ -33,38 +33,79 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Entity\Ioda;
+namespace App\Entity;
 
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Serializer\Normalizer\ContextAwareNormalizerInterface;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
-class MetadataEntityNormalizer implements ContextAwareNormalizerInterface
+/**
+ * @ORM\Entity
+ * @ORM\Table(name="mddb_entity_type")
+ */
+class MetadataEntityType
 {
-    private $router;
-    private $normalizer;
 
-    public function __construct(UrlGeneratorInterface $router, ObjectNormalizer $normalizer)
+    //////////////////////////
+    //////////////////////////
+    // VARIABLE DEFINITIONS //
+    //////////////////////////
+    //////////////////////////
+
+    /**
+     * @ORM\Id()
+     * @ORM\Column(type="integer")
+     * @var integer
+     */
+    private $id;
+
+    /**
+     * @Groups({"public"})
+     * @ORM\Column(type="string")
+     * @var string
+     */
+    private $type;
+
+
+    /////////////////////
+    /////////////////////
+    // GETTERS SETTERS //
+    /////////////////////
+    /////////////////////
+
+
+    /**
+     * @return int
+     */
+    public function getId(): int
     {
-        $this->router = $router;
-        $this->normalizer = $normalizer;
+        return $this->id;
     }
 
-    public function normalize($entity, $format = null, array $context = [])
+    /**
+     * @param int $id
+     * @return MetadataEntityType
+     */
+    public function setId(int $id): MetadataEntityType
     {
-        $data = $this->normalizer->normalize($entity, $format, $context);
-        $data["type"] = $data["type"]["type"];
-        $data["attrs"] = new \ArrayObject();
-        foreach($data["attributes"] as $d){
-            $data["attrs"][$d["key"]] = $d["value"];
-        }
-        unset($data["attributes"]);
-
-        return $data;
+        $this->id = $id;
+        return $this;
     }
 
-    public function supportsNormalization($data, $format = null, array $context = [])
+    /**
+     * @return string
+     */
+    public function getType(): string
     {
-        return $data instanceof MetadataEntity;
+        return $this->type;
+    }
+
+    /**
+     * @param string $type
+     * @return MetadataEntityType
+     */
+    public function setType(string $type): MetadataEntityType
+    {
+        $this->type = $type;
+        return $this;
     }
 }

@@ -36,7 +36,7 @@
 namespace App\TimeSeries;
 
 
-use App\Entity\Ioda\MetadataEntity;
+use App\Entity\MetadataEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 class TimeSeriesSet

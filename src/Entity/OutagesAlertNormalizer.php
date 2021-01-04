@@ -33,79 +33,40 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Entity\Ioda;
+namespace App\Entity;
 
-use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Serializer\Normalizer\ContextAwareNormalizerInterface;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 
-/**
- * @ORM\Entity
- * @ORM\Table(name="mddb_entity_type")
- */
-class MetadataEntityType
+class OutagesAlertNormalizer implements ContextAwareNormalizerInterface
 {
+    private $router;
+    private $normalizer;
 
-    //////////////////////////
-    //////////////////////////
-    // VARIABLE DEFINITIONS //
-    //////////////////////////
-    //////////////////////////
-
-    /**
-     * @ORM\Id()
-     * @ORM\Column(type="integer")
-     * @var integer
-     */
-    private $id;
-
-    /**
-     * @Groups({"public"})
-     * @ORM\Column(type="string")
-     * @var string
-     */
-    private $type;
-
-
-    /////////////////////
-    /////////////////////
-    // GETTERS SETTERS //
-    /////////////////////
-    /////////////////////
-
-
-    /**
-     * @return int
-     */
-    public function getId(): int
+    public function __construct(UrlGeneratorInterface $router, ObjectNormalizer $normalizer)
     {
-        return $this->id;
+        $this->router = $router;
+        $this->normalizer = $normalizer;
     }
 
-    /**
-     * @param int $id
-     * @return MetadataEntityType
-     */
-    public function setId(int $id): MetadataEntityType
+    public function normalize($alert, $format = null, array $context = [])
     {
-        $this->id = $id;
-        return $this;
+        $data = $this->normalizer->normalize($alert, $format, $context);
+        $res = array();
+        $res["datasource"]=$data["datasource"];
+        $res["entity"] = $data["entity"];
+        $res["time"] = $data["time"];
+        $res["level"] = $data["level"];
+        $res["condition"] = $data["condition"];
+        $res["value"] = $data["value"];
+        $res["historyValue"] = $data["historyValue"];
+
+        return $res;
     }
 
-    /**
-     * @return string
-     */
-    public function getType(): string
+    public function supportsNormalization($data, $format = null, array $context = [])
     {
-        return $this->type;
-    }
-
-    /**
-     * @param string $type
-     * @return MetadataEntityType
-     */
-    public function setType(string $type): MetadataEntityType
-    {
-        $this->type = $type;
-        return $this;
+        return $data instanceof OutagesAlert;
     }
 }

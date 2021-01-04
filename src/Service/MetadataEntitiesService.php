@@ -36,7 +36,7 @@
 namespace App\Service;
 
 
-use App\Entity\Ioda\MetadataEntity;
+use App\Entity\MetadataEntity;
 use App\Repository\EntitiesRepository;
 
 class MetadataEntitiesService

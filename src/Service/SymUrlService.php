@@ -36,7 +36,7 @@
 namespace App\Service;
 
 
-use App\Entity\Ioda\SymUrl;
+use App\Entity\SymUrl;
 use App\Repository\SymUrlRepository;
 
 class SymUrlService

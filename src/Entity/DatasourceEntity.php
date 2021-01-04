@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * This software is Copyright (c) 2013 The Regents of the University of
  * California. All Rights Reserved. Permission to copy, modify, and distribute this
  * software and its documentation for academic research and education purposes,
@@ -33,123 +33,140 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Entity\Ioda;
+namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
-/**
- * @ORM\Entity(repositoryClass="App\Repository\SymUrlRepository")
- * @ORM\Table(indexes={@ORM\Index(name="long_url_idx", columns={"long_url"})})
- */
-class SymUrl
+class DatasourceEntity
 {
-    /**
-     * @ORM\Id()
-     * @ORM\GeneratedValue()
-     * @ORM\Column(type="integer")
-     */
-    private $id;
 
     /**
-     * @ORM\Column(type="string", length=255, unique=true)
-     * @Groups({"public"})
+     * Constructor
+     * @param string $datasource
+     * @param string $name
+     * @param string $units
+     * @param int $nativeStep
+     * @param string $backend
      */
-    private $shortTag;
-
-    /**
-     * @ORM\Column(type="text")
-     * @Groups({"public"})
-     */
-    private $longUrl;
-
-    /**
-     * @ORM\Column(type="integer")
-     * @Groups({"public"})
-     */
-    private $useCount;
-
-    /**
-     * @ORM\Column(type="datetime")
-     * @Groups({"public"})
-     */
-    private $dateCreated;
-
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     * @Groups({"public"})
-     */
-    private $dateLastUsed;
-
-    public function __construct()
+    public function __construct(string $datasource, string $name, string $units, int $nativeStep, string $backend)
     {
-        $this->setDateCreated(new \DateTime());
-        $this->setDateLastUsed(null);
-        $this->setUseCount(0);
+        $this->datasource = $datasource;
+        $this->name = $name;
+        $this->units = $units;
+        $this->backend = $backend;
+        $this->nativeStep = $nativeStep;
     }
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    //////////////////////////
+    //////////////////////////
+    // VARIABLE DEFINITIONS //
+    //////////////////////////
+    //////////////////////////
 
-    public function getShortTag(): ?string
-    {
-        return $this->shortTag;
-    }
+    /**
+     * @Groups({"public"})
+     * @var string
+     */
+    private $datasource;
 
-    public function setShortTag(string $shortTag): self
-    {
-        $this->shortTag = $shortTag;
+    /**
+     * @Groups({"public"})
+     * @var string
+     */
+    private $name;
 
+    /**
+     * @Groups({"public"})
+     * @var string
+     */
+    private $units;
+
+    /**
+     * Native step for this data source, in seconds.
+     * @var int
+     */
+    private $nativeStep;
+
+
+    /**
+     * @var string
+     */
+    private $backend;
+
+    /////////////////////
+    /////////////////////
+    // GETTERS SETTERS //
+    /////////////////////
+    /////////////////////
+
+    /**
+     * @param string $datasource
+     * @return DatasourceEntity
+     */
+    public function setDatasource(string $datasource): DatasourceEntity
+    {
+        $this->datasource = $datasource;
         return $this;
     }
 
-    public function getLongUrl(): ?string
+    /**
+     * @return string
+     */
+    public function getDatasource(): string
     {
-        return $this->longUrl;
+        return $this->datasource;
     }
 
-    public function setLongUrl(string $longUrl): self
+    /**
+     * @return string
+     */
+    public function getName(): string
     {
-        $this->longUrl = $longUrl;
+        return $this->name;
+    }
 
+    /**
+     * @param string $name
+     * @return DatasourceEntity
+     */
+    public function setName(string $name): DatasourceEntity
+    {
+        $this->name = $name;
         return $this;
     }
 
-    public function getUseCount(): ?int
+    /**
+     * @return string
+     */
+    public function getUnits(): string
     {
-        return $this->useCount;
+        return $this->units;
     }
 
-    public function setUseCount(int $useCount): self
+    /**
+     * @param string $units
+     * @return DatasourceEntity
+     */
+    public function setUnits(string $units): DatasourceEntity
     {
-        $this->useCount = $useCount;
-
+        $this->units = $units;
         return $this;
     }
 
-    public function getDateCreated(): ?\DateTimeInterface
+    /**
+     * @return int
+     */
+    public function getNativeStep(): int
     {
-        return $this->dateCreated;
+        return $this->nativeStep;
     }
 
-    public function setDateCreated(\DateTimeInterface $dateCreated): self
+    /**
+     * @return string
+     */
+    public function getBackend(): string
     {
-        $this->dateCreated = $dateCreated;
-
-        return $this;
-    }
-
-    public function getDateLastUsed(): ?\DateTimeInterface
-    {
-        return $this->dateLastUsed;
-    }
-
-    public function setDateLastUsed(?\DateTimeInterface $dateLastUsed): self
-    {
-        $this->dateLastUsed = $dateLastUsed;
-
-        return $this;
+        return $this->backend;
     }
 }

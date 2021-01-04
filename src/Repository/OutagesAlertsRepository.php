@@ -35,8 +35,8 @@
 
 namespace App\Repository;
 
-use App\Entity\Outages\OutagesAlert;
 use Doctrine\ORM\Query\ResultSetMappingBuilder;
+use App\Entity\OutagesAlert;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 

@@ -250,7 +250,7 @@ class OutagesController extends ApiController
      *                          ),
      *                          @SWG\Property(
      *                              property="entity",
-     *                              ref=@Model(type=\App\Entity\Ioda\MetadataEntity::class, groups={"public"})
+     *                              ref=@Model(type=\App\Entity\MetadataEntity::class, groups={"public"})
      *                          ),
      *                          @SWG\Property(
      *                              property="time",

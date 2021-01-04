@@ -29,17 +29,17 @@ services:
         tags: [serializer.normalizer]
 
     metadata_entity_normalizer:
-        class: App\Entity\Ioda\MetadataEntityNormalizer
+        class: App\Entity\MetadataEntityNormalizer
         public: false
         tags: [serializer.normalizer]
 
     outages_alert_normalizer:
-        class: App\Entity\Outages\OutagesAlertNormalizer
+        class: App\Entity\OutagesAlertNormalizer
         public: false
         tags: [serializer.normalizer]
 
     outages_event_normalizer:
-        class: App\Entity\Outages\OutagesEventNormalizer
+        class: App\Entity\OutagesEventNormalizer
         public: false
         tags: [serializer.normalizer]
 

@@ -76,7 +76,7 @@ class DatasourcesController extends ApiController
      *                 ),
      *                 @SWG\Property(
      *                     property="data",
-     *                     ref=@Model(type=\App\Entity\Ioda\DatasourceEntity::class, groups={"public"})
+     *                     ref=@Model(type=\App\Entity\DatasourceEntity::class, groups={"public"})
      *                 )
      *             )
      *         }
