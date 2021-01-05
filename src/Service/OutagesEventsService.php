@@ -144,9 +144,10 @@ class OutagesEventsService
      * @param $until
      * @param $limit
      * @param int $page
+     * @param string $orderBy
      * @return OutagesEvent[]
      */
-    public function buildEventsSimple($alerts, $includeAlerts, $format, $from, $until, $limit, $page=0){
+    public function buildEventsSimple($alerts, $includeAlerts, $format, $from, $until, $limit, $page=0, $orderByAttr="time", $orderByOrder="asc"){
         $res = [];
 
         $eventmap = $this->buildEvents($alerts, $from, $until);
@@ -157,7 +158,30 @@ class OutagesEventsService
             }
         }
 
-        usort($res, [ "App\Service\OutagesEventsService","cmpEventObj"]);
+        if($orderByAttr=="score"){
+            usort($res,
+                function ($a, $b) {
+                    return ($a->getScore() > $b->getScore() );
+                }
+            );
+        } else if ($orderByAttr=="name") {
+            usort($res,
+                function ($a, $b) {
+                    return strcmp($a->getEntity()->getName(), $b->getEntity()->getName() );
+                }
+            );
+        } else if ($orderByAttr=="time") {
+            usort($res,
+                function ($a, $b) {
+                    return ($a->getFrom() > $b->getFrom() );
+                }
+            );
+        }
+
+        if ($orderByOrder == "desc"){
+            $res = array_reverse($res);
+        }
+
         if ($limit) {
             $res = array_slice($res, $limit*$page, $limit);
         }
@@ -198,9 +222,14 @@ class OutagesEventsService
      * @param $until
      * @param $limit
      * @param int $page
+     * @param string $orderByAttr
+     * @param string $orderByOrder
      * @return OutagesEvent[]
      */
-    public function buildEventsSummary($alerts, $from, $until, $limit, $page=0){
+    public function buildEventsSummary($alerts, $from, $until, $limit, $page=0, $orderByAttr="score", $orderByOrder="asc"){
+        if($orderByAttr=="time"){
+            $orderByAttr="score";
+        }
         $res = [];
 
         $alertGroups = $this->groupAlertsByEntity($alerts);
@@ -211,18 +240,32 @@ class OutagesEventsService
             $res[] = new OutagesSummary($scores, $alerts[0]->getEntity());
         }
 
-        usort($res,
-            function ($a, $b) {
-                return ($a->getScores()["overall"] < $b->getScores()["overall"] );
-            }
-        );
+
+        if($orderByAttr=="score"){
+            usort($res,
+                function ($a, $b) {
+                    return ($a->getScores()["overall"] > $b->getScores()["overall"] );
+                }
+            );
+        } else if ($orderByAttr=="name") {
+            usort($res,
+                function ($a, $b) {
+                    return strcmp($a->getEntity()->getName(), $b->getEntity()->getName() );
+                }
+            );
+        }
+
+        if($orderByOrder=="desc"){
+            $res=array_reverse($res);
+        }
+
         if ($limit) {
             $res = array_slice($res, $limit*$page, $limit);
         }
         return $res;
     }
 
-    private function buildEvents($alerts, $from, $until){
+    private function buildEvents($alerts, $from, $until, $orderBy="score"){
         // sort alerts by time
         // usort($alerts, ["App\Outages\OutagesEventsService","cmpAlert"]);
 
