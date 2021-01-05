@@ -92,7 +92,7 @@ class OutagesController extends ApiController
         return $relatedTo;
     }
 
-    private function parseOrderBy(?string $orderBy){
+    private function parseOrderBy(?string $orderBy, string $type){
         // parse relatedTo parameter to entity type and code
         if ($orderBy) {
             // sanity-checking related field
@@ -117,7 +117,13 @@ class OutagesController extends ApiController
             }
 
         } else {
-            $orderBy = [null, null];
+            if($type=="events"){
+                $orderBy = ["time", "asc"];
+            } else if ($type == "summary"){
+                $orderBy = ["score", "desc"];
+            } else {
+                $orderBy = [null, null];
+            }
         }
         return $orderBy;
     }
@@ -518,7 +524,7 @@ class OutagesController extends ApiController
         $format = $env->getParam('format');
         $limit = $env->getParam('limit');
         $page = $env->getParam('page');
-        $orderBy = $this->parseOrderBy($env->getParam('orderBy'));
+        $orderBy = $this->parseOrderBy($env->getParam('orderBy'), "events");
         $relatedTo = $this->parseRelatedTo($env->getParam('relatedTo'));
 
         // sanitize user inputs
@@ -685,7 +691,7 @@ class OutagesController extends ApiController
         $until = $this->parseTimestampParameter($env->getParam('until'));
         $limit = $env->getParam('limit');
         $page = $env->getParam('page');
-        $orderBy = $this->parseOrderBy($env->getParam('orderBy'));
+        $orderBy = $this->parseOrderBy($env->getParam('orderBy'), "summary");
         $relatedTo = $this->parseRelatedTo($env->getParam('relatedTo'));
 
         try {

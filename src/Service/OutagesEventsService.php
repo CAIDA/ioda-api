@@ -226,7 +226,7 @@ class OutagesEventsService
      * @param string $orderByOrder
      * @return OutagesEvent[]
      */
-    public function buildEventsSummary($alerts, $from, $until, $limit, $page=0, $orderByAttr="score", $orderByOrder="desc"){
+    public function buildEventsSummary($alerts, $from, $until, $limit, $page=0, $orderByAttr="score", $orderByOrder="asc"){
         if($orderByAttr=="time"){
             $orderByAttr="score";
         }
