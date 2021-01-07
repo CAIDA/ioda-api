@@ -112,6 +112,8 @@ class OutagesAlertsService
      * @param $datasource
      * @param null $limit
      * @param int $page
+     * @param null $relatedType
+     * @param null $relatedCode
      * @return OutagesAlert[]
      */
     public function findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit=null, $page=0,

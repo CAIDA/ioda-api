@@ -190,7 +190,7 @@ class OutagesController extends ApiController
      *     name="entityCode",
      *     in="path",
      *     type="string",
-     *     description="Code of the entity, e.g. for United States the code is 'US'",
+     *     description="Code of the entity, e.g. for United States the code is 'US'; use comma ',' to separate multiple codes",
      *     required=false,
      *     default=null
      * )
@@ -358,7 +358,7 @@ class OutagesController extends ApiController
      *     name="entityCode",
      *     in="path",
      *     type="string",
-     *     description="Code of the entity, e.g. for United States the code is 'US'",
+     *     description="Code of the entity, e.g. for United States the code is 'US'; use comma ',' to separate multiple codes",
      *     required=false,
      *     default=null
      * )
@@ -561,7 +561,7 @@ class OutagesController extends ApiController
      *     name="entityCode",
      *     in="path",
      *     type="string",
-     *     description="Code of the entity, e.g. for United States the code is 'US'",
+     *     description="Code of the entity, e.g. for United States the code is 'US'; use comma ',' to separate multiple codes",
      *     required=false,
      *     default=null
      * )

@@ -80,8 +80,9 @@ class OutagesAlertsRepository extends ServiceEntityRepository
                 ->setParameter('metaType', $entityType);
         }
         if (isset($entityCode)) {
-            $qb->andWhere('a.metaCode = :metaCode')
-                ->setParameter('metaCode', $entityCode);
+            $codes = explode(",", $entityCode);
+            $qb->andWhere('a.metaCode IN (:codes)')
+                ->setParameter('codes', $codes);
         }
         if (isset($relatedType)) {
             $qb->andWhere('a.relatedType = :relatedType')
