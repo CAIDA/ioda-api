@@ -36,7 +36,7 @@
 namespace App\TimeSeries;
 
 
-use App\Entity\Ioda\MetadataEntity;
+use App\Entity\MetadataEntity;
 use App\TimeSeries\Backend\BackendException;
 use DateTime;
 
