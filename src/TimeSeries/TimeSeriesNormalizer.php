@@ -64,7 +64,6 @@ class TimeSeriesNormalizer implements ContextAwareNormalizerInterface
         $data["nativeStep"] = $timeSeries->getNativeStep();
         $data["values"] = $timeSeries->getValues();
 
-
         return $data;
     }
 
