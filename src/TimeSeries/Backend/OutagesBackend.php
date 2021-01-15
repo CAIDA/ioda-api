@@ -126,12 +126,14 @@ class OutagesBackend
             $scores = [];
             for($i=$cur_event_index; $i<count($events); $i++){
                 $event = $events[$i];
-                if($event->getFrom()>$cur_time+$until){
+                if($event->getFrom()>$cur_time+$step){
                     break;
                 }
-                if($this->isEventOverlapsRange($cur_time, $cur_time+$until, $event)){
+                if($this->isEventOverlapsRange($cur_time, $cur_time+$step, $event)){
                     $scores[] = $event->getScore();
                     $cur_event_index = $i;
+                } else {
+                    $scores[]=0;
                 }
             }
 
