@@ -37,11 +37,10 @@ namespace App\TimeSeries\Backend;
 
 
 
-use App\Entity\DatasourceEntity;
+use App\Service\MetadataEntitiesService;
 use App\Service\OutagesAlertsService;
 use App\Service\OutagesEventsService;
 use App\TimeSeries\TimeSeries;
-use App\Utils\QueryTime;
 use DateTime;
 
 /// Time series data backend that turns outage events into time series
@@ -58,10 +57,12 @@ class OutagesBackend
 
     private $alertsService;
     private $eventsService;
+    private $entitiesSerivce;
 
-    public function __construct(OutagesAlertsService $alertsService, OutagesEventsService $eventsService){
+    public function __construct(OutagesAlertsService $alertsService, OutagesEventsService $eventsService, MetadataEntitiesService $entitiesService){
         $this->alertsService = $alertsService;
         $this->eventsService = $eventsService;
+        $this->entitiesSerivce = $entitiesService;
     }
 
     /**
@@ -86,46 +87,68 @@ class OutagesBackend
         return $newStep;
     }
 
-    private function convertEventsToTimeseries($from, $until, $maxPoints, $events){
+    private function isEventOverlapsRange($t1, $t2, $event){
+        $from = $event->getFrom();
+        $until = $event->getUntil();
+
+        $overlap = false;
+        if($from <= $t1){
+            if($until>$t1){
+                $overlap = true;
+            }
+        } else {
+            // $from > $t1
+            if($from <= $t2){
+                $overlap = true;
+            }
+        }
+
+        return $overlap;
+    }
+
+    private function convertEventsToTimeseries($from, $until, $maxPoints, $events, $method="max"){
         $step = $this->findStep($from, $until, $maxPoints);
 
         $values = [];
-        $event_times = [];
-        foreach($events as $event){
-            $event_times[] = [$event->getFrom(), $event->getUntil()];
-        }
-
         $cur_event_index = 0;
-        $cur_event = $events[$cur_event_index];
         $cur_time = $from;
 
+        // loop through all steps in the range
         while(true){
 
+            // break the loop if we step out of the range
             if($cur_time>$until+$step){
                 break;
             }
 
-            if(!isset($cur_event) || $cur_time<$cur_event->getFrom()){
-                // before the current event or current event is null (after last event)
-                $values[] = 0;
-            } else if ($cur_time <= $cur_event->getUntil()) {
-                // during the current event
-                $values[] = $cur_event->getScore();
-            } else {
-                // after current event
-                $values[] = 0;
-
-                // find the next event
-                if($cur_event_index<count($events)-1){
-                    // current event is not the last event
-                    $cur_event_index+=1;
-                    $cur_event = $events[$cur_event_index];
-                } else {
-                    // current event is the last event
-                    $cur_event = null;
+            // find out all events that overlaps in range [$cur_time, $cur_time+$step)
+            // and use the maximum score for the score of this range.
+            $scores = [];
+            for($i=$cur_event_index; $i<count($events); $i++){
+                $event = $events[$i];
+                if($event->getFrom()>$cur_time+$until){
+                    break;
+                }
+                if($this->isEventOverlapsRange($cur_time, $cur_time+$until, $event)){
+                    $scores[] = $event->getScore();
+                    $cur_event_index = $i;
                 }
             }
 
+            if(empty($scores)){
+                $rangeScore = 0;
+            } else {
+                if($method=="max"){
+                    $rangeScore = max($scores);
+                } else if ($method=="mean"){
+                    $rangeScore = round(array_sum($scores)/count($scores));
+                } else {
+                    // default to max
+                    $rangeScore = max($scores);
+                }
+            }
+
+            $values[] = $rangeScore;
             $cur_time += $step;
         }
 
@@ -162,10 +185,16 @@ class OutagesBackend
         $events = $this->eventsService->buildEventsObjects($alerts, false, "ioda", $from, $until, null, true, null, "time", "asc");
         $eventsGroups = $this->eventsService->groupEventsByEntity($events);
 
+        $entities = $this->entitiesSerivce->search($entityType, $entityCode);
+
         $tses = [];
-        foreach($eventsGroups as $entity_id => $events){
+        foreach($entities as $entity){
+            $events = [];
+            if(array_key_exists($entity->getId(), $eventsGroups)){
+                $events = $eventsGroups[$entity->getId()];
+            }
             $ts = $this->convertEventsToTimeseries($from, $until, $maxPoints, $events);
-            $ts->setMetadataEntity($events[0]->getEntity());
+            $ts->setMetadataEntity($entity);
             $ts->setDatasource($datasource);
 
             $tses[] = $ts;
