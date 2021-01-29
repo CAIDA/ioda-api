@@ -106,6 +106,19 @@ class SignalsController extends ApiController
     /**
      * Retrieve time-series signals.
      *
+     * <p>
+     * The signals API retreives time-series data for a given entity using
+     * different data sources.  The data calcualtion is documented in the
+     * datasources endpoint API.
+     * </p>
+     *
+     * <br/>
+     *
+     * <p>
+     * The signals API is used for building time-series graphs on the IODA
+     * dashboard.
+     * </p>
+     *
      * @Route("/raw/{entityType}/{entityCode}", methods={"GET"}, name="raw")
      * @SWG\Tag(name="Time Series Signals")
      * @SWG\Parameter(
