@@ -5,7 +5,7 @@ nelmio_api_doc:
         info:
             title: IODA HTTP API
             description: Data and metadata API for IODA project.
-            version: 1.0.0
+            version: 2.0.0
         tags:
         - name: Time Series Signals
           description: Time series data and metadata access calls

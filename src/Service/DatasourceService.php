@@ -43,11 +43,13 @@ class DatasourceService
     /**
      * @var DatasourceEntity[]
      */
-    private $DATASOURCES_ENTITIES;
+    private $RAW_DATA_DATASOURCES;
+
+    private $EVENTS_DATASOURCE;
 
     public function __construct()
     {
-        $this->DATASOURCES_ENTITIES = [
+        $this->RAW_DATA_DATASOURCES = [
             "ucsd-nt" => new DatasourceEntity(
                 "ucsd-nt",
                 "UCSD Network Telescope",
@@ -70,25 +72,37 @@ class DatasourceService
                 "graphite"
             ),
         ];
+        $this->EVENTS_DATASOURCE =
+            new DatasourceEntity(
+                "outages",
+                "IODA outages score time series",
+                "IODA overall score",
+                600,
+                "outages"
+            );
     }
 
     public function getAllDatasources(){
-        return array_values($this->DATASOURCES_ENTITIES);
+        return array_values($this->RAW_DATA_DATASOURCES);
+    }
+
+    public function getEventsDatasource(){
+        return $this->EVENTS_DATASOURCE;
     }
 
     public function getDatasource(String $name){
-        if (!array_key_exists($name, $this->DATASOURCES_ENTITIES)) {
+        if (!array_key_exists($name, $this->RAW_DATA_DATASOURCES)) {
             throw new \InvalidArgumentException("Unknown datasource '$name'");
         }
-        return $this->DATASOURCES_ENTITIES[$name];
+        return $this->RAW_DATA_DATASOURCES[$name];
     }
 
     public function getDatasourceNames(){
-        return array_keys($this->DATASOURCES_ENTITIES);
+        return array_keys($this->RAW_DATA_DATASOURCES);
     }
 
     public function isValidDatasource(string $ds_name): bool {
-        return array_key_exists($ds_name,$this->DATASOURCES_ENTITIES);
+        return array_key_exists($ds_name,$this->RAW_DATA_DATASOURCES);
     }
 
     public function fqidToDatasourceName($fqid){

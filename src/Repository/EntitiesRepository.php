@@ -71,7 +71,7 @@ class EntitiesRepository extends ServiceEntityRepository
             [
                 'm.code != :unknown',
                 (!empty($type) ? 'mt.type ILIKE :type' : null),
-                (!empty($code) ? 'm.code ILIKE :code' : null),
+                (!empty($code) ? 'm.code IN (:codes)' : null),
                 (!empty($name) ? 'm.name ILIKE :wildcard_name' : null),
                 (!empty($relatedType) ? 'omt.type ILIKE :relatedType' : null),
                 (!empty($relatedCode) ? 'om.code ILIKE :relatedCode' : null),
@@ -101,11 +101,15 @@ class EntitiesRepository extends ServiceEntityRepository
             . (($limit) ? ' LIMIT ' . $limit: '');
         ;
 
+        if (isset($code)) {
+            $codes = explode(",", $code);
+        }
+
         $q = $em->createNativeQuery($sql, $rsm)
             ->setParameters([
                 'unknown' => '??',
                 'type' => $type,
-                'code' => $code,
+                'codes' => $codes,
                 'name' => $name,
                 'wildcard_name' => (!empty($wildcard) ? '%'.$name.'%' : $name),
                 'country' => 'country',

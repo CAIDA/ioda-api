@@ -119,7 +119,7 @@ class SignalsController extends ApiController
      * dashboard.
      * </p>
      *
-     * @Route("/{entityType}/{entityCode}", methods={"GET"}, name="get")
+     * @Route("/raw/{entityType}/{entityCode}", methods={"GET"}, name="raw")
      * @SWG\Tag(name="Time Series Signals")
      * @SWG\Parameter(
      *     name="entityType",
@@ -286,6 +286,7 @@ class SignalsController extends ApiController
         // execute queries based on the datasources' defined backends
         try{
             foreach($datasource_array as $datasource){
+                // TODO: $ts could already be sets
                 $ts = $this->signalsService->queryForTimeSeries($from, $until, $entity, $datasource, $maxPoints);
                 $ts->sanityCheckValues();
                 $ts_set->addOneSeries($ts);
@@ -296,6 +297,145 @@ class SignalsController extends ApiController
         }
 
         $env->setData($ts_set);
+        return $this->json($env);
+    }
+
+    /**
+     * Retrieve time-series signals.
+     *
+     * @Route("/events/{entityType}/{entityCode}", methods={"GET"}, name="events")
+     * @SWG\Tag(name="Time Series Signals")
+     * @SWG\Parameter(
+     *     name="entityType",
+     *     in="path",
+     *     type="string",
+     *     description="Type of the entity, e.g. country, region, asn",
+     *     enum={"continent", "country", "region", "county", "asn"},
+     *     required=false,
+     *     default=null
+     * )
+     * @SWG\Parameter(
+     *     name="entityCode",
+     *     in="path",
+     *     type="string",
+     *     description="Code of the entity, e.g. for United States the code is 'US'",
+     *     required=false,
+     *     default=null
+     * )
+     * @SWG\Parameter(
+     *     name="from",
+     *     in="query",
+     *     type="integer",
+     *     description="Unix timestamp from when the alerts should begin after",
+     *     required=true
+     * )
+     * @SWG\Parameter(
+     *     name="until",
+     *     in="query",
+     *     type="integer",
+     *     description="Unix timestamp until when the alerts should end before",
+     *     required=true
+     * )
+     * @SWG\Parameter(
+     *     name="maxPoints",
+     *     in="query",
+     *     type="integer",
+     *     description="Maximum number of points per time-series",
+     *     required=false,
+     *     default=null
+     * )
+     * @SWG\Response(
+     *     response=200,
+     *     description="Return time series signals",
+     *     @SWG\Schema(
+     *         allOf={
+     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
+     *             @SWG\Schema(
+     *                 @SWG\Property(
+     *                     property="type",
+     *                     type="string",
+     *                     enum={"outages.alerts"}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="error",
+     *                     type="string",
+     *                     enum={}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="data",
+     *                     type="array",
+     *                     @SWG\Items(
+     *                          @SWG\Property(
+     *                              property="entityType",
+     *                              type="string"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="entityCode",
+     *                              type="string"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="datasource",
+     *                              type="string"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="from",
+     *                              type="number"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="until",
+     *                              type="number"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="step",
+     *                              type="number"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="nativeStep",
+     *                              type="number"
+     *                          ),
+     *                          @SWG\Property(
+     *                              property="values",
+     *                              type="array",
+     *                              @SWG\Items(
+     *                                  type="integer"
+     *                              )
+     *                          )
+     *                     )
+     *                 )
+     *             )
+     *         }
+     *     )
+     * )
+     *
+     * @param string|null $entityType
+     * @param string|null $entityCode
+     * @return JsonResponse
+     * @var Request $request
+     */
+    public function events(?string $entityType, ?string $entityCode, Request $request)
+    {
+        $env = new Envelope('signals',
+            'query',
+            [
+                new RequestParameter('from', RequestParameter::INTEGER, null, true),
+                new RequestParameter('until', RequestParameter::INTEGER, null, true),
+                new RequestParameter('maxPoints', RequestParameter::INTEGER, null, false),
+            ],
+            $request
+        );
+        if ($env->getError()) {
+            return $this->json($env, 400);
+        }
+
+        /* LOCAL PARAM PARSING */
+        $from = $env->getParam('from');
+        $until = $env->getParam('until');
+        $maxPoints = $env->getParam('maxPoints');
+
+        // execute queries based on the datasources' defined backends
+        $tses = $this->signalsService->queryForEventsTimeSeries($from, $until, $entityType, $entityCode, $this->datasourceService->getEventsDatasource(),$maxPoints);
+
+        $env->setData($tses);
         return $this->json($env);
     }
 }

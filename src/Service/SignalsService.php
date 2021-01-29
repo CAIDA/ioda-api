@@ -39,6 +39,7 @@ use App\Entity\MetadataEntity;
 use App\TimeSeries\Backend\BackendException;
 use App\TimeSeries\Backend\GraphiteBackend;
 use App\TimeSeries\Backend\InfluxBackend;
+use App\TimeSeries\Backend\OutagesBackend;
 use App\TimeSeries\TimeSeries;
 use App\Utils\QueryTime;
 
@@ -54,6 +55,10 @@ class SignalsService
      * @var InfluxBackend
      */
     private $influxBackend;
+    /**
+     * @var OutagesBackend
+     */
+    private $outagesBackend;
 
     /**
      * All available down-sample steps an datasource can use.
@@ -113,9 +118,10 @@ class SignalsService
     }
 
 
-    public function __construct(GraphiteBackend $graphiteBackend, InfluxBackend $influxBackend) {
+    public function __construct(GraphiteBackend $graphiteBackend, InfluxBackend $influxBackend, OutagesBackend $outagesBackend) {
         $this->graphiteBackend = $graphiteBackend;
         $this->influxBackend = $influxBackend;
+        $this->outagesBackend = $outagesBackend;
     }
 
     /**
@@ -217,6 +223,9 @@ class SignalsService
             $influx_query = $this->buildInfluxQuery($datasource, $entity, $from, $until, $step);
             $ts = $this->influxBackend->queryInflux($influx_query, $this->getInfluxDbName($datasource->getDatasource()));
             $ts->setNativeStep($datasource->getNativeStep());
+        } else if ($backend=="outages"){
+            // TODO: finish this
+            // $this->outagesBackend->queryOutages($from, $until, );
         } else {
             throw new BackendException(
                 sprintf("invalid datasource %s", $datasource)
@@ -225,5 +234,22 @@ class SignalsService
         $ts->setMetadataEntity($entity);
         $ts->setDatasource($datasource->getDatasource());
         return $ts;
+    }
+
+    /**
+     * @param int $from
+     * @param int $until
+     * @param string $entityType
+     * @param string $entityCode
+     * @param $datasource
+     * @param int|null $maxPoints
+     * @return array
+     */
+    public function queryForEventsTimeSeries(int $from, int $until, string $entityType, string $entityCode, DatasourceEntity $datasource, ?int $maxPoints): array
+    {
+        if(null === $maxPoints){
+            $maxPoints = 400;
+        }
+        return $this->outagesBackend->queryOutages($from, $until,$entityType, $entityCode, $maxPoints, $datasource->getDatasource());
     }
 }

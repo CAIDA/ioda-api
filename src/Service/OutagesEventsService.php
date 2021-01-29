@@ -151,7 +151,7 @@ class OutagesEventsService
      * @param $alerts
      * @return array
      */
-    private function groupAlertsByEntity($alerts): array
+    public function groupAlertsByEntity($alerts): array
     {
         $res = [];
         foreach($alerts as $alert){
@@ -160,6 +160,25 @@ class OutagesEventsService
                 $res[$entity_id] = array();
             }
             $res[$entity_id][] = $alert;
+        }
+        return $res;
+    }
+
+    /**
+     * Group alerts by entity.
+     *
+     * @param $events
+     * @return array
+     */
+    public function groupEventsByEntity($events): array
+    {
+        $res = [];
+        foreach($events as $event){
+            $entity_id = $event->getEntity()->getId();
+            if(!array_key_exists($entity_id, $res)){
+                $res[$entity_id] = array();
+            }
+            $res[$entity_id][] = $event;
         }
         return $res;
     }
