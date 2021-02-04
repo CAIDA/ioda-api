@@ -814,6 +814,10 @@ class OutagesController extends ApiController
      *                              ),
      *                          ),
      *                          @SWG\Property(
+     *                              property="event_cnt",
+     *                              type="number"
+     *                          ),
+     *                          @SWG\Property(
      *                              property="entity",
      *                              ref=@Model(type=\App\Entity\MetadataEntity::class, groups={"public"})
      *                          )
