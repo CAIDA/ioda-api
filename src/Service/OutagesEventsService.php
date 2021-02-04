@@ -311,7 +311,7 @@ class OutagesEventsService
             // all alerts here have the entity
             $eventmap = $this->buildEvents($alerts, $from, $until);
             $scores = $this->computeSummaryScores($eventmap);
-            $res[] = new OutagesSummary($scores, $alerts[0]->getEntity());
+            $res[] = new OutagesSummary($scores, $alerts[0]->getEntity(), count($eventmap));
         }
 
 

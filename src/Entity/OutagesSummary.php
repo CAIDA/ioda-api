@@ -44,10 +44,11 @@ class OutagesSummary
     /**
      * Constructor
      */
-    public function __construct($scores, $entity)
+    public function __construct($scores, $entity, $event_cnt)
     {
         $this->scores = $scores;
         $this->entity = $entity;
+        $this->event_cnt = $event_cnt;
     }
 
     /////////////////////
@@ -92,6 +93,24 @@ class OutagesSummary
         return $this;
     }
 
+    /**
+     * @return int
+     */
+    public function getEventCnt(): int
+    {
+        return $this->event_cnt;
+    }
+
+    /**
+     * @param int $event_cnt
+     * @return OutagesSummary
+     */
+    public function setEventCnt(int $event_cnt): OutagesSummary
+    {
+        $this->event_cnt = $event_cnt;
+        return $this;
+    }
+
 
 
     //////////////////////////
@@ -105,6 +124,12 @@ class OutagesSummary
      * @var array
      */
     private $scores;
+
+    /**
+     * @Groups({"public"})
+     * @var integer
+     */
+    private $event_cnt;
 
     /**
      * @Groups({"public"})
