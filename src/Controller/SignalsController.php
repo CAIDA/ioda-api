@@ -284,16 +284,15 @@ class SignalsController extends ApiController
         $ts_set->setMetadataEntity($entity);
 
         // execute queries based on the datasources' defined backends
-        try{
-            foreach($datasource_array as $datasource){
+        foreach($datasource_array as $datasource){
+            try{
                 // TODO: $ts could already be sets
                 $ts = $this->signalsService->queryForTimeSeries($from, $until, $entity, $datasource, $maxPoints);
                 $ts->sanityCheckValues();
                 $ts_set->addOneSeries($ts);
+            } catch (BackendException $ex) {
+                $env->setError($ex->getMessage());
             }
-        } catch (BackendException $ex) {
-            $env->setError($ex->getMessage());
-            return $this->json($env, 400);
         }
 
         $env->setData($ts_set);

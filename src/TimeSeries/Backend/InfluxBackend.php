@@ -94,8 +94,13 @@ class InfluxBackend
             count($responseJson['results'][0]['series'])!=1
         ){
             $message = "InfluxDB backend failure";
-            $message .= in_array("message", array_keys($responseJson))?
-                sprintf(": %s",$responseJson["message"]): "" ;
+            if( !array_key_exists("series", $responseJson['results'][0]) ||
+            count($responseJson['results'][0]['series'])!=1){
+                $message .= sprintf(": no data in range") ;
+            } else {
+                $message .= in_array("message", array_keys($responseJson))?
+                    sprintf(": %s",$responseJson["message"]): "" ;
+            }
             throw new BackendException($message);
         }
         $data = $responseJson['results'][0]['series'][0];
