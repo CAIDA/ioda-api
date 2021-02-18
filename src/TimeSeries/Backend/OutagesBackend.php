@@ -106,7 +106,7 @@ class OutagesBackend
         return $overlap;
     }
 
-    private function convertEventsToTimeseries($from, $until, $maxPoints, $events, $method="max"){
+    private function convertEventsToTimeseries($from, $until, $maxPoints, $events, $method="multiply"){
         $step = $this->findStep($from, $until, $maxPoints);
 
         $values = [];
@@ -124,14 +124,12 @@ class OutagesBackend
             // find out all events that overlaps in range [$cur_time, $cur_time+$step)
             // and use the maximum score for the score of this range.
             $scores = [];
-            for($i=$cur_event_index; $i<count($events); $i++){
-                $event = $events[$i];
+            foreach($events as $event){
                 if($event->getFrom()>$cur_time+$step){
                     break;
                 }
                 if($this->isEventOverlapsRange($cur_time, $cur_time+$step, $event)){
                     $scores[] = $event->getScore();
-                    $cur_event_index = $i;
                 } else {
                     $scores[]=0;
                 }
@@ -142,6 +140,8 @@ class OutagesBackend
             } else {
                 if($method=="max"){
                     $rangeScore = max($scores);
+                } else if ($method=="multiply"){
+                    $rangeScore = array_product($scores);
                 } else if ($method=="mean"){
                     $rangeScore = round(array_sum($scores)/count($scores));
                 } else {
@@ -184,7 +184,7 @@ class OutagesBackend
 
         // build events
         $alerts = $this->alertsService->findAlerts($from, $until, $entityType, $entityCode, null, false, null, null, null);
-        $events = $this->eventsService->buildEventsObjects($alerts, false, "ioda", $from, $until, null, true, null, "time", "asc");
+        $events = $this->eventsService->buildEventsObjects($alerts, false, "ioda", $from, $until, null, false, null, "time", "asc");
         $eventsGroups = $this->eventsService->groupEventsByEntity($events);
 
         $entities = $this->entitiesSerivce->search($entityType, $entityCode);
