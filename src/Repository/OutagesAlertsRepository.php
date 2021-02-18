@@ -67,10 +67,10 @@ class OutagesAlertsRepository extends ServiceEntityRepository
 
 
         if ($from) {
-            $qb->andWhere('a.time > :from')->setParameter('from', $from);
+            $qb->andWhere('a.time >= :from')->setParameter('from', $from);
         }
         if ($until) {
-            $qb->andWhere('a.time < :until')->setParameter('until', $until);
+            $qb->andWhere('a.time <= :until')->setParameter('until', $until);
         }
         if ($datasource){
             $qb->andWhere('a.fqid LIKE :datasource')->setParameter('datasource', "%".$datasource."%");
