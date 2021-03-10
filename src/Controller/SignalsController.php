@@ -43,6 +43,7 @@ use App\Service\SignalsService;
 use App\TimeSeries\Backend\BackendException;
 use App\TimeSeries\TimeSeriesSet;
 use App\Utils\QueryTime;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use InvalidArgumentException;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
@@ -96,9 +97,9 @@ class SignalsController extends ApiController
             );
         }
 
-        if(count($metas)!=1){
+        if(count($metas)<1){
             throw new InvalidArgumentException(
-                sprintf("cannot find corresponding metadata entity")
+                sprintf("cannot find corresponding metadata entity %d", count($metas))
             );
         }
     }
@@ -134,7 +135,7 @@ class SignalsController extends ApiController
      *     name="entityCode",
      *     in="path",
      *     type="string",
-     *     description="Code of the entity, e.g. for United States the code is 'US'",
+     *     description="Code of the entity, e.g. for United States the code is 'US'; use comma ',' to separate multiple codes",
      *     required=false,
      *     default=null
      * )
@@ -190,41 +191,47 @@ class SignalsController extends ApiController
      *                     property="data",
      *                     type="array",
      *                     @SWG\Items(
-     *                          @SWG\Property(
-     *                              property="entityType",
-     *                              type="string"
-     *                          ),
-     *                          @SWG\Property(
-     *                              property="entityCode",
-     *                              type="string"
-     *                          ),
-     *                          @SWG\Property(
-     *                              property="datasource",
-     *                              type="string"
-     *                          ),
-     *                          @SWG\Property(
-     *                              property="from",
-     *                              type="number"
-     *                          ),
-     *                          @SWG\Property(
-     *                              property="until",
-     *                              type="number"
-     *                          ),
-     *                          @SWG\Property(
-     *                              property="step",
-     *                              type="number"
-     *                          ),
-     *                          @SWG\Property(
-     *                              property="nativeStep",
-     *                              type="number"
-     *                          ),
-     *                          @SWG\Property(
-     *                              property="values",
-     *                              type="array",
-     *                              @SWG\Items(
-     *                                  type="integer"
-     *                              )
-     *                          )
+     *                         @SWG\Property(
+     *                             property="data",
+     *                             type="array",
+     *                             @SWG\Items(
+     *                                  @SWG\Property(
+     *                                      property="entityType",
+     *                                      type="string"
+     *                                  ),
+     *                                  @SWG\Property(
+     *                                      property="entityCode",
+     *                                      type="string"
+     *                                  ),
+     *                                  @SWG\Property(
+     *                                      property="datasource",
+     *                                      type="string"
+     *                                  ),
+     *                                  @SWG\Property(
+     *                                      property="from",
+     *                                      type="number"
+     *                                  ),
+     *                                  @SWG\Property(
+     *                                      property="until",
+     *                                      type="number"
+     *                                  ),
+     *                                  @SWG\Property(
+     *                                      property="step",
+     *                                      type="number"
+     *                                  ),
+     *                                  @SWG\Property(
+     *                                      property="nativeStep",
+     *                                      type="number"
+     *                                  ),
+     *                                  @SWG\Property(
+     *                                      property="values",
+     *                                      type="array",
+     *                                      @SWG\Items(
+     *                                          type="integer"
+     *                                      )
+     *                                  )
+     *                             )
+     *                         )
      *                     )
      *                 )
      *             )
@@ -265,7 +272,7 @@ class SignalsController extends ApiController
             $from = new QueryTime($from);
             $until = new QueryTime($until);
             $this->validateUserInputs($from, $until, $datasource_str, $metas);
-            $entity = $metas[0];
+            $entities = $metas;
         } catch (InvalidArgumentException $ex) {
             $env->setError($ex->getMessage());
             return $this->json($env, 400);
@@ -279,23 +286,28 @@ class SignalsController extends ApiController
             $datasource_array[] = $this->datasourceService->getDatasource($datasource_str);
         }
 
-        // prepare TimeSeriesSet object
-        $ts_set = new TimeSeriesSet();
-        $ts_set->setMetadataEntity($entity);
+        $ts_sets = [];
+        foreach($entities as $entity){
+            // prepare TimeSeriesSet object
+            $ts_set = new TimeSeriesSet();
+            $ts_set->setMetadataEntity($entity);
 
-        // execute queries based on the datasources' defined backends
-        foreach($datasource_array as $datasource){
-            try{
-                // TODO: $ts could already be sets
-                $ts = $this->signalsService->queryForTimeSeries($from, $until, $entity, $datasource, $maxPoints);
-                $ts->sanityCheckValues();
-                $ts_set->addOneSeries($ts);
-            } catch (BackendException $ex) {
-                $env->setError($ex->getMessage());
+            // execute queries based on the datasources' defined backends
+            foreach($datasource_array as $datasource){
+                try{
+                    // TODO: $ts could already be sets
+                    $ts = $this->signalsService->queryForTimeSeries($from, $until, $entity, $datasource, $maxPoints);
+                    $ts->sanityCheckValues();
+                    $ts_set->addOneSeries($ts);
+                } catch (BackendException $ex) {
+                    $env->setError($ex->getMessage());
+                }
             }
+
+            $ts_sets []= $ts_set;
         }
 
-        $env->setData($ts_set);
+        $env->setData($ts_sets);
         return $this->json($env);
     }
 
@@ -317,7 +329,7 @@ class SignalsController extends ApiController
      *     name="entityCode",
      *     in="path",
      *     type="string",
-     *     description="Code of the entity, e.g. for United States the code is 'US'",
+     *     description="Code of the entity, e.g. for United States the code is 'US'; use comma ',' to separate multiple codes",
      *     required=false,
      *     default=null
      * )
