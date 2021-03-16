@@ -51,11 +51,66 @@ use Symfony\Component\Serializer\SerializerInterface;
  */
 class DatasourcesController extends ApiController
 {
+
     /**
-     * Get datasources
+     * Get all data sources.
+     *
+     * Return all data sources used in IODA.
+     *
+     * <h3>BGP (bgp)</h3>
+     * <ul>
+     *     <li>
+     *         Data is obtained by processing <em>all updates</em> from <em>all Route Views and
+     *         RIPE RIS collectors</em>.
+     *     </li>
+     *     <li>
+     *         Every 5 minutes, we calculate the number of full-feed peers that
+     *         observe each prefix. A peer is <em>full-feed</em> if it has more than 400k IPv4 prefixes, and/or more than 10k IPv6 prefixes (i.e., suggesting that it shares its entire routing table).
+     *     </li>
+     *     <li>
+     *         A prefix is <em>visible</em> if more than 50% of the full-feed peers observe it.
+     *         We aggregate prefix visibility statistics by country, region and ASN.
+     *     </li>
+     * </ul>
+     *
+     * <h3>Active Probing (ping-slash24)</h3>
+     * <ul>
+     *     <li>
+     *         We use a custom implementation of the <a href="https://www.isi.edu/~johnh/PAPERS/Quan13c.html">Trinocular</a> technique.
+     *     </li>
+     *     <li>
+     *         We probe ~4.2M /24 blocks at least once every 10 minutes (as opposed to 11 minutes used in the Trinocular paper).
+     *     </li>
+     *     <li>
+     *         Currently the alerts IODA shows use data from a team of
+     *         20 probers located at SDSC. (Alerts based on data from our
+     *         distributed probers that run on the Ark platform are coming soon.)
+     *     </li>
+     *     <li>
+     *         The trinocular measurement and inference technique labels a /24 block as <em>up</em>,
+     *         <em>down</em>, or <em>unknown</em>.
+     *         In addition, we then aggregate <em>up</em> /24s into country, region and ASN
+     *         statistics.
+     *     </li>
+     * </ul>
+     *
+     * <h3>Network Telescope (ucsd-nt)</h3>
+     * <ul>
+     *     <li>
+     *         We analyze traffic data from both the <a href=https://www.caida.org/projects/network_telescope/>UCSD</a> and <a href=https://www.merit.edu/a-data-repository-for-cyber-security-research-and-education/>Merit</a> Network Telescopes.
+     *         (Currently IODA uses only data from the UCSD Telescope for generating alerts.)
+     *     </li>
+     *     <li>
+     *         We apply <a href=http://www.caida.org/publications/papers/2014/passive_ip_space_usage_estimation/>anti-spoofing heuristics and noise reduction filters</a> to the
+     *         raw traffic.
+     *     </li>
+     *     <li>
+     *            For each packet that passes the filters, we perform geolocation (using the Netacuity IP geolocation DB) and ASN lookups on the source IP address,
+     *            and then compute the <em>number of unique source IPs per minute</em>, aggregated by  country, region, and ASN.
+     *     </li>
+     * </ul>
      *
      * @Route("/", methods={"GET"}, name="getall")
-     * @Route("/{datasource}", methods={"GET"}, name="findone")
      * @SWG\Tag(name="Data Sources")
      * @SWG\Response(
      *     response=200,
@@ -76,19 +131,19 @@ class DatasourcesController extends ApiController
      *                 ),
      *                 @SWG\Property(
      *                     property="data",
-     *                     ref=@Model(type=\App\Entity\Ioda\DatasourceEntity::class, groups={"public"})
+     *                     ref=@Model(type=\App\Entity\DatasourceEntity::class, groups={"public"})
      *                 )
      *             )
      *         }
      *     )
      * )
      *
-     * @var string|null datasource
+     *
      * @var Request $request
-     * @var SerializerInterface $serializer
+     * @param DatasourceService $datasourceService
      * @return JsonResponse
      */
-    public function datasourceLookup(?string $datasource, Request $request, DatasourceService $datasourceService)
+    public function datasourcesAll(Request $request, DatasourceService $datasourceService)
     {
         $env = new Envelope('datasources',
             'query',
@@ -99,13 +154,68 @@ class DatasourcesController extends ApiController
             return $this->json($env, 400);
         }
 
-        // $datasource is null, return all datasources
-        if(!isset($datasource)){
-            $env->setData($datasourceService->getAllDatasources());
-            return $this->json($env);
+        $env->setData($datasourceService->getAllDatasources());
+        return $this->json($env);
+    }
+
+    /**
+     * Get one data source by name
+     *
+     * Return a single data source used in IODA by data source name.
+     *
+     * @Route("/{datasource}", methods={"GET"}, name="findone")
+     * @SWG\Tag(name="Data Sources")
+     * @SWG\Parameter(
+     *     name="datasource",
+     *     in="path",
+     *     type="string",
+     *     description="Shortname of the data source: bgp, ucsd-nt, ping-slash24",
+     *     default=null
+     * )
+     * @SWG\Response(
+     *     response=200,
+     *     description="Return data source matched by the lookup term",
+     *     @SWG\Schema(
+     *         allOf={
+     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
+     *             @SWG\Schema(
+     *                 @SWG\Property(
+     *                     property="type",
+     *                     type="string",
+     *                     enum={"datasources.lookup"}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="error",
+     *                     type="string",
+     *                     enum={}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="data",
+     *                     ref=@Model(type=\App\Entity\DatasourceEntity::class, groups={"public"})
+     *                 )
+     *             )
+     *         }
+     *     )
+     * )
+     *
+     *
+     *
+     * @var string $datasource
+     * @var Request $request
+     * @var DatasourceService $datasourceService
+     * @return JsonResponse
+     */
+    public function datasourceSingle(string $datasource, Request $request, DatasourceService $datasourceService)
+    {
+        $env = new Envelope('datasources',
+            'query',
+            [],
+            $request
+        );
+        if ($env->getError()) {
+            return $this->json($env, 400);
         }
 
-        // $datasource is not null, return only the matching datasource
         try {
             $env->setData($datasourceService->getDatasource($datasource));
         } catch (\InvalidArgumentException $ex) {

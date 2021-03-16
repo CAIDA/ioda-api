@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * This software is Copyright (c) 2013 The Regents of the University of
  * California. All Rights Reserved. Permission to copy, modify, and distribute this
  * software and its documentation for academic research and education purposes,
@@ -33,15 +33,15 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Entity\Outages;
+namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
-use App\Entity\Ioda\MetadataEntity;
+use App\Entity\MetadataEntity;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\OutagersAlertsRepository")
- * @ORM\Table(name="watchtower_alert")
+ * @ORM\Table(name="alerts_with_entity_view")
  */
 class OutagesAlert
 {
@@ -392,7 +392,23 @@ class OutagesAlert
     private $metaCode;
 
     /**
+     * @ORM\Column(type="string")
+     * @Groups({"private"})
+     * @var string
+     */
+    private $relatedType;
+
+    /**
+     * @ORM\Column(type="string")
+     * @Groups({"private"})
+     * @var string
+     */
+    private $relatedCode;
+
+    /**
      * @Groups({"public"})
+     * @ORM\ManyToOne(targetEntity="MetadataEntity")
+     * @ORM\JoinColumn(name="meta_id", referencedColumnName="id")
      * @var MetadataEntity
      */
     private $entity;

@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * This software is Copyright (c) 2013 The Regents of the University of
  * California. All Rights Reserved. Permission to copy, modify, and distribute this
  * software and its documentation for academic research and education purposes,
@@ -33,40 +33,107 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Entity\Outages;
+namespace App\Entity;
 
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Serializer\Normalizer\ContextAwareNormalizerInterface;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
+use App\Entity\MetadataEntity;
 
-class OutagesAlertNormalizer implements ContextAwareNormalizerInterface
+class OutagesSummary
 {
-    private $router;
-    private $normalizer;
-
-    public function __construct(UrlGeneratorInterface $router, ObjectNormalizer $normalizer)
+    /**
+     * Constructor
+     */
+    public function __construct($scores, $entity, $event_cnt)
     {
-        $this->router = $router;
-        $this->normalizer = $normalizer;
+        $this->scores = $scores;
+        $this->entity = $entity;
+        $this->event_cnt = $event_cnt;
     }
 
-    public function normalize($alert, $format = null, array $context = [])
-    {
-        $data = $this->normalizer->normalize($alert, $format, $context);
-        $res = array();
-        $res["datasource"]=$data["datasource"];
-        $res["entity"] = $data["entity"];
-        $res["time"] = $data["time"];
-        $res["level"] = $data["level"];
-        $res["condition"] = $data["condition"];
-        $res["value"] = $data["value"];
-        $res["historyValue"] = $data["historyValue"];
+    /////////////////////
+    /////////////////////
+    // GETTERS SETTERS //
+    /////////////////////
+    /////////////////////
 
-        return $res;
+    /**
+     * @return array
+     */
+    public function getScores(): array
+    {
+        return $this->scores;
     }
 
-    public function supportsNormalization($data, $format = null, array $context = [])
+    /**
+     * @param array $scores
+     * @return OutagesSummary
+     */
+    public function setScores(array $scores): OutagesSummary
     {
-        return $data instanceof OutagesAlert;
+        $this->scores = $scores;
+        return $this;
     }
+
+    /**
+     * @return MetadataEntity
+     */
+    public function getEntity(): ?MetadataEntity
+    {
+        return $this->entity;
+    }
+
+    /**
+     * @param MetadataEntity $entity
+     * @return OutagesSummary
+     */
+    public function setEntity(MetadataEntity $entity): OutagesSummary
+    {
+        $this->entity = $entity;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getEventCnt(): int
+    {
+        return $this->event_cnt;
+    }
+
+    /**
+     * @param int $event_cnt
+     * @return OutagesSummary
+     */
+    public function setEventCnt(int $event_cnt): OutagesSummary
+    {
+        $this->event_cnt = $event_cnt;
+        return $this;
+    }
+
+
+
+    //////////////////////////
+    //////////////////////////
+    // VARIABLE DEFINITIONS //
+    //////////////////////////
+    //////////////////////////
+
+    /**
+     * @Groups({"public"})
+     * @var array
+     */
+    private $scores;
+
+    /**
+     * @Groups({"public"})
+     * @var integer
+     */
+    private $event_cnt;
+
+    /**
+     * @Groups({"public"})
+     * @var MetadataEntity
+     */
+    private $entity;
 }

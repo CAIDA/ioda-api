@@ -43,6 +43,7 @@ use App\Service\SignalsService;
 use App\TimeSeries\Backend\BackendException;
 use App\TimeSeries\TimeSeriesSet;
 use App\Utils\QueryTime;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use InvalidArgumentException;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Swagger\Annotations as SWG;
@@ -96,9 +97,9 @@ class SignalsController extends ApiController
             );
         }
 
-        if(count($metas)!=1){
+        if(count($metas)<1){
             throw new InvalidArgumentException(
-                sprintf("cannot find corresponding metadata entity")
+                sprintf("cannot find corresponding metadata entity %d", count($metas))
             );
         }
     }
@@ -106,7 +107,20 @@ class SignalsController extends ApiController
     /**
      * Retrieve time-series signals.
      *
-     * @Route("/{entityType}/{entityCode}", methods={"GET"}, name="get")
+     * <p>
+     * The signals API retreives time-series data for a given entity using
+     * different data sources.  The data calcualtion is documented in the
+     * datasources endpoint API.
+     * </p>
+     *
+     * <br/>
+     *
+     * <p>
+     * The signals API is used for building time-series graphs on the IODA
+     * dashboard.
+     * </p>
+     *
+     * @Route("/raw/{entityType}/{entityCode}", methods={"GET"}, name="raw")
      * @SWG\Tag(name="Time Series Signals")
      * @SWG\Parameter(
      *     name="entityType",
@@ -121,7 +135,7 @@ class SignalsController extends ApiController
      *     name="entityCode",
      *     in="path",
      *     type="string",
-     *     description="Code of the entity, e.g. for United States the code is 'US'",
+     *     description="Code of the entity, e.g. for United States the code is 'US'; use comma ',' to separate multiple codes",
      *     required=false,
      *     default=null
      * )
@@ -147,6 +161,191 @@ class SignalsController extends ApiController
      *     enum={"bgp", "ucsd-nt", "ping-slash24"},
      *     required=false,
      *     default=null
+     * )
+     * @SWG\Parameter(
+     *     name="maxPoints",
+     *     in="query",
+     *     type="integer",
+     *     description="Maximum number of points per time-series",
+     *     required=false,
+     *     default=null
+     * )
+     * @SWG\Response(
+     *     response=200,
+     *     description="Return time series signals",
+     *     @SWG\Schema(
+     *         allOf={
+     *             @SWG\Schema(ref=@Model(type=Envelope::class, groups={"public"})),
+     *             @SWG\Schema(
+     *                 @SWG\Property(
+     *                     property="type",
+     *                     type="string",
+     *                     enum={"outages.alerts"}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="error",
+     *                     type="string",
+     *                     enum={}
+     *                 ),
+     *                 @SWG\Property(
+     *                     property="data",
+     *                     type="array",
+     *                     @SWG\Items(
+     *                         @SWG\Property(
+     *                             property="data",
+     *                             type="array",
+     *                             @SWG\Items(
+     *                                  @SWG\Property(
+     *                                      property="entityType",
+     *                                      type="string"
+     *                                  ),
+     *                                  @SWG\Property(
+     *                                      property="entityCode",
+     *                                      type="string"
+     *                                  ),
+     *                                  @SWG\Property(
+     *                                      property="datasource",
+     *                                      type="string"
+     *                                  ),
+     *                                  @SWG\Property(
+     *                                      property="from",
+     *                                      type="number"
+     *                                  ),
+     *                                  @SWG\Property(
+     *                                      property="until",
+     *                                      type="number"
+     *                                  ),
+     *                                  @SWG\Property(
+     *                                      property="step",
+     *                                      type="number"
+     *                                  ),
+     *                                  @SWG\Property(
+     *                                      property="nativeStep",
+     *                                      type="number"
+     *                                  ),
+     *                                  @SWG\Property(
+     *                                      property="values",
+     *                                      type="array",
+     *                                      @SWG\Items(
+     *                                          type="integer"
+     *                                      )
+     *                                  )
+     *                             )
+     *                         )
+     *                     )
+     *                 )
+     *             )
+     *         }
+     *     )
+     * )
+     *
+     * @param string|null $entityType
+     * @param string|null $entityCode
+     * @return JsonResponse
+     * @var Request $request
+     */
+    public function lookup(?string $entityType, ?string $entityCode, Request $request)
+    {
+        $env = new Envelope('signals',
+                            'query',
+                            [
+                                new RequestParameter('from', RequestParameter::INTEGER, null, true),
+                                new RequestParameter('until', RequestParameter::INTEGER, null, true),
+                                new RequestParameter('datasource', RequestParameter::STRING, null, false),
+                                new RequestParameter('maxPoints', RequestParameter::INTEGER, null, false),
+                                new RequestParameter('noinflux', RequestParameter::BOOL, false, false),
+                            ],
+                            $request
+        );
+        if ($env->getError()) {
+            return $this->json($env, 400);
+        }
+
+        /* LOCAL PARAM PARSING */
+        $from = $env->getParam('from');
+        $until = $env->getParam('until');
+        $datasource_str = $env->getParam('datasource');
+        $maxPoints = $env->getParam('maxPoints');
+        $metas = $this->metadataService->search($entityType, $entityCode);
+
+        try{
+            $from = new QueryTime($from);
+            $until = new QueryTime($until);
+            $this->validateUserInputs($from, $until, $datasource_str, $metas);
+            $entities = $metas;
+        } catch (InvalidArgumentException $ex) {
+            $env->setError($ex->getMessage());
+            return $this->json($env, 400);
+        }
+
+        // convert datasource id string to datasource objects array
+        $datasource_array = [];
+        if($datasource_str == null){
+            $datasource_array = $this->datasourceService->getAllDatasources();
+        } else {
+            $datasource_array[] = $this->datasourceService->getDatasource($datasource_str);
+        }
+
+        $ts_sets = [];
+        foreach($entities as $entity){
+            // prepare TimeSeriesSet object
+            $ts_set = new TimeSeriesSet();
+            $ts_set->setMetadataEntity($entity);
+
+            // execute queries based on the datasources' defined backends
+            foreach($datasource_array as $datasource){
+                try{
+                    // TODO: $ts could already be sets
+                    $ts = $this->signalsService->queryForTimeSeries($from, $until, $entity, $datasource, $maxPoints);
+                    $ts->sanityCheckValues();
+                    $ts_set->addOneSeries($ts);
+                } catch (BackendException $ex) {
+                    $env->setError($ex->getMessage());
+                }
+            }
+
+            $ts_sets []= $ts_set;
+        }
+
+        $env->setData($ts_sets);
+        return $this->json($env);
+    }
+
+    /**
+     * Retrieve time-series signals.
+     *
+     * @Route("/events/{entityType}/{entityCode}", methods={"GET"}, name="events")
+     * @SWG\Tag(name="Time Series Signals")
+     * @SWG\Parameter(
+     *     name="entityType",
+     *     in="path",
+     *     type="string",
+     *     description="Type of the entity, e.g. country, region, asn",
+     *     enum={"continent", "country", "region", "county", "asn"},
+     *     required=false,
+     *     default=null
+     * )
+     * @SWG\Parameter(
+     *     name="entityCode",
+     *     in="path",
+     *     type="string",
+     *     description="Code of the entity, e.g. for United States the code is 'US'; use comma ',' to separate multiple codes",
+     *     required=false,
+     *     default=null
+     * )
+     * @SWG\Parameter(
+     *     name="from",
+     *     in="query",
+     *     type="integer",
+     *     description="Unix timestamp from when the alerts should begin after",
+     *     required=true
+     * )
+     * @SWG\Parameter(
+     *     name="until",
+     *     in="query",
+     *     type="integer",
+     *     description="Unix timestamp until when the alerts should end before",
+     *     required=true
      * )
      * @SWG\Parameter(
      *     name="maxPoints",
@@ -224,18 +423,16 @@ class SignalsController extends ApiController
      * @return JsonResponse
      * @var Request $request
      */
-    public function lookup(?string $entityType, ?string $entityCode, Request $request)
+    public function events(?string $entityType, ?string $entityCode, Request $request)
     {
         $env = new Envelope('signals',
-                            'query',
-                            [
-                                new RequestParameter('from', RequestParameter::INTEGER, null, true),
-                                new RequestParameter('until', RequestParameter::INTEGER, null, true),
-                                new RequestParameter('datasource', RequestParameter::STRING, null, false),
-                                new RequestParameter('maxPoints', RequestParameter::INTEGER, null, false),
-                                new RequestParameter('noinflux', RequestParameter::BOOL, false, false),
-                            ],
-                            $request
+            'query',
+            [
+                new RequestParameter('from', RequestParameter::INTEGER, null, true),
+                new RequestParameter('until', RequestParameter::INTEGER, null, true),
+                new RequestParameter('maxPoints', RequestParameter::INTEGER, null, false),
+            ],
+            $request
         );
         if ($env->getError()) {
             return $this->json($env, 400);
@@ -244,45 +441,12 @@ class SignalsController extends ApiController
         /* LOCAL PARAM PARSING */
         $from = $env->getParam('from');
         $until = $env->getParam('until');
-        $datasource_str = $env->getParam('datasource');
         $maxPoints = $env->getParam('maxPoints');
-        $metas = $this->metadataService->search($entityType, $entityCode);
-
-        try{
-            $from = new QueryTime($from);
-            $until = new QueryTime($until);
-            $this->validateUserInputs($from, $until, $datasource_str, $metas);
-            $entity = $metas[0];
-        } catch (InvalidArgumentException $ex) {
-            $env->setError($ex->getMessage());
-            return $this->json($env, 400);
-        }
-
-        // convert datasource id string to datasource objects array
-        $datasource_array = [];
-        if($datasource_str == null){
-            $datasource_array = $this->datasourceService->getAllDatasources();
-        } else {
-            $datasource_array[] = $this->datasourceService->getDatasource($datasource_str);
-        }
-
-        // prepare TimeSeriesSet object
-        $ts_set = new TimeSeriesSet();
-        $ts_set->setMetadataEntity($entity);
 
         // execute queries based on the datasources' defined backends
-        try{
-            foreach($datasource_array as $datasource){
-                $ts = $this->signalsService->queryForTimeSeries($from, $until, $entity, $datasource, $maxPoints);
-                $ts->sanityCheckValues();
-                $ts_set->addOneSeries($ts);
-            }
-        } catch (BackendException $ex) {
-            $env->setError($ex->getMessage());
-            return $this->json($env, 400);
-        }
+        $tses = $this->signalsService->queryForEventsTimeSeries($from, $until, $entityType, $entityCode, $this->datasourceService->getEventsDatasource(),$maxPoints);
 
-        $env->setData($ts_set);
+        $env->setData($tses);
         return $this->json($env);
     }
 }

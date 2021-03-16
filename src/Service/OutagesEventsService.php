@@ -36,8 +36,8 @@
 namespace App\Service;
 
 
-use App\Entity\Outages\OutagesEvent;
-use App\Entity\Outages\OutagesSummary;
+use App\Entity\OutagesEvent;
+use App\Entity\OutagesSummary;
 use App\Repository\OutagesAlertsRepository;
 
 class OutagesEventsService
@@ -66,14 +66,21 @@ class OutagesEventsService
         return $a->getFrom() - $b->getFrom();
     }
 
-    private function mergeEvents($events)
+    /**
+     * Merge overlapping events and calculate overall scores.
+     *
+     * @param $eventMap
+     * @return array
+     */
+    private function mergeOverlappingEvents($eventMap): array
     {
-        if (!count($events)) {
+        if (!count($eventMap)) {
             return [];
         }
+        // prepare merged-event data fields (fqScore)
         $allEvents = [];
-        foreach (array_keys($events) as $aId) {
-            foreach ($events[$aId] as $event) {
+        foreach (array_keys($eventMap) as $aId) {
+            foreach ($eventMap[$aId] as $event) {
                 $fqid = $event['fqid'];
                 $event['fqScores'] = [
                     $fqid => $event['score'],
@@ -93,28 +100,42 @@ class OutagesEventsService
         ]);
 
         $merged = [];
-        $merged[] = array_shift($allEvents);
+        $merged[] = array_shift($allEvents); // get the first event out
         foreach ($allEvents as $event) {
-            $last = array_pop($merged);
-            if ($last['until'] < $event['from']) {
+            $lastEvent = array_pop($merged); // pop the latest event (last one is the latest)
+
+            if ($lastEvent['until'] < $event['from']) {
+                // current event starts after the last event ends
                 // no overlap, just add as-is
-                $merged[] = $last;
-                $merged[] = $event;
+                $merged[] = $lastEvent; // put back the popped last event
+                $merged[] = $event; // push the current event into merged events array
             } else {
-                if ($last['until'] < $event['until']) {
-                    // need to extend last to include event
-                    $last['until'] = $event['until'];
+                // current event starts before the last merged event ends
+                // modify the last merged event and push it back
+
+                // update end time
+                if ($lastEvent['until'] < $event['until']) {
+                    // need to extend last merged event's ends time
+                    $lastEvent['until'] = $event['until'];
                 }
+
+                // update score from each individual data source.
+                // we use the *largest score* for a datasource as the merged-event's score for that data source.
                 $eFqid = $event['fqid'];
-                if (array_key_exists($eFqid, $last['fqScores'])) {
-                    $last['fqScores'][$eFqid] += $event['fqScores'][$eFqid];
-                } else {
-                    $last['fqScores'][$eFqid] = $event['fqScores'][$eFqid];
+                if (!array_key_exists($eFqid, $lastEvent['fqScores']) ||
+                    $lastEvent['fqScores'][$eFqid] < $event['fqScores'][$eFqid]) {
+                    $lastEvent['fqScores'][$eFqid] = $event['fqScores'][$eFqid];
                 }
-                $merged[] = $last;
+
+                $lastEvent['alerts'] = array_merge($lastEvent['alerts'], $event["alerts"]);
+
+                // put back the popped last merged event
+                // essentially, we updated the last merged event in this block
+                $merged[] = $lastEvent;
             }
         }
 
+        // for each merged event, we multiply the largest score of each data source to get the overall score
         foreach ($merged as &$event) {
             foreach (array_keys($event['fqScores']) as $fqid) {
                 $event['score'] *= $event['fqScores'][$fqid];
@@ -124,7 +145,14 @@ class OutagesEventsService
         return $merged;
     }
 
-    private function groupAlertsByEntity($alerts){
+    /**
+     * Group alerts by entity.
+     *
+     * @param $alerts
+     * @return array
+     */
+    public function groupAlertsByEntity($alerts): array
+    {
         $res = [];
         foreach($alerts as $alert){
             $entity_id = $alert->getMetaType() . $alert->getMetaCode();
@@ -137,27 +165,86 @@ class OutagesEventsService
     }
 
     /**
+     * Group alerts by entity.
+     *
+     * @param $events
+     * @return array
+     */
+    public function groupEventsByEntity($events): array
+    {
+        $res = [];
+        foreach($events as $event){
+            $entity_id = $event->getEntity()->getId();
+            if(!array_key_exists($entity_id, $res)){
+                $res[$entity_id] = array();
+            }
+            $res[$entity_id][] = $event;
+        }
+        return $res;
+    }
+
+    /**
      * @param $alerts
      * @param $includeAlerts
      * @param $format
      * @param $from
      * @param $until
      * @param $limit
+     * @param bool $mergeOverlap
      * @param int $page
+     * @param string $orderByAttr
+     * @param string $orderByOrder
      * @return OutagesEvent[]
      */
-    public function buildEventsSimple($alerts, $includeAlerts, $format, $from, $until, $limit, $page=0){
+    public function buildEventsObjects($alerts, $includeAlerts, $format, $from, $until, $limit, $mergeOverlap=false, $page=0, $orderByAttr="time", $orderByOrder="asc"): array
+    {
         $res = [];
+        $raw_events = [];
 
-        $eventmap = $this->buildEvents($alerts, $from, $until);
-        foreach ($eventmap as $id => $events) {
-            foreach($events as $event){
-                $res[] = new OutagesEvent($event['from'], $event['until'],
-                    $event['alerts'], $event['score'], $format, $includeAlerts, $event['X-Overlaps-Window']);
+        $alertGroups = $this->groupAlertsByEntity($alerts);
+        foreach($alertGroups as $entity_id => $alerts) {
+            $eventMap = $this->buildEvents($alerts, $from, $until);
+            if ($mergeOverlap) {
+                $raw_events = array_merge($raw_events, $this->mergeOverlappingEvents($eventMap));
+            } else {
+                foreach ($eventMap as $id => $events) {
+                    // id = datasource + entity_type + entity_code
+                    foreach ($events as $event) {
+                        $raw_events[] = $event;
+                    }
+                }
             }
         }
+        foreach($raw_events as $event){
+            $res[] = new OutagesEvent($event['from'], $event['until'],
+                $event['alerts'], $event['score'], $format, $includeAlerts, $event['X-Overlaps-Window'], $mergeOverlap);
+        }
 
-        usort($res, [ "App\Service\OutagesEventsService","cmpEventObj"]);
+        // source events
+        if($orderByAttr=="score"){
+            usort($res,
+                function ($a, $b) {
+                    return ($a->getScore() > $b->getScore() );
+                }
+            );
+        } else if ($orderByAttr=="name") {
+            usort($res,
+                function ($a, $b) {
+                    return strcmp($a->getEntity()->getName(), $b->getEntity()->getName() );
+                }
+            );
+        } else if ($orderByAttr=="time") {
+            usort($res,
+                function ($a, $b) {
+                    return ($a->getFrom() > $b->getFrom() );
+                }
+            );
+        }
+
+        if ($orderByOrder == "desc"){
+            $res = array_reverse($res);
+        }
+
         if ($limit) {
             $res = array_slice($res, $limit*$page, $limit);
         }
@@ -166,11 +253,16 @@ class OutagesEventsService
     }
 
     /**
+     * Compute summary scores.
+     *
+     * In a summary, the score of each data source is the sum of all scores of events for the corresponding data source.
+     * The overall score for the summary of the sum of all the overall scores for the merged events.
+     *
      * @param array $events
      *
      * @return array
      */
-    private function computeScores(&$events)
+    private function computeSummaryScores(array &$events): array
     {
         $res = [];
         foreach (array_keys($events) as $aId) {
@@ -183,7 +275,7 @@ class OutagesEventsService
             }
         }
 
-        $merged = $this->mergeEvents($events);
+        $merged = $this->mergeOverlappingEvents($events);
         $total = 0;
         foreach ($merged as $event) {
             $total += $event['score'];
@@ -193,36 +285,61 @@ class OutagesEventsService
     }
 
     /**
-     * @param $alerts
-     * @param $from
-     * @param $until
-     * @param $limit
-     * @param int $page
+     * Summarize all events during the time period by entities. One summary per
+     * entitiy for the entire time period.
+     *
+     * @param array $alerts an array of alerts to build events from
+     * @param int $from
+     * @param int $until
+     * @param int $limit
+     * @param int|null $page
+     * @param string|null $orderByAttr
+     * @param string|null $orderByOrder
      * @return OutagesEvent[]
      */
-    public function buildEventsSummary($alerts, $from, $until, $limit, $page=0){
+    public function buildEventsSummary($alerts, $from, $until, $limit, $page=0, $orderByAttr="score", $orderByOrder="asc"): array
+    {
+        if($orderByAttr=="time"){
+            $orderByAttr="score";
+        }
         $res = [];
 
+        // first group all alerts by entity and process each entity's alerts
+        // separately to build events and then summary
         $alertGroups = $this->groupAlertsByEntity($alerts);
         foreach($alertGroups as $entity_id => $alerts){
             // all alerts here have the entity
             $eventmap = $this->buildEvents($alerts, $from, $until);
-            $scores = $this->computeScores($eventmap);
-            $res[] = new OutagesSummary($scores, $alerts[0]->getEntity());
+            $scores = $this->computeSummaryScores($eventmap);
+            $res[] = new OutagesSummary($scores, $alerts[0]->getEntity(), count($eventmap));
         }
 
-        usort($res,
-            function ($a, $b) {
-                return ($a->getScores()["overall"] < $b->getScores()["overall"] );
-            }
-        );
+
+        if($orderByAttr=="score"){
+            usort($res,
+                function ($a, $b) {
+                    return ($a->getScores()["overall"] > $b->getScores()["overall"] );
+                }
+            );
+        } else if ($orderByAttr=="name") {
+            usort($res,
+                function ($a, $b) {
+                    return strcmp($a->getEntity()->getName(), $b->getEntity()->getName() );
+                }
+            );
+        }
+
+        if($orderByOrder=="desc"){
+            $res=array_reverse($res);
+        }
+
         if ($limit) {
             $res = array_slice($res, $limit*$page, $limit);
         }
         return $res;
     }
 
-    private function buildEvents($alerts, $from, $until){
+    private function buildEvents($alerts, $from, $until, $orderBy="score"){
         // sort alerts by time
         // usort($alerts, ["App\Outages\OutagesEventsService","cmpAlert"]);
 

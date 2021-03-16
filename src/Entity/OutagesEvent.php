@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * This software is Copyright (c) 2013 The Regents of the University of
  * California. All Rights Reserved. Permission to copy, modify, and distribute this
  * software and its documentation for academic research and education purposes,
@@ -33,18 +33,26 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Entity\Outages;
+namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
-use App\Entity\Ioda\MetadataEntity;
+use App\Entity\MetadataEntity;
 
 class OutagesEvent
 {
     /**
      * Constructor
+     * @param $from
+     * @param $until
+     * @param $alerts
+     * @param $score
+     * @param $format
+     * @param $includeAlerts
+     * @param $overlap
+     * @param bool $mergedEvent
      */
-    public function __construct($from, $until, $alerts, $score, $format, $includeAlerts, $overlap)
+    public function __construct($from, $until, $alerts, $score, $format, $includeAlerts, $overlap, $mergedEvent=False)
     {
         $this->from = $from;
         $this->until = $until;
@@ -53,6 +61,11 @@ class OutagesEvent
         $this->format = $format;
         $this->includeAlerts = $includeAlerts;
         $this->overlap = $overlap;
+        if($mergedEvent){
+            $this->datasource = "overall";
+        } else {
+            $this->datasource = $alerts[0]->getDatasource();
+        }
     }
 
     /////////////////////
@@ -177,7 +190,12 @@ class OutagesEvent
     public function setAlerts(array $alerts): OutagesEvent
     {
         $this->alerts = $alerts;
+        $this->datasource = $alerts[0]->getDatasource();
         return $this;
+    }
+
+    public function setDatasource(string $datasource){
+        $this->datasource = $datasource;
     }
 
     /**
@@ -185,7 +203,7 @@ class OutagesEvent
      */
     public function getDatasource(): string
     {
-        return $this->alerts[0]->getDatasource();
+        return $this->datasource;
     }
 
     /**

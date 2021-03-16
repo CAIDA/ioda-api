@@ -36,9 +36,7 @@
 namespace App\Service;
 
 
-use App\Entity\Ioda\MetadataEntity;
-use App\Entity\Ioda\MetadataEntityType;
-use App\Entity\Outages\OutagesAlert;
+use App\Entity\OutagesAlert;
 use App\Repository\OutagesAlertsRepository;
 
 class OutagesAlertsService
@@ -114,13 +112,15 @@ class OutagesAlertsService
      * @param $datasource
      * @param null $limit
      * @param int $page
-     * @param bool $lookup_entity
+     * @param null $relatedType
+     * @param null $relatedCode
      * @return OutagesAlert[]
      */
-    public function findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit=null, $page=0, $lookup_entity=true)
+    public function findAlerts($from, $until, $entityType, $entityCode, $datasource, $limit=null, $page=0,
+                               $relatedType=null, $relatedCode=null)
     {
         // find alerts, already sorted by time
-        $alerts = $this->repo->findAlerts($from, $until, $entityType, $entityCode, $datasource);
+        $alerts = $this->repo->findAlerts($from, $until, $entityType, $entityCode, $datasource, $relatedType, $relatedCode);
 
         // squash alerts
         $alerts = $this->squashAlerts($alerts);
@@ -130,30 +130,10 @@ class OutagesAlertsService
             $alerts = array_slice($alerts, $limit*$page, $limit);
         }
 
-        $res = [];
-        foreach($alerts as &$alert){
-            // TODO: eventually, find a way to let doctrine to the work.
-            $type = $alert->getMetaType();
-            $code = $alert->getMetaCode();
-            if($lookup_entity){
-                $metas = $this->metadataService->search($type, $code);
-                if(count($metas)!=1){
-                    continue;
-                }
-                $alert->setEntity($metas[0]);
-            } else {
-                $entity = new MetadataEntity();
-                $entity_type = new MetadataEntityType();
-                $entity_type->setType($type);
-                $entity->setType($entity_type);
-                $entity->setCode($code);
-                // $entity->setName("unknown");
-                $alert->setEntity($entity);
-            }
+        foreach($alerts as $alert){
             $alert->setDatasource($this->datasourceService->fqidToDatasourceName($alert->getFqid()));
-            $res[] = $alert;
         }
 
-        return $res;
+        return $alerts;
     }
 }

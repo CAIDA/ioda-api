@@ -59,6 +59,25 @@ class EntitiesController extends ApiController
      *
      * Returns a JSON object with metadata for the searched entities.
      *
+     * <h2> Usage examples </h2>
+     *
+     * To get information about United States, use the following query:
+     * <pre>/entities/country/US</pre>
+     *
+     * </br>
+     *
+     * To search for entities whose name contains the word "united", use the following query
+     * <pre>/entities?search=united</pre>
+     * To narrow down the previous search for only the countries, use the following query
+     * <pre>/entities/country?search=united</pre>
+     *
+     * </br>
+     *
+     * For more advanced search, you can also use the <b>relatedTo</b> parameter. It takes a entity type and code
+     * separated by <b>/</b>.
+     * For example, to search for all ASes operate in New Zealand, use the following query:
+     * <pre><code>/entities/asn?relatedTo=country/NZ</code></pre>
+     *
      * @Route("/{entityType}/{entityCode}", methods={"GET"}, name="get", defaults={"entityType"=null,"entityCode"=null})
      * @SWG\Tag(name="Metadata Entities")
      * @SWG\Parameter(
@@ -72,7 +91,7 @@ class EntitiesController extends ApiController
      *     name="entityCode",
      *     in="path",
      *     type="string",
-     *     description="Code of the entity, e.g. for United States the code is 'US'",
+     *     description="Code of the entity, e.g. for United States the code is 'US'; use comma ',' to separate multiple codes",
      *     required=false,
      *     default=null
      * )
@@ -80,7 +99,7 @@ class EntitiesController extends ApiController
      *     name="relatedTo",
      *     in="query",
      *     type="string",
-     *     description="Find entities related to another entity. Format: 'entityType[/entityCode]",
+     *     description="Find entities related to another entity. Format: entityType[/entityCode]",
      *     required=false,
      * )
      * @SWG\Parameter(
@@ -111,7 +130,7 @@ class EntitiesController extends ApiController
      *                     property="data",
      *                     type="array",
      *                     @SWG\Items(
-     *                          ref=@Model(type=\App\Entity\Ioda\MetadataEntity::class, groups={"public"})
+     *                          ref=@Model(type=\App\Entity\MetadataEntity::class, groups={"public"})
      *                     )
      *                 )
      *             )

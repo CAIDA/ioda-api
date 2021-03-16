@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * This software is Copyright (c) 2013 The Regents of the University of
  * California. All Rights Reserved. Permission to copy, modify, and distribute this
  * software and its documentation for academic research and education purposes,
@@ -33,16 +33,16 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Entity\Ioda;
+namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Entity
- * @ORM\Table(name="mddb_entity_attribute")
+ * @ORM\Table(name="mddb_entity_type")
  */
-class MetadataEntityAttribute
+class MetadataEntityType
 {
 
     //////////////////////////
@@ -63,27 +63,15 @@ class MetadataEntityAttribute
      * @ORM\Column(type="string")
      * @var string
      */
-    private $key;
+    private $type;
 
-    /**
-     * @Groups({"public"})
-     * @ORM\Column(type="string")
-     * @var string
-     */
-    private $value;
-
-    /**
-     * @ORM\ManyToOne(targetEntity="MetadataEntity")
-     * @ORM\JoinColumn(name="metadata_id", referencedColumnName="id")
-     * @var MetadataEntity
-     */
-    private $entity;
 
     /////////////////////
     /////////////////////
     // GETTERS SETTERS //
     /////////////////////
     /////////////////////
+
 
     /**
      * @return int
@@ -95,9 +83,9 @@ class MetadataEntityAttribute
 
     /**
      * @param int $id
-     * @return MetadataEntityAttribute
+     * @return MetadataEntityType
      */
-    public function setId(int $id): MetadataEntityAttribute
+    public function setId(int $id): MetadataEntityType
     {
         $this->id = $id;
         return $this;
@@ -106,55 +94,18 @@ class MetadataEntityAttribute
     /**
      * @return string
      */
-    public function getKey(): string
+    public function getType(): string
     {
-        return $this->key;
+        return $this->type;
     }
 
     /**
-     * @param string $key
-     * @return MetadataEntityAttribute
+     * @param string $type
+     * @return MetadataEntityType
      */
-    public function setKey(string $key): MetadataEntityAttribute
+    public function setType(string $type): MetadataEntityType
     {
-        $this->key = $key;
+        $this->type = $type;
         return $this;
     }
-
-    /**
-     * @return string
-     */
-    public function getValue(): string
-    {
-        return $this->value;
-    }
-
-    /**
-     * @param string $value
-     * @return MetadataEntityAttribute
-     */
-    public function setValue(string $value): MetadataEntityAttribute
-    {
-        $this->value = $value;
-        return $this;
-    }
-
-    /**
-     * @return MetadataEntity
-     */
-    public function getEntity(): MetadataEntity
-    {
-        return $this->entity;
-    }
-
-    /**
-     * @param MetadataEntity $entity
-     * @return MetadataEntityAttribute
-     */
-    public function setEntity(MetadataEntity $entity): MetadataEntityAttribute
-    {
-        $this->entity = $entity;
-        return $this;
-    }
-
 }

@@ -54,8 +54,20 @@ class TopoController extends ApiController
     /**
      * Get topographic database information
      *
+     * Returns topographic data based on the specified entity type. The entity type must be one of the following:
+     * continent, country, region, county. The topographic data returned can be used for plotting geo-location maps
+     * for the frontend application. For example, the outages world map in the dashboard uses the country-level
+     * topographic data.
+     *
      * @Route("/{entityType}", methods={"GET"}, name="get")
      * @SWG\Tag(name="Topographic")
+     * @SWG\Parameter(
+     *     name="entityType",
+     *     in="path",
+     *     type="string",
+     *     description="Type of the entity: continent, country, region, county",
+     *     default=null
+     * )
      * @SWG\Response(
      *     response=200,
      *     description="Returns information about the given topographic database",

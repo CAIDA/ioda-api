@@ -1,5 +1,5 @@
 <?php
-/**
+/*
  * This software is Copyright (c) 2013 The Regents of the University of
  * California. All Rights Reserved. Permission to copy, modify, and distribute this
  * software and its documentation for academic research and education purposes,
@@ -33,123 +33,128 @@
  * MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  */
 
-namespace App\Entity\Ioda;
+namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
- * @ORM\Entity(repositoryClass="App\Repository\SymUrlRepository")
- * @ORM\Table(indexes={@ORM\Index(name="long_url_idx", columns={"long_url"})})
+ * @ORM\Entity
+ * @ORM\Table(name="mddb_entity_attribute")
  */
-class SymUrl
+class MetadataEntityAttribute
 {
+
+    //////////////////////////
+    //////////////////////////
+    // VARIABLE DEFINITIONS //
+    //////////////////////////
+    //////////////////////////
+
     /**
      * @ORM\Id()
-     * @ORM\GeneratedValue()
      * @ORM\Column(type="integer")
+     * @var integer
      */
     private $id;
 
     /**
-     * @ORM\Column(type="string", length=255, unique=true)
      * @Groups({"public"})
+     * @ORM\Column(type="string")
+     * @var string
      */
-    private $shortTag;
+    private $key;
 
     /**
-     * @ORM\Column(type="text")
      * @Groups({"public"})
+     * @ORM\Column(type="string")
+     * @var string
      */
-    private $longUrl;
+    private $value;
 
     /**
-     * @ORM\Column(type="integer")
-     * @Groups({"public"})
+     * @ORM\ManyToOne(targetEntity="MetadataEntity")
+     * @ORM\JoinColumn(name="metadata_id", referencedColumnName="id")
+     * @var MetadataEntity
      */
-    private $useCount;
+    private $entity;
+
+    /////////////////////
+    /////////////////////
+    // GETTERS SETTERS //
+    /////////////////////
+    /////////////////////
 
     /**
-     * @ORM\Column(type="datetime")
-     * @Groups({"public"})
+     * @return int
      */
-    private $dateCreated;
-
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     * @Groups({"public"})
-     */
-    private $dateLastUsed;
-
-    public function __construct()
-    {
-        $this->setDateCreated(new \DateTime());
-        $this->setDateLastUsed(null);
-        $this->setUseCount(0);
-    }
-
-    public function getId(): ?int
+    public function getId(): int
     {
         return $this->id;
     }
 
-    public function getShortTag(): ?string
+    /**
+     * @param int $id
+     * @return MetadataEntityAttribute
+     */
+    public function setId(int $id): MetadataEntityAttribute
     {
-        return $this->shortTag;
-    }
-
-    public function setShortTag(string $shortTag): self
-    {
-        $this->shortTag = $shortTag;
-
+        $this->id = $id;
         return $this;
     }
 
-    public function getLongUrl(): ?string
+    /**
+     * @return string
+     */
+    public function getKey(): string
     {
-        return $this->longUrl;
+        return $this->key;
     }
 
-    public function setLongUrl(string $longUrl): self
+    /**
+     * @param string $key
+     * @return MetadataEntityAttribute
+     */
+    public function setKey(string $key): MetadataEntityAttribute
     {
-        $this->longUrl = $longUrl;
-
+        $this->key = $key;
         return $this;
     }
 
-    public function getUseCount(): ?int
+    /**
+     * @return string
+     */
+    public function getValue(): string
     {
-        return $this->useCount;
+        return $this->value;
     }
 
-    public function setUseCount(int $useCount): self
+    /**
+     * @param string $value
+     * @return MetadataEntityAttribute
+     */
+    public function setValue(string $value): MetadataEntityAttribute
     {
-        $this->useCount = $useCount;
-
+        $this->value = $value;
         return $this;
     }
 
-    public function getDateCreated(): ?\DateTimeInterface
+    /**
+     * @return MetadataEntity
+     */
+    public function getEntity(): MetadataEntity
     {
-        return $this->dateCreated;
+        return $this->entity;
     }
 
-    public function setDateCreated(\DateTimeInterface $dateCreated): self
+    /**
+     * @param MetadataEntity $entity
+     * @return MetadataEntityAttribute
+     */
+    public function setEntity(MetadataEntity $entity): MetadataEntityAttribute
     {
-        $this->dateCreated = $dateCreated;
-
+        $this->entity = $entity;
         return $this;
     }
 
-    public function getDateLastUsed(): ?\DateTimeInterface
-    {
-        return $this->dateLastUsed;
-    }
-
-    public function setDateLastUsed(?\DateTimeInterface $dateLastUsed): self
-    {
-        $this->dateLastUsed = $dateLastUsed;
-
-        return $this;
-    }
 }
