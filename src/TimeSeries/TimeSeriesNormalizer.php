@@ -57,6 +57,7 @@ class TimeSeriesNormalizer implements ContextAwareNormalizerInterface
 
         $data["entityType"] = $entity["type"]["type"];
         $data["entityCode"] = $entity["code"];
+        $data["entityName"] = $entity["name"];
         $data["datasource"] = $timeSeries->getDatasource();
         $data["from"] = $timeSeries->getFrom()->getTimestamp();
         $data["until"] = $timeSeries->getUntil()->getTimestamp();
