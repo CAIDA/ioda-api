@@ -284,6 +284,14 @@ class OutagesEventsService
         return $res;
     }
 
+    private function countEventsFromMap($eventMap): int {
+        $count=0;
+        foreach($eventMap as $aid => $events){
+            $count += count($events);
+        }
+        return $count;
+    }
+
     /**
      * Summarize all events during the time period by entities. One summary per
      * entitiy for the entire time period.
@@ -311,7 +319,7 @@ class OutagesEventsService
             // all alerts here have the entity
             $eventmap = $this->buildEvents($alerts, $from, $until);
             $scores = $this->computeSummaryScores($eventmap);
-            $res[] = new OutagesSummary($scores, $alerts[0]->getEntity(), count($eventmap));
+            $res[] = new OutagesSummary($scores, $alerts[0]->getEntity(), $this->countEventsFromMap($eventmap));
         }
 
 
