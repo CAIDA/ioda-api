@@ -318,6 +318,9 @@ class OutagesEventsService
         foreach($alertGroups as $entity_id => $alerts){
             // all alerts here have the entity
             $eventmap = $this->buildEvents($alerts, $from, $until);
+            if(!$eventmap){
+                continue;
+            }
             $scores = $this->computeSummaryScores($eventmap);
             $res[] = new OutagesSummary($scores, $alerts[0]->getEntity(), $this->countEventsFromMap($eventmap));
         }
@@ -357,7 +360,7 @@ class OutagesEventsService
         $curEvents = []; // curEvents[fqid] -> ongoing event
         foreach ($alerts as &$a) {
             $fqid = $a->getFqid();
-            $aId = $fqid . $a->getMetaType() . $a->getMetaCode();
+            $aId = $fqid . $a->getMetaType() . $a->getMetaCode(); // event identifier
             $level = $a->getLevel();
             $time = $a->getTime();
             $drop = (abs($a->getHistoryValue() -
@@ -424,6 +427,13 @@ class OutagesEventsService
                 $cE['until'] = $until;
                 $cE['X-Overlaps-Window'] = true;
                 $events[$aId][] = $cE;
+            }
+        }
+
+        // remove event keys with empty list of events
+        foreach($events as $aid => $e) {
+            if(count($e)==0){
+                unset ($events[$aid]);
             }
         }
 
