@@ -81,62 +81,79 @@ class InfluxBackend
 
     /**
      * process JSON response get from influxdb instance
+     *
+    !in_array("results", array_keys($responseJson)) ||
+    count($responseJson['results'])!=1 ||
+    !array_key_exists("series", $responseJson['results'][0]) ||
+    count($responseJson['results'][0]['series'])!=1
+     *
+     *
+    if( !array_key_exists("series", $responseJson['results'][0]) ||
+    count($responseJson['results'][0]['series'])!=1){
+    $message .= sprintf(": no data in range") ;
+    } else {
+    $message .= in_array("message", array_keys($responseJson))?
+    sprintf(": %s",$responseJson["message"]): "" ;
+    }
+    throw new BackendException($message);
      * @param array $responseJson
      * @return TimeSeries
      * @throws BackendException
      */
-    private function processResponseJson(array $responseJson): TimeSeries {
+    private function processResponseJson(array $responseJson): array {
         // sanity check json responses
-        if(
-            !in_array("results", array_keys($responseJson)) ||
-            count($responseJson['results'])!=1 ||
-            !array_key_exists("series", $responseJson['results'][0]) ||
-            count($responseJson['results'][0]['series'])!=1
-        ){
+        if(!in_array("results", array_keys($responseJson))){
             $message = "InfluxDB backend failure";
-            if( !array_key_exists("series", $responseJson['results'][0]) ||
-            count($responseJson['results'][0]['series'])!=1){
-                $message .= sprintf(": no data in range") ;
-            } else {
-                $message .= in_array("message", array_keys($responseJson))?
-                    sprintf(": %s",$responseJson["message"]): "" ;
-            }
             throw new BackendException($message);
         }
-        $data = $responseJson['results'][0]['series'][0];
 
-        $from = new DateTime();
-        $until = new DateTime();
-        $step = 0;
-        $prev_ts = 0;
+        $timeseriesArray = [];
 
-        $values = [];
-        // retrieve values and calculate steps
-        foreach($data['values'] as $value_pair){
-            $cur_ts = $value_pair[0]/1000;  // influx returns timestamp in miliseconds
-            // save the actual datapoint value to array
-            $values[] = $value_pair[1];
 
-            // use the first two iterations to calculate the step from the returned data
-            if($step==0){
-                if($prev_ts==0){
-                    $prev_ts = $cur_ts;
-                } else {
-                    $step = $cur_ts - $prev_ts;
+        foreach($responseJson["results"] as $resultJson){
+            if(!array_key_exists("series", $resultJson)){
+                continue;
+            }
+            foreach($resultJson["series"] as $data){
+                $step = 0;
+                $prev_ts = 0;
+
+                $key = array_values($data["tags"])[0];
+                $values = [];
+
+                // retrieve values and calculate steps
+                foreach($data['values'] as $value_pair){
+                    $cur_ts = $value_pair[0]/1000;  // influx returns timestamp in miliseconds
+                    // save the actual datapoint value to array
+                    $values[] = $value_pair[1];
+
+                    // use the first two iterations to calculate the step from the returned data
+                    if($step==0){
+                        if($prev_ts==0){
+                            $prev_ts = $cur_ts;
+                        } else {
+                            $step = $cur_ts - $prev_ts;
+                        }
+                    }
                 }
+
+                $from = new DateTime();
+                $until = new DateTime();
+                $from->setTimestamp($data['values'][0][0]/1000);
+                $until->setTimestamp(end($data['values'])[0]/1000 + $step);
+
+                // create new TimeSeries object accordingly
+                $newSeries = new TimeSeries();
+                $newSeries->setFrom($from);
+                $newSeries->setUntil($until);
+                $newSeries->setStep($step);
+                $newSeries->setValues($values);
+                $timeseriesArray[$key] = $newSeries;
             }
         }
 
-        $from->setTimestamp($data['values'][0][0]/1000);
-        $until->setTimestamp(end($data['values'])[0]/1000 + $step);
 
-        // create new TimeSeries object accordingly
-        $newSeries = new TimeSeries();
-        $newSeries->setFrom($from);
-        $newSeries->setUntil($until);
-        $newSeries->setStep($step);
-        $newSeries->setValues($values);
-        return $newSeries;
+        return $timeseriesArray;
     }
 
     /**
@@ -147,10 +164,11 @@ class InfluxBackend
      * @return TimeSeries
      * @throws BackendException
      */
-    public function queryInflux(string $query, string $db_name): TimeSeries
+    public function queryInflux(string $query, string $db_name): array
     {
         // send query and process response
         $res = $this->sendQuery($query, $db_name);
+
         return $this->processResponseJson($res);
     }
 }

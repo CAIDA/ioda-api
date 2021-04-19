@@ -266,6 +266,7 @@ class SignalsController extends ApiController
         $until = $env->getParam('until');
         $datasource_str = $env->getParam('datasource');
         $maxPoints = $env->getParam('maxPoints');
+        $noinflux = $env->getParam('noinflux');
         $metas = $this->metadataService->search($entityType, $entityCode);
 
         try{
@@ -287,6 +288,13 @@ class SignalsController extends ApiController
         }
 
         $ts_sets = [];
+        try{
+            $ts_sets = $this->signalsService->queryForAll($from, $until, $entities, $datasource_array, $maxPoints, $noinflux);
+        } catch (BackendException $ex) {
+            $env->setError($ex->getMessage());
+        }
+
+        /*
         foreach($entities as $entity){
             // TODO: this double loop is sequential and very slow. We should merge queries by data sources and then split by entity
             // prepare TimeSeriesSet object
@@ -306,6 +314,7 @@ class SignalsController extends ApiController
 
             $ts_sets []= $ts_set;
         }
+        */
 
         $env->setData($ts_sets);
         return $this->json($env);

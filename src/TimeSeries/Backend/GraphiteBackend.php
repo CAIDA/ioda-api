@@ -113,7 +113,7 @@ class GraphiteBackend
      * @return TimeSeries
      * @throws BackendException
      */
-    public function queryGraphite(QueryTime $from, QueryTime $until, $expression, ?int $maxPoints): TimeSeries
+    public function queryGraphite(QueryTime $from, QueryTime $until, $expression, ?int $maxPoints): array
     {
         // calculate cache timeout, used in graphite query
         $timeout = $this->calcTimeout($until);
@@ -140,18 +140,23 @@ class GraphiteBackend
             throw new BackendException('Invalid JSON from TS backend: ' . json_last_error_msg());
         }
         if (!is_array($jsonResult)) {
-            throw new BackendException('Invalid response from TS backend'); }
-
-        if(count($jsonResult)!=1){
-            throw new BackendException(
-                sprintf("wrong number of timeseries response from graphite %d, expect %d", count($jsonResult), 1)
-            );
+            throw new BackendException('Invalid response from TS backend');
         }
 
-        $res = $jsonResult[0];
+        $ts_array = [];
 
+        foreach($jsonResult as $res){
+            $ts_array[$res["name"]] = $this->convertJsonToTs($res);
+        }
+        return $ts_array;
+    }
 
-
+    /**
+     * Convert single graphite JSON result to a timeseries object
+     * @param $res
+     * @return TimeSeries
+     */
+    private function convertJsonToTs($res): TimeSeries {
         $newSeries = new TimeSeries();
         $from = new DateTime();
         $from->setTimestamp((int)$res['start']);
