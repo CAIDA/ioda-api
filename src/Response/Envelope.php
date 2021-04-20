@@ -74,6 +74,11 @@ class Envelope
 
     /**
      * @Groups({"all", "public"})
+     */
+    private $perf;
+
+    /**
+     * @Groups({"all", "public"})
      * @SWG\Property(type="object")
      */
     private $data;
@@ -210,6 +215,15 @@ class Envelope
     public function getError(): ?string
     {
         return $this->error;
+    }
+
+    public function setPerf($data){
+        $this->perf = $data;
+    }
+
+    public function getPerf()
+    {
+        return $this->perf;
     }
 
     public function setError(string $error): void

@@ -319,11 +319,15 @@ class SignalsService
             $entityMap[$entity->getCode()] = $entity;
         }
 
+        $perf = [];
+
         foreach($datasources as $datasource){
             $backend = $datasource->getBackend();
+            $ds = $datasource->getDatasource();
 
+            $now = microtime(true);
             if($backend == "graphite"){
-                $exp_json = $this->buildMultiEntityGraphiteExpression($entities, $datasource->getDatasource());
+                $exp_json = $this->buildMultiEntityGraphiteExpression($entities, $ds);
                 $arr = $this->graphiteBackend->queryGraphite($from, $until, $exp_json, $maxPoints);
             } else if ($backend == "influx"){
                 if(isset($noinflux) && $noinflux==true){
@@ -338,6 +342,11 @@ class SignalsService
                     sprintf("invalid datasource %s", $datasource)
                 );
             }
+            $perf[] = [
+                "datasource"=>$ds,
+                "backend"=>$backend,
+                "timeUsed"=>microtime(true) - $now
+            ];
 
             // post-processing
             foreach(array_keys($arr) as $code){
@@ -368,7 +377,7 @@ class SignalsService
             // add the timeseries set to result array
             $ts_sets[] = $ts_set;
         }
-        return $ts_sets;
+        return [$ts_sets, $perf];
     }
 
     /**
