@@ -294,28 +294,6 @@ class SignalsController extends ApiController
             $env->setError($ex->getMessage());
         }
 
-        /*
-        foreach($entities as $entity){
-            // TODO: this double loop is sequential and very slow. We should merge queries by data sources and then split by entity
-            // prepare TimeSeriesSet object
-            $ts_set = new TimeSeriesSet();
-            $ts_set->setMetadataEntity($entity);
-
-            // execute queries based on the datasources' defined backends
-            foreach($datasource_array as $datasource){
-                try{
-                    $ts = $this->signalsService->queryForTimeSeries($from, $until, $entity, $datasource, $maxPoints);
-                    $ts->sanityCheckValues();
-                    $ts_set->addOneSeries($ts);
-                } catch (BackendException $ex) {
-                    $env->setError($ex->getMessage());
-                }
-            }
-
-            $ts_sets []= $ts_set;
-        }
-        */
-
         $env->setData($ts_sets);
         return $this->json($env);
     }

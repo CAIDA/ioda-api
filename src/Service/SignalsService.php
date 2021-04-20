@@ -148,10 +148,12 @@ class SignalsService
      */
     private function buildMultiEntityGraphiteExpression(array $entities, string $datasource_id): string {
         // NOTE: for a list of fqids, there should only be one portion that are different.
-        // e.g. geo.netacuity.AS.MM.2747 and geo.netacuity.AS.MM.2748
-        // Also, it must be the last field that are different from each other
-        // TODO: confirm the theory above
-        // TODO: consider the length of the query and potentially break into multiple queries if one is too long
+        // It also must be the last field that are different from each other
+        // Examples:
+        // - asn: asn.133191
+        // - country: geo.netacuity.NA.US
+        // - region: geo.netacuity.NA.US.4437
+        // - county: geo.netacuity.NA.US.4437.3103
 
         $common="";
         $unique=[];
@@ -175,9 +177,9 @@ class SignalsService
             "region" => 6,
         ];
 
-        // TODO: check whether we need keepLastValue function. if so, how to do it.
         $queryJsons = [
             "bgp" => "aliasByNode(bgp.prefix-visibility.$fqid_combined.v4.visibility_threshold.min_50%_ff_peer_asns.visible_slash24_cnt, $aliasIndex[$entityType])",
+            // NOTE: if see strange gaps in between bins, consider bring back keepLastValue function for ping-slash24
             "ping-slash24" => "aliasByNode(groupByNode(active.ping-slash24.$fqid_combined.probers.team-1.caida-sdsc.*.up_slash24_cnt,$aliasIndex[$entityType], 'sumSeries'), $aliasIndex[$entityType])",
         ];
 
