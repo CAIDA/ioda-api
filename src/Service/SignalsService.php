@@ -157,9 +157,6 @@ class SignalsService
         $unique=[];
         $entityType = $entities[0]->getType()->getType();
 
-
-        $entityFqidMap=[];
-
         foreach($entities as $entity) {
             $fqid = $entity->getAttribute("fqid");
             $fields = explode(".", $fqid);
@@ -178,9 +175,10 @@ class SignalsService
             "region" => 6,
         ];
 
+        // TODO: check whether we need keepLastValue function. if so, how to do it.
         $queryJsons = [
             "bgp" => "aliasByNode(bgp.prefix-visibility.$fqid_combined.v4.visibility_threshold.min_50%_ff_peer_asns.visible_slash24_cnt, $aliasIndex[$entityType])",
-            "ping-slash24" => "aliasByNode(sumSeries(keepLastValue(active.ping-slash24.$fqid_combined.probers.team-1.caida-sdsc.*.up_slash24_cnt,1)), $aliasIndex[$entityType])",
+            "ping-slash24" => "aliasByNode(groupByNode(active.ping-slash24.$fqid_combined.probers.team-1.caida-sdsc.*.up_slash24_cnt,$aliasIndex[$entityType], 'sumSeries'), $aliasIndex[$entityType])",
         ];
 
         return $queryJsons[$datasource_id];
