@@ -74,6 +74,7 @@ class Envelope
 
     /**
      * @Groups({"all", "public"})
+     * @SWG\Property(type="object")
      */
     private $perf;
 

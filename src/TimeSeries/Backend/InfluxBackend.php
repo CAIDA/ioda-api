@@ -82,20 +82,6 @@ class InfluxBackend
     /**
      * process JSON response get from influxdb instance
      *
-    !in_array("results", array_keys($responseJson)) ||
-    count($responseJson['results'])!=1 ||
-    !array_key_exists("series", $responseJson['results'][0]) ||
-    count($responseJson['results'][0]['series'])!=1
-     *
-     *
-    if( !array_key_exists("series", $responseJson['results'][0]) ||
-    count($responseJson['results'][0]['series'])!=1){
-    $message .= sprintf(": no data in range") ;
-    } else {
-    $message .= in_array("message", array_keys($responseJson))?
-    sprintf(": %s",$responseJson["message"]): "" ;
-    }
-    throw new BackendException($message);
      * @param array $responseJson
      * @return TimeSeries
      * @throws BackendException
