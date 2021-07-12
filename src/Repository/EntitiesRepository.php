@@ -60,7 +60,7 @@ class EntitiesRepository extends ServiceEntityRepository
      * @param bool $wildcard
      * @return int|mixed|string
      */
-    public function findMetadata($type=null, $code=null, $name=null, $limit=null, $wildcard=false,
+    public function findMetadata($type=null, $code=null, $name=null, $limit=null, $page=null, $wildcard=false,
                                  $relatedType=null, $relatedCode=null)
     {
         $em = $this->getEntityManager();
@@ -77,6 +77,11 @@ class EntitiesRepository extends ServiceEntityRepository
                 (!empty($relatedCode) ? 'om.code ILIKE :relatedCode' : null),
             ]
         );
+
+        $offset=null;
+        if(isset($limit) && isset($page)){
+            $offset = $limit * $page;
+        }
 
         $sql =
             'SELECT ' . $rsm->generateSelectClause() . '
@@ -98,9 +103,11 @@ class EntitiesRepository extends ServiceEntityRepository
             WHEN mt.type ILIKE :region  THEN 4
             END ASC, m.name
             ': '' )
-            . (($limit) ? ' LIMIT ' . $limit: '');
+            . (($limit) ? ' LIMIT ' . $limit: '')
+            . (($offset) ? ' OFFSET ' . $offset: '')
         ;
 
+        $codes=null;
         if (isset($code)) {
             $codes = explode(",", $code);
         }

@@ -109,6 +109,20 @@ class EntitiesController extends ApiController
      *     description="Search entities with name that matches the search term",
      *     required=false,
      * )
+     * @SWG\Parameter(
+     *     name="limit",
+     *     in="query",
+     *     type="integer",
+     *     description="maximum number of entities to return",
+     *     required=false,
+     * )
+     * @SWG\Parameter(
+     *     name="page",
+     *     in="query",
+     *     type="integer",
+     *     description="specify the page number of the returned entities",
+     *     required=false,
+     * )
      * @SWG\Response(
      *     response=200,
      *     description="Return an array of metadata entities",
@@ -157,6 +171,7 @@ class EntitiesController extends ApiController
                 new RequestParameter('relatedTo', RequestParameter::STRING, null, false),
                 new RequestParameter('search', RequestParameter::STRING, null, false),
                 new RequestParameter('limit', RequestParameter::INTEGER, null, false),
+                new RequestParameter('page', RequestParameter::INTEGER, null, false),
             ],
             $request
         );
@@ -168,6 +183,7 @@ class EntitiesController extends ApiController
         $search = $env->getParam('search');
         $relatedTo = $env->getParam('relatedTo');
         $limit = $env->getParam('limit');
+        $page = $env->getParam('page');
         /*
         if($search){
             $entity = $service->search($entityType, null, $search, $limit, true);
@@ -202,7 +218,7 @@ class EntitiesController extends ApiController
             $env->setError($ex->getMessage());
             return $this->json($env, 400);
         }
-        $entity = $service->search($entityType, $entityCode, $search, $limit, true, $relatedTo[0], $relatedTo[1]);
+        $entity = $service->search($entityType, $entityCode, $search, $limit, $page, true, $relatedTo[0], $relatedTo[1]);
         // $entity = $service->lookup($entityType, $entityCode, $relatedTo[0], $relatedTo[1], $limit);
         $env->setData($entity);
         return $this->json($env);

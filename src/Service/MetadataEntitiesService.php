@@ -60,8 +60,8 @@ class MetadataEntitiesService
      * @param bool $wildcard
      * @return MetadataEntity[]
      */
-    public function search($type, $code = null, $name = null, $limit=null, $wildcard=false, $relatedType=null, $relatedCode=null)
+    public function search($type, $code = null, $name = null, $limit=null, $page=null, $wildcard=false, $relatedType=null, $relatedCode=null)
     {
-        return $this->repo->findMetadata($type, $code, $name, $limit, $wildcard, $relatedType, $relatedCode);
+        return $this->repo->findMetadata($type, $code, $name, $limit, $page, $wildcard, $relatedType, $relatedCode);
     }
 }

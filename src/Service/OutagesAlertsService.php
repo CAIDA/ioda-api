@@ -120,10 +120,28 @@ class OutagesAlertsService
                                $relatedType=null, $relatedCode=null)
     {
         // find alerts, already sorted by time
-        $alerts = $this->repo->findAlerts($from, $until, $entityType, $entityCode, $datasource, $relatedType, $relatedCode);
 
-        // squash alerts
-        $alerts = $this->squashAlerts($alerts);
+        $alerts = [];
+
+        if($relatedType!=null){
+            $entities = $this->metadataService->search($entityType, $entityCode, null, null, $page, false, $relatedType, $relatedCode);
+            $codes = [];
+            foreach($entities as $entity) {
+                $codes[] = $entity->getCode();
+            }
+            $code_chunks = array_chunk($codes, 1000, true);
+            foreach($code_chunks as $code_chunk) {
+                $alerts = array_merge($alerts, $this->repo->findAlerts($from, $until, $entityType, implode(",", $code_chunk), $datasource, null, null));
+                $alerts = $this->squashAlerts($alerts);
+                if($limit && count($alerts)>$limit){
+                    break;
+                }
+            }
+        } else {
+            $alerts = $this->repo->findAlerts($from, $until, $entityType, $entityCode, $datasource, $relatedType, $relatedCode);
+            // squash alerts
+            $alerts = $this->squashAlerts($alerts);
+        }
 
         if ($limit) {
             // paginate

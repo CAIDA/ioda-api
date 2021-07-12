@@ -266,6 +266,7 @@ class SignalsController extends ApiController
         $until = $env->getParam('until');
         $datasource_str = $env->getParam('datasource');
         $maxPoints = $env->getParam('maxPoints');
+        $noinflux = $env->getParam('noinflux');
         $metas = $this->metadataService->search($entityType, $entityCode);
 
         try{
@@ -287,27 +288,15 @@ class SignalsController extends ApiController
         }
 
         $ts_sets = [];
-        foreach($entities as $entity){
-            // prepare TimeSeriesSet object
-            $ts_set = new TimeSeriesSet();
-            $ts_set->setMetadataEntity($entity);
-
-            // execute queries based on the datasources' defined backends
-            foreach($datasource_array as $datasource){
-                try{
-                    // TODO: $ts could already be sets
-                    $ts = $this->signalsService->queryForTimeSeries($from, $until, $entity, $datasource, $maxPoints);
-                    $ts->sanityCheckValues();
-                    $ts_set->addOneSeries($ts);
-                } catch (BackendException $ex) {
-                    $env->setError($ex->getMessage());
-                }
-            }
-
-            $ts_sets []= $ts_set;
+        $perf = null;
+        try{
+            [$ts_sets, $perf] = $this->signalsService->queryForAll($from, $until, $entities, $datasource_array, $maxPoints, $noinflux);
+        } catch (BackendException $ex) {
+            $env->setError($ex->getMessage());
         }
 
         $env->setData($ts_sets);
+        $env->setPerf($perf);
         return $this->json($env);
     }
 
