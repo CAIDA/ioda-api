@@ -35,32 +35,24 @@
 
 namespace App\Service;
 use App\Entity\DatasourceEntity;
-use App\Entity\MetadataEntity;
 use App\TimeSeries\Backend\BackendException;
-use App\TimeSeries\Backend\GraphiteBackend;
-use App\TimeSeries\Backend\InfluxBackend;
+use App\TimeSeries\Backend\InfluxV2Backend;
 use App\TimeSeries\Backend\OutagesBackend;
-use App\TimeSeries\TimeSeries;
 use App\TimeSeries\TimeSeriesSet;
 use App\Utils\QueryTime;
-use Symfony\Component\Asset\Package;
 
 
 class SignalsService
 {
-
     /**
-     * @var GraphiteBackend
+     * @var InfluxV2Backend
      */
-    private $graphiteBackend;
-    /**
-     * @var InfluxBackend
-     */
-    private $influxBackend;
+    private $influxV2Backend;
     /**
      * @var OutagesBackend
      */
     private $outagesBackend;
+    private $influxService;
 
     /**
      * All available down-sample steps an datasource can use.
@@ -117,186 +109,13 @@ class SignalsService
     }
 
 
-    public function __construct(GraphiteBackend $graphiteBackend, InfluxBackend $influxBackend, OutagesBackend $outagesBackend) {
-        $this->graphiteBackend = $graphiteBackend;
-        $this->influxBackend = $influxBackend;
+    public function __construct(OutagesBackend $outagesBackend,
+                                InfluxV2Backend $influxV2Backend,
+                                InfluxService $influxService
+    ) {
         $this->outagesBackend = $outagesBackend;
-    }
-
-    /**
-     * Build graphite expression JSON object based on given $datasource.
-     *
-     * @param string $fqid
-     * @param string $datasource_id
-     * @return string
-     */
-    private function buildGraphiteExpression(string $fqid, string $datasource_id): string {
-        $queryJsons = [
-            "bgp" => "alias(bgp.prefix-visibility.$fqid.v4.visibility_threshold.min_50%_ff_peer_asns.visible_slash24_cnt,\"bgp\")",
-            "ucsd-nt" => "alias(darknet.ucsd-nt.non-erratic.$fqid.uniq_src_ip,\"ucsd-nt\")",
-            "ping-slash24" => "alias(sumSeries(keepLastValue(active.ping-slash24.$fqid.probers.team-1.caida-sdsc.*.up_slash24_cnt,1)),\"ping-slash24\")",
-        ];
-        return $queryJsons[$datasource_id];
-    }
-
-    /**
-     * Build graphite expression JSON object based on given $datasource.
-     *
-     * @param string $fqid
-     * @param string $datasource_id
-     * @return string
-     */
-    private function buildMultiEntityGraphiteExpression(array $entities, string $datasource_id): string {
-        // NOTE: for a list of fqids, there should only be one portion that are different.
-        // It also must be the last field that are different from each other
-        // Examples:
-        // - asn: asn.133191
-        // - country: geo.netacuity.NA.US
-        // - region: geo.netacuity.NA.US.4437
-        // - county: geo.netacuity.NA.US.4437.3103
-
-        $common="";
-        $unique=[];
-        $entityType = $entities[0]->getType()->getType();
-
-        foreach($entities as $entity) {
-            $fqid = $entity->getAttribute("fqid");
-            $fields = explode(".", $fqid);
-            if($common == ""){
-                $common = implode(".", array_slice($fields, 0, -1));
-            }
-            assert($entity->getCode() == end($fields));
-            $unique[] = end($fields);
-        }
-
-        $fqid_combined = $common . ".{" . implode(",", $unique) . "}";
-
-        $aliasIndex = [
-            "asn" => 3,
-            "country" => 5,
-            "region" => 6,
-        ];
-
-        $queryJsons = [
-            "bgp" => "aliasByNode(bgp.prefix-visibility.$fqid_combined.v4.visibility_threshold.min_50%_ff_peer_asns.visible_slash24_cnt, $aliasIndex[$entityType])",
-            // NOTE: if see strange gaps in between bins, consider bring back keepLastValue function for ping-slash24
-            "ping-slash24" => "aliasByNode(groupByNode(active.ping-slash24.$fqid_combined.probers.team-1.caida-sdsc.*.up_slash24_cnt,$aliasIndex[$entityType], 'sumSeries'), $aliasIndex[$entityType])",
-        ];
-
-        return $queryJsons[$datasource_id];
-    }
-
-    /**
-     * Build influx query string based on the entity type and code.
-     *
-     * @param DatasourceEntity $datasourceEntity
-     * @param MetadataEntity $entity
-     * @param QueryTime $from
-     * @param QueryTime $until
-     * @param int $step
-     * @return string influx query string
-     * @throws BackendException
-     */
-    private function buildInfluxQuery(DatasourceEntity $datasourceEntity, MetadataEntity $entity,
-                                      QueryTime $from, QueryTime $until, int $step): string {
-        $entityType = $entity->getType()->getType();
-        $entityCode = $entity->getCode();
-
-        if($datasourceEntity->getDatasource() == "ucsd-nt"){
-            $MEASUREMENT = [
-                "country" => "geo_country",
-                "region" => "geo_region",
-                "county" => "geo_county",
-                "asn" => "origin_asn",
-            ];
-            $WHERE = [
-                "country" => "\"country_code\" = '%s' AND \"geo_db\" = 'netacuity'",
-                "region"  => "\"region_code\" = '%s' AND \"geo_db\" = 'netacuity'",
-                "county"  => "\"county_code\" = '%s' AND \"geo_db\" = 'netacuity'",
-                "asn" => "\"asn\" = '%s'",
-            ];
-
-            $measurement = $MEASUREMENT[$entityType];
-            $where = sprintf($WHERE[$entityType], $entityCode);
-            $timeQuery = sprintf("time >= %ds AND time < %ds", $from->getEpochTime(), $until->getEpochTime());
-            $step = sprintf("%ds",$step);
-            return "q=SELECT mean(\"uniq_src_ip\") FROM \"$measurement\" WHERE (\"telescope\" = 'ucsd-nt' AND \"filter\" = 'non-erratic' AND $where) AND $timeQuery GROUP BY time($step) fill(null)";
-        } else {
-            throw new BackendException(
-                sprintf("Datasource %s doesn't not currently support InfluxDB backend",
-                    $datasourceEntity->getDatasource()
-                ));
-        }
-    }
-
-    /**
-     * Build influx query string based on the entity type and code.
-     *
-     * @param DatasourceEntity $datasourceEntity
-     * @param MetadataEntity $entity
-     * @param QueryTime $from
-     * @param QueryTime $until
-     * @param int $step
-     * @return string influx query string
-     * @throws BackendException
-     */
-    private function buildMultiEntityInfluxQuery(string $datasource, array $entities,
-                                      QueryTime $from, QueryTime $until, int $step): string {
-        // make sure all entities has the same type
-        $entityType = $entities[0]->getType()->getType();
-
-        if($datasource != "ucsd-nt"){
-            throw new BackendException(
-                sprintf("Datasource %s doesn't not currently support InfluxDB backend",
-                    $datasource
-                ));
-        }
-
-        $MEASUREMENT = [
-            "country" => "geo_country",
-            "region" => "geo_region",
-            "county" => "geo_county",
-            "asn" => "origin_asn",
-        ];
-
-        $WHERE_CODE = [
-            "country" => "country_code",
-            "region"  => "region_code",
-            "county"  => "county_code",
-            "asn" => "asn",
-        ];
-
-        $or_statement = [];
-        foreach($entities as $entity){
-            $or_statement[] = sprintf("\"%s\"='%s'", $WHERE_CODE[$entityType], $entity->getCode());
-        }
-        if($entityType == "asn"){
-            $where = sprintf("(%s)", implode(" OR ", $or_statement));
-        } else {
-            $where = sprintf("(%s) AND \"geo_db\" = 'netacuity'", implode(" OR ", $or_statement));
-        }
-
-
-        $measurement = $MEASUREMENT[$entityType];
-        $group_by = "$measurement.$entityType";
-        $timeQuery = sprintf("time >= %ds AND time < %ds", $from->getEpochTime(), $until->getEpochTime());
-        $step = sprintf("%ds",$step);
-        return "q=SELECT mean(\"uniq_src_ip\") FROM \"$measurement\" WHERE (\"telescope\" = 'ucsd-nt' AND \"filter\" = 'non-erratic' AND $where) AND $timeQuery GROUP BY time($step),$WHERE_CODE[$entityType]  fill(null)";
-    }
-
-    /**
-     * @param $datasource_id
-     * @return string
-     * @throws BackendException
-     */
-    private function getInfluxDbName($datasource_id){
-        $DBMAP = [
-            "ucsd-nt" => "stardust_ucsdnt"
-        ];
-        if(!array_key_exists($datasource_id, $DBMAP)){
-            throw new BackendException("Datasource $datasource_id doesn't not have corresponding InfluxDB database");
-        }
-        return $DBMAP[$datasource_id];
+        $this->influxV2Backend = $influxV2Backend;
+        $this->influxService = $influxService;
     }
 
     /**
@@ -309,8 +128,9 @@ class SignalsService
      * @param array $datasources
      * @param int|null $maxPoints
      * @return array
+     * @throws BackendException
      */
-    public function queryForAll(QueryTime $from, QueryTime $until, array $entities, array $datasources, ?int $maxPoints, ?bool $noinflux): array
+    public function queryForAll(QueryTime $from, QueryTime $until, array $entities, array $datasources, ?int $maxPoints): array
     {
         $ts_array = [];
 
@@ -322,26 +142,14 @@ class SignalsService
         $perf = [];
 
         foreach($datasources as $datasource){
+            $now = microtime(true);
             $backend = $datasource->getBackend();
             $ds = $datasource->getDatasource();
 
-            $now = microtime(true);
-            if($backend == "graphite"){
-                $exp_json = $this->buildMultiEntityGraphiteExpression($entities, $ds);
-                $arr = $this->graphiteBackend->queryGraphite($from, $until, $exp_json, $maxPoints);
-            } else if ($backend == "influx"){
-                if(isset($noinflux) && $noinflux==true){
-                    continue;
-                }
-                $step = $this->calculateStep($from, $until, $maxPoints, $datasource->getNativeStep());
-                $from = $this->roundDownFromTs($from, $step);
-                $influx_query = $this->buildMultiEntityInfluxQuery($datasource->getDatasource(), $entities, $from, $until, $step);
-                $arr = $this->influxBackend->queryInflux($influx_query, $this->getInfluxDbName($datasource->getDatasource()));
-            } else {
-                throw new BackendException(
-                    sprintf("invalid datasource %s", $datasource)
-                );
-            }
+            $step = $this->calculateStep($from, $until, $maxPoints, $datasource->getNativeStep());
+            $from = $this->roundDownFromTs($from, $step);
+            $arr = $this->queryForInfluxV2($ds, $entities, $from, $until, $step);
+
             $perf[] = [
                 "datasource"=>$ds,
                 "backend"=>$backend,
@@ -360,7 +168,6 @@ class SignalsService
                 $ts_array[$code][] = $ts;
             }
         }
-
 
         $ts_sets = [];
         foreach($entities as $entity){
@@ -381,39 +188,6 @@ class SignalsService
     }
 
     /**
-     * @param QueryTime $from
-     * @param QueryTime $until
-     * @param MetadataEntity $entity
-     * @param DatasourceEntity $datasource
-     * @param int $maxPoints
-     * @return TimeSeries
-     * @throws BackendException
-     */
-    public function queryForTimeSeries(QueryTime $from, QueryTime $until, MetadataEntity $entity,
-                                  DatasourceEntity $datasource, ?int $maxPoints): TimeSeries {
-        $backend = $datasource->getBackend();
-
-        if($backend == "graphite"){
-            $exp_json = $this->buildGraphiteExpression($entity->getAttribute("fqid"), $datasource->getDatasource());
-            $ts = array_values($this->graphiteBackend->queryGraphite($from, $until, $exp_json, $maxPoints))[0];
-        } else if($backend=="influx"){
-            // calculate step and round down starting time
-            $step = $this->calculateStep($from, $until, $maxPoints, $datasource->getNativeStep());
-            $from = $this->roundDownFromTs($from, $step);
-            $influx_query = $this->buildInfluxQuery($datasource, $entity, $from, $until, $step);
-            $ts = array_values($this->influxBackend->queryInflux($influx_query, $this->getInfluxDbName($datasource->getDatasource())))[0];
-            $ts->setNativeStep($datasource->getNativeStep());
-        } else {
-            throw new BackendException(
-                sprintf("invalid datasource %s", $datasource)
-            );
-        }
-        $ts->setMetadataEntity($entity);
-        $ts->setDatasource($datasource->getDatasource());
-        return $ts;
-    }
-
-    /**
      * @param int $from
      * @param int $until
      * @param string $entityType
@@ -428,5 +202,14 @@ class SignalsService
             $maxPoints = 400;
         }
         return $this->outagesBackend->queryOutages($from, $until,$entityType, $entityCode, $maxPoints, $datasource->getDatasource());
+    }
+
+    /**
+     * @throws BackendException
+     */
+    public function queryForInfluxV2(string $datasource, array $entities, QueryTime $from, QueryTime $until, int $step): array
+    {
+        $query = $this->influxService->buildFluxQuery($datasource, $entities, $from, $until, $step);
+        return $this -> influxV2Backend -> queryInfluxV2($query);
     }
 }

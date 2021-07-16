@@ -39,19 +39,18 @@ namespace App\TimeSeries\Backend;
 use App\TimeSeries\TimeSeries;
 use DateTime;
 
-class InfluxBackend
+class InfluxV2Backend
 {
 
     /**
-     * @param $query
-     * @param $db_name influx db name
+     * @param string $query
      * @return array
      * @throws BackendException
      */
-    private function sendQuery(string $query, string $db_name): array {
+    private function sendQuery(string $query): array {
         // retrive environment variables for inlfuxdb connection
-        $secret = getenv("INFLUXDB_SECRET");
-        $influx_uri = getenv("INFLUXDB_API");
+        $secret = getenv("INFLUXV2DB_SECRET");
+        $influx_uri = getenv("INFLUXV2DB_API");
         if(!$secret){
             throw new BackendException("Missing INFLUXDB_SECRET environment variable");
         }
@@ -61,9 +60,10 @@ class InfluxBackend
 
         // create curl resource
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "$influx_uri/query?db=$db_name&epoch=ms");
+        curl_setopt($ch, CURLOPT_URL, "$influx_uri");
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Content-Type: application/x-www-form-urlencoded',
+            'Content-Type: application/json',
+            'Accept: */*',
             "Authorization: Bearer $secret"
         ));
         curl_setopt($ch, CURLOPT_POST, 1);
@@ -79,82 +79,47 @@ class InfluxBackend
         return json_decode($output, true);
     }
 
-    /**
-     * process JSON response get from influxdb instance
-     *
-     * @param array $responseJson
-     * @return TimeSeries
-     * @throws BackendException
-     */
-    private function processResponseJson(array $responseJson): array {
-        // sanity check json responses
-        if(!in_array("results", array_keys($responseJson))){
-            $message = "InfluxDB backend failure";
-            throw new BackendException($message);
-        }
-
-        $timeseriesArray = [];
-
-
-        foreach($responseJson["results"] as $resultJson){
-            if(!array_key_exists("series", $resultJson)){
+    private function parseReturnValue($responseJson) {
+        $res_array = [];
+        foreach($responseJson["results"] as $entityCode => $res) {
+            $raw_values = $res["frames"][0]["data"]["values"];
+            if(count($raw_values)!=2){
                 continue;
             }
-            foreach($resultJson["series"] as $data){
-                $step = 0;
-                $prev_ts = 0;
+            $res_array[$entityCode] = $raw_values;
 
-                $key = array_values($data["tags"])[0];
-                $values = [];
+            // find step
+            $step = ($raw_values[0][1] -$raw_values[0][0])/1000;
 
-                // retrieve values and calculate steps
-                foreach($data['values'] as $value_pair){
-                    $cur_ts = $value_pair[0]/1000;  // influx returns timestamp in miliseconds
-                    // save the actual datapoint value to array
-                    $values[] = $value_pair[1];
+            $from = new DateTime();
+            $until = new DateTime();
+            $from->setTimestamp($raw_values[0][0]/1000);
+            $until->setTimestamp(end($raw_values[0])/1000 + $step);
 
-                    // use the first two iterations to calculate the step from the returned data
-                    if($step==0){
-                        if($prev_ts==0){
-                            $prev_ts = $cur_ts;
-                        } else {
-                            $step = $cur_ts - $prev_ts;
-                        }
-                    }
-                }
-
-                $from = new DateTime();
-                $until = new DateTime();
-                $from->setTimestamp($data['values'][0][0]/1000);
-                $until->setTimestamp(end($data['values'])[0]/1000 + $step);
-
-                // create new TimeSeries object accordingly
-                $newSeries = new TimeSeries();
-                $newSeries->setFrom($from);
-                $newSeries->setUntil($until);
-                $newSeries->setStep($step);
-                $newSeries->setValues($values);
-                $timeseriesArray[$key] = $newSeries;
-            }
+            // create new TimeSeries object accordingly
+            $newSeries = new TimeSeries();
+            $newSeries->setFrom($from);
+            $newSeries->setUntil($until);
+            $newSeries->setStep($step);
+            $newSeries->setValues($raw_values[1]);
+            $res_array[$entityCode] = $newSeries;
         }
 
-
-        return $timeseriesArray;
+        return $res_array;
     }
 
     /**
      * Influx service main entry point.
      *
      * @param string $query
-     * @param string $db_name
-     * @return TimeSeries
+     * @return array
      * @throws BackendException
      */
-    public function queryInflux(string $query, string $db_name): array
+    public function queryInfluxV2(string $query): array
     {
         // send query and process response
-        $res = $this->sendQuery($query, $db_name);
+        $res = $this->sendQuery($query);
 
-        return $this->processResponseJson($res);
+        return $this->parseReturnValue($res);
     }
 }

@@ -55,21 +55,21 @@ class DatasourceService
                 "UCSD Network Telescope",
                 "Unique Source IPs",
                 60,
-                "influx"
+                "influxv2"
             ),
             "bgp" => new DatasourceEntity(
                 "bgp",
                 "BGP",
                 "Visible /24s",
                 300,
-                "graphite"
+                "influxv2"
             ),
             "ping-slash24" => new DatasourceEntity(
                 "ping-slash24",
                 "Active Probing",
                 "Up /24s",
                 600,
-                "graphite"
+                "influxv2"
             ),
         ];
         $this->EVENTS_DATASOURCE =
