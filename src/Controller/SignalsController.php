@@ -253,7 +253,6 @@ class SignalsController extends ApiController
                                 new RequestParameter('until', RequestParameter::INTEGER, null, true),
                                 new RequestParameter('datasource', RequestParameter::STRING, null, false),
                                 new RequestParameter('maxPoints', RequestParameter::INTEGER, null, false),
-                                new RequestParameter('noinflux', RequestParameter::BOOL, false, false),
                             ],
                             $request
         );
@@ -266,7 +265,6 @@ class SignalsController extends ApiController
         $until = $env->getParam('until');
         $datasource_str = $env->getParam('datasource');
         $maxPoints = $env->getParam('maxPoints');
-        $noinflux = $env->getParam('noinflux');
         $metas = $this->metadataService->search($entityType, $entityCode);
 
         try{
@@ -290,7 +288,7 @@ class SignalsController extends ApiController
         $ts_sets = [];
         $perf = null;
         try{
-            [$ts_sets, $perf] = $this->signalsService->queryForAll($from, $until, $entities, $datasource_array, $maxPoints, $noinflux);
+            [$ts_sets, $perf] = $this->signalsService->queryForAll($from, $until, $entities, $datasource_array, $maxPoints);
         } catch (BackendException $ex) {
             $env->setError($ex->getMessage());
         }
