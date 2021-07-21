@@ -89,7 +89,11 @@ class InfluxV2Backend
             $res_array[$entityCode] = $raw_values;
 
             // find step
-            $step = ($raw_values[0][1] -$raw_values[0][0])/1000;
+            if(count($raw_values[0])<=1){
+                $step = 0;
+            } else {
+                $step = ($raw_values[0][1] -$raw_values[0][0])/1000;
+            }
 
             $from = new DateTime();
             $until = new DateTime();

@@ -161,6 +161,10 @@ class SignalsService
                 $ts = $arr[$code];
                 $ts -> setMetadataEntity($entityMap[$code]);
                 $ts -> setNativeStep($datasource->getNativeStep());
+                if(count($ts -> getValues()) <= 2) {
+                    // not enough to calculate a true step, use native step instead
+                    $ts->setStep($ts-> getNativeStep());
+                }
                 $ts -> setDatasource($datasource->getDatasource());
                 if(!array_key_exists($code, $ts_array)){
                     $ts_array[$code] = [];
