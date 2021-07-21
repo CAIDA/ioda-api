@@ -44,6 +44,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 class Envelope
 {
+    const COPYRIGHT = "This data is Copyright (c) 2013 The Regents of the University of California. All Rights Reserved.";
+
     /**
      * @Groups({"all", "public"})
      * @SWG\Property(type="string")
@@ -83,6 +85,30 @@ class Envelope
      * @SWG\Property(type="object")
      */
     private $data;
+
+    /**
+     * @SWG\Property(type="string")
+     * @Groups({"public"})
+     */
+    private $copyright;
+
+    /**
+     * @return mixed
+     */
+    public function getCopyright()
+    {
+        return self::COPYRIGHT;
+    }
+
+    /**
+     * @param mixed $copyright
+     * @return void
+     */
+    public function setCopyright($copyright)
+    {
+        return;
+    }
+
 
     /**
      * Envelope constructor.
