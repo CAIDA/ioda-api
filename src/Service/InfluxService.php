@@ -167,13 +167,15 @@ END;
 
         $queries = [];
         foreach($fluxQueries as $entityCode => $fluxQuery){
+            // NOTE: the maxDataPoints needs to be set to a very large value to avoid grafana stripping data off
+            //       currently set to be 31536000, which should be equivalent to 10 years
             $queries[] = <<<END
     {
       "query": "$fluxQuery",
       "refId":"$entityCode",
       "datasourceId": $datasource_id,
       "intervalMs": 60000,
-      "maxDataPoints": 1268
+      "maxDataPoints": 31536000
     }
 END;
         }
