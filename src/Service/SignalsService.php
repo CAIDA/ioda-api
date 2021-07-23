@@ -58,7 +58,7 @@ class SignalsService
      * All available down-sample steps an datasource can use.
      */
     const ALLOWED_STEPS = [
-        60, 120, 300, 900, 1800, // minute-level [1, 2, 5, 15, 30]
+        60, 120, 300, 600, 900, 1800, // minute-level [1, 2, 5, 15, 30]
         3600, 7200, 21600, 43200,  //hour-level [1, 2, 6, 12]
         86400, 172800, //day-level [1, 2]
         604800, 1209600, 2419200, //week-level [1, 2, 4]
