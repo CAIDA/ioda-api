@@ -36,6 +36,7 @@
 namespace App\Service;
 use App\Entity\DatasourceEntity;
 use App\TimeSeries\Backend\BackendException;
+use App\TimeSeries\Backend\GraphiteBackend;
 use App\TimeSeries\Backend\InfluxV2Backend;
 use App\TimeSeries\Backend\OutagesBackend;
 use App\TimeSeries\TimeSeriesSet;
@@ -52,6 +53,9 @@ class SignalsService
      * @var OutagesBackend
      */
     private $outagesBackend;
+
+    private $graphiteBackend;
+
     private $influxService;
 
     /**
@@ -64,6 +68,80 @@ class SignalsService
         604800, 1209600, 2419200, //week-level [1, 2, 4]
         31536000, 63072000, 315360000, //year-level [1, 2, 10]
     ];
+
+
+    /**
+     * Build graphite expression JSON object based on given $datasource.
+     *
+     * @param string $fqid
+     * @param string $datasource_id
+     * @return string
+     */
+    private function buildGraphiteExpression(string $fqid, string $datasource_id): string {
+        $queryJsons = [
+            "bgp" => "alias(bgp.prefix-visibility.$fqid.v4.visibility_threshold.min_50%_ff_peer_asns.visible_slash24_cnt,\"bgp\")",
+            "ucsd-nt" => "alias(darknet.ucsd-nt.non-erratic.$fqid.uniq_src_ip,\"ucsd-nt\")",
+            "ping-slash24" => "alias(sumSeries(keepLastValue(active.ping-slash24.$fqid.probers.team-1.caida-sdsc.*.up_slash24_cnt,1)),\"ping-slash24\")",
+        ];
+        return $queryJsons[$datasource_id];
+    }
+
+    /**
+     * Build graphite expression JSON object based on given $datasource.
+     *
+     * @param string $fqid
+     * @param string $datasource_id
+     * @return string
+     */
+    private function buildMultiEntityGraphiteExpression(array $entities, string $datasource_id): string {
+        // NOTE: for a list of fqids, there should only be one portion that are different.
+        // It also must be the last field that are different from each other
+        // Examples:
+        // - asn: asn.133191
+        // - country: geo.netacuity.NA.US
+        // - region: geo.netacuity.NA.US.4437
+        // - county: geo.netacuity.NA.US.4437.3103
+
+        $common="";
+        $unique=[];
+        $entityType = $entities[0]->getType()->getType();
+
+        foreach($entities as $entity) {
+            $fqid = $entity->getAttribute("fqid");
+            $fields = explode(".", $fqid);
+            if($common == ""){
+                $common = implode(".", array_slice($fields, 0, -1));
+            }
+            assert($entity->getCode() == end($fields));
+            $unique[] = end($fields);
+        }
+
+        if($datasource_id=="ucsd-nt" && $common=="asn"){
+            $common="routing.asn";
+        }
+        $fqid_combined = $common . ".{" . implode(",", $unique) . "}";
+
+        $aliasIndex = [
+            "asn" => 3,
+            "country" => 5,
+            "region" => 6,
+        ];
+
+        $aliasIndexNt = [
+            "asn" => 5,
+            "country" => 6,
+            "region" => 7,
+        ];
+
+        $queryJsons = [
+            "bgp" => "aliasByNode(bgp.prefix-visibility.$fqid_combined.v4.visibility_threshold.min_50%_ff_peer_asns.visible_slash24_cnt, $aliasIndex[$entityType])",
+            "ucsd-nt" => "aliasByNode(darknet.ucsd-nt.non-erratic.$fqid_combined.uniq_src_ip, $aliasIndexNt[$entityType])",
+            // NOTE: if see strange gaps in between bins, consider bring back keepLastValue function for ping-slash24
+            "ping-slash24" => "aliasByNode(groupByNode(active.ping-slash24.$fqid_combined.probers.team-1.caida-sdsc.*.up_slash24_cnt,$aliasIndex[$entityType], 'sumSeries'), $aliasIndex[$entityType])",
+        ];
+
+        return $queryJsons[$datasource_id];
+    }
 
     /**
      * Calculate step based on the value of `from` and `until`.
@@ -110,12 +188,14 @@ class SignalsService
 
 
     public function __construct(OutagesBackend $outagesBackend,
+                                GraphiteBackend $graphiteBackend,
                                 InfluxV2Backend $influxV2Backend,
                                 InfluxService $influxService
     ) {
         $this->outagesBackend = $outagesBackend;
         $this->influxV2Backend = $influxV2Backend;
         $this->influxService = $influxService;
+        $this->graphiteBackend= $graphiteBackend;
     }
 
     /**
@@ -127,10 +207,11 @@ class SignalsService
      * @param array $entities
      * @param array $datasources
      * @param int|null $maxPoints
+     * @param bool $graphite
      * @return array
      * @throws BackendException
      */
-    public function queryForAll(QueryTime $from, QueryTime $until, array $entities, array $datasources, ?int $maxPoints): array
+    public function queryForAll(QueryTime $from, QueryTime $until, array $entities, array $datasources, ?int $maxPoints, bool $graphite): array
     {
         $ts_array = [];
 
@@ -143,12 +224,17 @@ class SignalsService
 
         foreach($datasources as $datasource){
             $now = microtime(true);
-            $backend = $datasource->getBackend();
+            $backend = $graphite? "graphite": "influxv2";
             $ds = $datasource->getDatasource();
 
-            $step = $this->calculateStep($from, $until, $maxPoints, $datasource->getNativeStep());
-            $from = $this->roundDownFromTs($from, $step);
-            $arr = $this->queryForInfluxV2($ds, $entities, $from, $until, $step);
+            if($graphite) {
+                $exp_json = $this->buildMultiEntityGraphiteExpression($entities, $ds);
+                $arr = $this->graphiteBackend->queryGraphite($from, $until, $exp_json, $maxPoints);
+            } else {
+                $step = $this->calculateStep($from, $until, $maxPoints, $datasource->getNativeStep());
+                $from = $this->roundDownFromTs($from, $step);
+                $arr = $this->queryForInfluxV2($ds, $entities, $from, $until, $step);
+            }
 
             $perf[] = [
                 "datasource"=>$ds,
