@@ -113,7 +113,7 @@ class GraphiteBackend
      * @return TimeSeries
      * @throws BackendException
      */
-    public function queryGraphite(QueryTime $from, QueryTime $until, $expression, ?int $maxPoints): array
+    public function queryGraphite(QueryTime $from, QueryTime $until, array $expression, ?int $maxPoints): array
     {
         // calculate cache timeout, used in graphite query
         $timeout = $this->calcTimeout($until);
@@ -127,7 +127,7 @@ class GraphiteBackend
             '/render',
             [
                 'format' => 'json-internal',
-                'target' => [$expression],
+                'target' => $expression,
                 'from' => $from->getGraphiteTime(),
                 'until' => $until->getGraphiteTime(),
                 'cacheTimeout' => $timeout,
@@ -136,6 +136,7 @@ class GraphiteBackend
             ]
         );
         $jsonResult = json_decode($result, true);
+
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new BackendException('Invalid JSON from TS backend: ' . json_last_error_msg());
         }

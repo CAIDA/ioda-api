@@ -87,63 +87,103 @@ class SignalsService
     }
 
     /**
+     * Group entities by common part of the fqid part. Only entities with the same common part can be grouped into
+     * single graphite query.
+     *
+     * @param array $entities
+     * @return array|array[]
+     */
+    private function groupEntitiesByFqid(array $entities): array {
+        $entityType = $entities[0]->getType()->getType();
+        $entityGroups = [];
+        if($entityType=="asn") {
+            $entityGroups = ["asn"=>$entities];
+        }
+
+        $common_code_range = [
+            "asn" => [0,1],
+            "country" => [2,1],
+            "region" => [2,2],
+            "county" => [2,3],
+        ];
+
+        foreach($entities as $entity){
+            $fqid = $entity->getAttribute("fqid");
+            $fields = explode(".", $fqid);
+            $common_code = implode(".", array_slice($fields, $common_code_range[$entityType][0], $common_code_range[$entityType][1]));
+            if(!array_key_exists($common_code, $entityGroups)){
+                $entityGroups[$common_code] = [];
+            }
+            $entityGroups[$common_code][] = $entity;
+        }
+
+        return $entityGroups;
+    }
+
+    /**
      * Build graphite expression JSON object based on given $datasource.
      *
      * @param string $fqid
      * @param string $datasource_id
-     * @return string
+     * @return array
      */
-    private function buildMultiEntityGraphiteExpression(array $entities, string $datasource_id): string {
+    private function buildMultiEntityGraphiteExpression(array $entities, string $datasource_id): array
+    {
         // NOTE: for a list of fqids, there should only be one portion that are different.
         // It also must be the last field that are different from each other
         // Examples:
-        // - asn: routing.asn.133191
+        // - asn: asn.133191
         // - country: geo.netacuity.NA.US
         // - region: geo.netacuity.NA.US.4437
         // - county: geo.netacuity.NA.US.4437.3103
 
-        $common="";
-        $unique=[];
         $entityType = $entities[0]->getType()->getType();
 
-        foreach($entities as $entity) {
-            $fqid = $entity->getAttribute("fqid");
-            $fields = explode(".", $fqid);
-            if($common == ""){
-                $common = implode(".", array_slice($fields, 0, -1));
+        $queries = [];
+
+        foreach($this->groupEntitiesByFqid($entities) as $group_entities){
+            $common="";
+            $unique=[];
+            foreach($group_entities as $entity) {
+                $fqid = $entity->getAttribute("fqid");
+                $fields = explode(".", $fqid);
+                if($common == ""){
+                    $common = implode(".", array_slice($fields, 0, -1));
+                }
+                assert($entity->getCode() == end($fields));
+                $unique[] = end($fields);
             }
-            assert($entity->getCode() == end($fields));
-            $unique[] = end($fields);
+
+            if($datasource_id=="ucsd-nt" && $common=="asn"){
+                $common="routing.asn";
+            }
+            $fqid_combined = $common . ".{" . implode(",", $unique) . "}";
+
+            $aliasIndex = [
+                "asn" => 3,
+                "country" => 5,
+                "region" => 6,
+                "county" => 7,
+            ];
+
+            $aliasIndexNt = [
+                "asn" => 5,
+                "country" => 6,
+                "region" => 7,
+                "county" => 8,
+            ];
+
+            $queryJsons = [
+                "bgp" => "aliasByNode(bgp.prefix-visibility.$fqid_combined.v4.visibility_threshold.min_50%_ff_peer_asns.visible_slash24_cnt, $aliasIndex[$entityType])",
+                "ucsd-nt" => "aliasByNode(darknet.ucsd-nt.non-erratic.$fqid_combined.uniq_src_ip, $aliasIndexNt[$entityType])",
+                // NOTE: if see strange gaps in between bins, consider bring back keepLastValue function for ping-slash24
+                "ping-slash24" => "aliasByNode(groupByNode(active.ping-slash24.$fqid_combined.probers.team-1.caida-sdsc.*.up_slash24_cnt,$aliasIndex[$entityType], 'sumSeries'), $aliasIndex[$entityType])",
+            ];
+
+            $queries[] = $queryJsons[$datasource_id];
         }
 
-        if($datasource_id=="ucsd-nt" && $common=="asn"){
-            $common="routing.asn";
-        }
-        $fqid_combined = $common . ".{" . implode(",", $unique) . "}";
-
-        $aliasIndex = [
-            "asn" => 3,
-            "country" => 5,
-            "region" => 6,
-            "county" => 7,
-        ];
-
-        $aliasIndexNt = [
-            "asn" => 5,
-            "country" => 6,
-            "region" => 7,
-            "county" => 8,
-        ];
-
-        $queryJsons = [
-            "bgp" => "aliasByNode(bgp.prefix-visibility.$fqid_combined.v4.visibility_threshold.min_50%_ff_peer_asns.visible_slash24_cnt, $aliasIndex[$entityType])",
-            "ucsd-nt" => "aliasByNode(darknet.ucsd-nt.non-erratic.$fqid_combined.uniq_src_ip, $aliasIndexNt[$entityType])",
-            // NOTE: if see strange gaps in between bins, consider bring back keepLastValue function for ping-slash24
-            "ping-slash24" => "aliasByNode(groupByNode(active.ping-slash24.$fqid_combined.probers.team-1.caida-sdsc.*.up_slash24_cnt,$aliasIndex[$entityType], 'sumSeries'), $aliasIndex[$entityType])",
-        ];
-
-        // var_dump($queryJsons[$datasource_id]);
-        return $queryJsons[$datasource_id];
+        return $queries;
     }
 
     /**
