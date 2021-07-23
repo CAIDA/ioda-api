@@ -97,7 +97,7 @@ class SignalsService
         // NOTE: for a list of fqids, there should only be one portion that are different.
         // It also must be the last field that are different from each other
         // Examples:
-        // - asn: asn.133191
+        // - asn: routing.asn.133191
         // - country: geo.netacuity.NA.US
         // - region: geo.netacuity.NA.US.4437
         // - county: geo.netacuity.NA.US.4437.3103
@@ -125,12 +125,14 @@ class SignalsService
             "asn" => 3,
             "country" => 5,
             "region" => 6,
+            "county" => 7,
         ];
 
         $aliasIndexNt = [
             "asn" => 5,
             "country" => 6,
             "region" => 7,
+            "county" => 8,
         ];
 
         $queryJsons = [
@@ -140,6 +142,7 @@ class SignalsService
             "ping-slash24" => "aliasByNode(groupByNode(active.ping-slash24.$fqid_combined.probers.team-1.caida-sdsc.*.up_slash24_cnt,$aliasIndex[$entityType], 'sumSeries'), $aliasIndex[$entityType])",
         ];
 
+        // var_dump($queryJsons[$datasource_id]);
         return $queryJsons[$datasource_id];
     }
 
