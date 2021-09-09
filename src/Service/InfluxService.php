@@ -40,87 +40,115 @@ use App\Utils\QueryTime;
 
 class InfluxService
 {
+    const BGP_EXTRA_CLAUSE = " and r.ip_version == \"v4\" and r.visibility_threshold == \"min_50%_ff_peer_asns\"";
+    const PING_AGGR = "|> group(columns: [\"_time\"], mode:\"by\") |> sum(column: \"_value\") |> group() ";
+    const NT_EXTRA_GEO = " and r.geo_db == \"netacuity\" ";
+
     const FIELD_MAP = [
         "bgp" => [
             "continent" => [
                 "measurement" => "geo_continent_visibility",
-                "code_field" => "continent_code",
+		"code_field" => "continent_code",
+		"extra" => self::BGP_EXTRA_CLAUSE,
+		"aggr" => "",
             ],
             "country" => [
                 "measurement" => "geo_country_visibility",
                 "code_field" => "country_code",
+		"extra" => self::BGP_EXTRA_CLAUSE,
+		"aggr" => "",
             ],
             "county" => [
                 "measurement" => "geo_county_visibility",
                 "code_field" => "county_code",
+		"extra" => self::BGP_EXTRA_CLAUSE,
+		"aggr" => "",
             ],
             "region" => [
                 "measurement" => "geo_region_visibility",
                 "code_field" => "region_code",
+		"extra" => self::BGP_EXTRA_CLAUSE,
+		"aggr" => "",
             ],
             "asn" => [
                 "measurement" => "asn_visibility",
                 "code_field" => "asn",
+		"extra" => self::BGP_EXTRA_CLAUSE,
+		"aggr" => "",
             ],
             "datasource_id" => 3,
             "field" => "visible_slash24_cnt",
             "bucket" => "ioda_bgp",
-            "extra" => " and r.ip_version == \"v4\" and r.visibility_threshold == \"min_50%_ff_peer_asns\"",
-            "aggr" => "",
         ],
         "ping-slash24" => [
             "continent" => [
                 "measurement" => "geo_continent_slash24",
                 "code_field" => "continent_code",
-            ],
+	        "extra" => "",
+		"aggr" => self::PING_AGGR,
+	    ],
             "country" => [
                 "measurement" => "geo_country_slash24",
                 "code_field" => "country_code",
+	        "extra" => "",
+		"aggr" => self::PING_AGGR,
             ],
             "county" => [
                 "measurement" => "geo_county_slash24",
                 "code_field" => "county_code",
+	        "extra" => "",
+		"aggr" => self::PING_AGGR,
             ],
             "region" => [
                 "measurement" => "geo_region_slash24",
                 "code_field" => "region_code",
+	        "extra" => "",
+		"aggr" => self::PING_AGGR,
             ],
             "asn" => [
                 "measurement" => "asn_slash24",
                 "code_field" => "asn",
+	        "extra" => "",
+		"aggr" => self::PING_AGGR,
             ],
             "datasource_id" => 4,
             "field" => "up_slash24_cnt",
             "bucket" => "ioda_trinocular",
-            "extra" => "",
-            "aggr" => "|> group(columns: [\"_time\"], mode:\"by\") |> sum(column: \"_value\") |> group() ",
         ],
         "ucsd-nt" => [
             "continent" => [
                 "measurement" => "geo_continent",
-                "code_field" => "continent_code",
+		"code_field" => "continent_code",
+		"extra" => self::NT_EXTRA_GEO,
+		"aggr" => "",
             ],
             "country" => [
                 "measurement" => "geo_country",
                 "code_field" => "country_code",
+		"extra" => self::NT_EXTRA_GEO,
+		"aggr" => "",
             ],
             "county" => [
                 "measurement" => "geo_county",
                 "code_field" => "county_code",
+		"extra" => self::NT_EXTRA_GEO,
+		"aggr" => "",
             ],
             "region" => [
                 "measurement" => "geo_region",
                 "code_field" => "region_code",
+		"extra" => self::NT_EXTRA_GEO,
+		"aggr" => "",
             ],
             "asn" => [
                 "measurement" => "origin_asn",
                 "code_field" => "asn",
+		"extra" => "",
+		"aggr" => "",
             ],
             "datasource_id" => 7,
             "field" => "uniq_src_ip",
-            "bucket" => "ioda_ucsd_nt_non_erratic",
-            "extra" => "",
-            "aggr" => "|> group(columns: [\"_time\"], mode:\"by\") |> mean() |> group() ",
+	    "bucket" => "ioda_ucsd_nt_non_erratic",
         ]
     ];
 
@@ -139,8 +167,8 @@ class InfluxService
         $code_field =  self::FIELD_MAP[$datasource]["$entityType"]["code_field"];
         $measurement = self::FIELD_MAP[$datasource]["$entityType"]["measurement"];
         $bucket = self::FIELD_MAP[$datasource]["bucket"];
-        $extra = self::FIELD_MAP[$datasource]["extra"];
-        $aggr = self::FIELD_MAP[$datasource]["aggr"];
+        $extra = self::FIELD_MAP[$datasource]["$entityType"]["extra"];
+        $aggr = self::FIELD_MAP[$datasource]["$entityType"]["aggr"];
 
         $datasource_id = self::FIELD_MAP[$datasource]["datasource_id"];
 
