@@ -38,10 +38,19 @@ namespace App\Service;
 
 use App\Utils\QueryTime;
 
+/* NOTE TO FUTURE SELVES
+ *
+ * datasource_ids are not going to be consistent across grafana deployments.
+ * If we ever have to redeploy grafana from scratch, the IDs here will no longer
+ * match the data sources in grafana.
+ *
+ * So if you have bugs where the API can't seem to run queries any more, then
+ * maybe the datasource ID is wrong.
+ */
+
 class InfluxService
 {
     const BGP_EXTRA_CLAUSE = " and r.ip_version == \"v4\" and r.visibility_threshold == \"min_50%_ff_peer_asns\"";
-    const PING_AGGR = "|> group(columns: [\"_time\"], mode:\"by\") |> sum(column: \"_value\") |> group() ";
     const NT_EXTRA_GEO = " and r.geo_db == \"netacuity\" ";
 
     const FIELD_MAP = [
@@ -85,35 +94,35 @@ class InfluxService
                 "measurement" => "geo_continent_slash24",
                 "code_field" => "continent_code",
                 "extra" => "",
-                "aggr" => self::PING_AGGR,
+                "aggr" => "",
             ],
             "country" => [
                 "measurement" => "geo_country_slash24",
                 "code_field" => "country_code",
                 "extra" => "",
-                "aggr" => self::PING_AGGR,
+                "aggr" => "",
             ],
             "county" => [
                 "measurement" => "geo_county_slash24",
                 "code_field" => "county_code",
                 "extra" => "",
-                "aggr" => self::PING_AGGR,
+                "aggr" => "",
             ],
             "region" => [
                 "measurement" => "geo_region_slash24",
                 "code_field" => "region_code",
                 "extra" => "",
-                "aggr" => self::PING_AGGR,
+                "aggr" => "",
             ],
             "asn" => [
                 "measurement" => "asn_slash24",
                 "code_field" => "asn",
                 "extra" => "",
-                "aggr" => self::PING_AGGR,
+                "aggr" => "",
             ],
-            "datasource_id" => 4,
+            "datasource_id" => 9,
             "field" => "up_slash24_cnt",
-            "bucket" => "ioda_trinocular",
+            "bucket" => "ioda_trinocular_summed",
         ],
         "ucsd-nt" => [
             "continent" => [
